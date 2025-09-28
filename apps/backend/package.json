@@ -1,0 +1,19 @@
+{
+  "name": "backend",
+  "scripts": {
+    "dev": "bun run --hot src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target bun",
+    "start": "bun run dist/index.js",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src --ext .ts,.tsx",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "hono": "^4.9.9",
+    "ioredis": "^5.8.0",
+    "mqtt": "^5.14.1"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}

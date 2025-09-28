@@ -1,0 +1,37 @@
+{
+  "name": "orbit",
+  "devDependencies": {
+    "@biomejs/biome": "2.2.4",
+    "@types/node": "^20.0.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.2",
+
+    "turbo": "^1.10.0",
+    "typescript": "^5.2.0",
+    "ultracite": "5.4.4"
+  },
+  "packageManager": "bun@1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "ultracite check",
+    "format": "ultracite format",
+    "test": "turbo run test",
+    "type-check": "turbo run type-check",
+    "clean": "turbo run clean && rm -rf node_modules"
+  },
+  "trustedDependencies": [
+    "@swc/core",
+    "@tailwindcss/oxide"
+  ],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,jsonc,css,scss,md,mdx}": [
+      "bun x ultracite fix"
+    ]
+  }
+}
