@@ -5,8 +5,7 @@
     "@types/node": "^20.0.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.2",
-
-    "turbo": "^1.10.0",
+    "turbo": "^2.5.8",
     "typescript": "^5.2.0",
     "ultracite": "5.4.4"
   },
