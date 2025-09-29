@@ -1,6 +1,11 @@
+import RobotFace from "./components/RobotFace";
+
 function App() {
   return (
-    <h1 className="align-center text-7xl text-slate-300">Orbit can't Orbit</h1>
+    <main className="flex min-h-screen w-full items-center justify-center bg-background p-0 text-foreground">
+      {/* Full-screen face only */}
+      <RobotFace />
+    </main>
   );
 }
 
