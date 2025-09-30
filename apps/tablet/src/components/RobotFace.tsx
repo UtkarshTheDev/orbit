@@ -8,7 +8,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 // - Cheeks have soft pulsing glow and subtle breathing motion
 // - Mouth morphs through talking/expression shapes smoothly
 
-export default function RobotFace() {
+export default function RobotFace({
+  isDisappearing = false,
+}: {
+  isDisappearing?: boolean;
+}) {
   const faceRef = useRef<HTMLDivElement>(null);
 
   // Cursor tracking for eyes
@@ -20,16 +24,40 @@ export default function RobotFace() {
   // Eyelid blinking
   const [isBlinking, setIsBlinking] = useState(false);
   const [isHalfBlink, setIsHalfBlink] = useState(false);
+  const [forceSlowBlink, setForceSlowBlink] = useState(false);
 
   // Talking state cycles automatically for a lively feel
   const [isTalking, setIsTalking] = useState(true);
 
-  // Smooth springs for pupil positions (shared across both eyes using relative centers)
+  // Disappearing animation state
+  const [animationPhase, setAnimationPhase] = useState<
+    "idle" | "blinking" | "fading"
+  >("idle");
+
+  // Smooth springs for pupil positions
   const pupilX = useSpring(0, { stiffness: 120, damping: 12, mass: 0.4 });
   const pupilY = useSpring(0, { stiffness: 120, damping: 12, mass: 0.4 });
 
+  // Trigger disappear animation sequence
+  useEffect(() => {
+    if (!isDisappearing) return;
+
+    // Phase 1: Slow blink
+    setAnimationPhase("blinking");
+    setForceSlowBlink(true);
+
+    // Phase 2: Start fading after blink
+    const fadeTimer = setTimeout(() => {
+      setAnimationPhase("fading");
+    }, 800);
+
+    return () => clearTimeout(fadeTimer);
+  }, [isDisappearing]);
+
   useEffect(() => {
     const handler = (e: MouseEvent | TouchEvent) => {
+      if (isDisappearing) return; // Stop tracking during disappear
+
       const rect = faceRef.current?.getBoundingClientRect();
       if (!rect) return;
 
@@ -57,7 +85,7 @@ export default function RobotFace() {
       window.removeEventListener("mousemove", handler);
       window.removeEventListener("touchmove", handler);
     };
-  }, []);
+  }, [isDisappearing]);
 
   // Detect idle (good for tablets too)
   useEffect(() => {
@@ -69,28 +97,27 @@ export default function RobotFace() {
 
   // Idle wandering eyes: generate gentle look-around targets when idle
   useEffect(() => {
-    if (!isIdle) return;
+    if (!isIdle || isDisappearing) return;
     let cancelled = false;
     const wander = () => {
       if (cancelled) return;
-      const r = 140 + Math.random() * 180; // radius in px for virtual gaze reference
+      const r = 140 + Math.random() * 180;
       const ang = Math.random() * Math.PI * 2;
-      const nx = Math.cos(ang) * r * 0.25; // small offset
+      const nx = Math.cos(ang) * r * 0.25;
       const ny = Math.sin(ang) * r * 0.25;
       setIdleTarget({ x: nx, y: ny });
-      // vary cadence slightly for organic feel
       setTimeout(wander, 900 + Math.random() * 900);
     };
     wander();
     return () => {
       cancelled = true;
     };
-  }, [isIdle]);
+  }, [isIdle, isDisappearing]);
 
   // Map target to constrained pupil offset (use idle target when idle)
   useEffect(() => {
     const eff = isIdle ? idleTarget : target;
-    const max = 22; // px, how far pupils can travel (increased)
+    const max = 22;
     const len = Math.hypot(eff.x, eff.y) || 1;
     const nx = (eff.x / len) * Math.min(max, len / 8);
     const ny = (eff.y / len) * Math.min(max, len / 8);
@@ -100,14 +127,22 @@ export default function RobotFace() {
 
   // Natural random blinking with occasional double and half-blinks
   useEffect(() => {
+    if (forceSlowBlink) {
+      setIsBlinking(true);
+      const t = setTimeout(() => setIsBlinking(false), 600);
+      return () => clearTimeout(t);
+    }
+
+    if (isDisappearing) return;
+
     let active = true;
     const loop = () => {
       if (!active) return;
       const base = isIdle ? 3200 : 2200;
       const spread = isIdle ? 4200 : 2800;
       const nextIn = base + Math.random() * spread;
-      const doDouble = Math.random() < 0.18; // occasional double blink
-      const doHalf = Math.random() < 0.22; // subtle eyelid flutter
+      const doDouble = Math.random() < 0.18;
+      const doHalf = Math.random() < 0.22;
       const blinkDuration = 90 + Math.random() * 70;
       const t = setTimeout(() => {
         if (doHalf) {
@@ -137,13 +172,13 @@ export default function RobotFace() {
       active = false;
       cleanup && cleanup();
     };
-  }, [isIdle]);
+  }, [isIdle, forceSlowBlink, isDisappearing]);
 
-  // Activity level for reactive cheeks (based on eye movement + talking)
+  // Activity level for reactive cheeks
   const [activity, setActivity] = useState(0);
   useEffect(() => {
     const len = Math.hypot(target.x, target.y);
-    const eyeFactor = Math.min(1, len / 240); // normalize distance
+    const eyeFactor = Math.min(1, len / 240);
     const talkFactor = isTalking ? 0.55 : 0;
     const a = Math.min(1, eyeFactor * 0.6 + talkFactor);
     setActivity(a);
@@ -151,6 +186,8 @@ export default function RobotFace() {
 
   // Idle talking/expression toggling
   useEffect(() => {
+    if (isDisappearing) return;
+
     let timeout: number;
     const schedule = () => {
       const on = 2500 + Math.random() * 3000;
@@ -165,24 +202,28 @@ export default function RobotFace() {
     };
     schedule();
     return () => clearTimeout(timeout);
-  }, [isIdle]);
+  }, [isIdle, isDisappearing]);
 
   // Mouth morph shapes (SVG path d)
-  const mouthShapes = useMemo(() => {
-    return {
-      rest: "M 12 30 Q 64 40 116 30 Q 64 50 12 30 Z", // wider subtle smile
-      speak1: "M 12 30 Q 64 62 116 30 Q 64 82 12 30 Z", // open wide oval (wider)
-      speak2: "M 16 34 Q 64 56 112 34 Q 64 72 16 34 Z", // medium open (wider)
-      grin: "M 12 36 Q 64 66 116 36 Q 64 70 12 36 Z", // wider grin
-      ee: "M 18 36 Q 64 44 110 36 Q 64 48 18 36 Z", // narrow, horizontal 'ee'
-      ah: "M 22 32 Q 64 68 106 32 Q 64 86 22 32 Z", // tall 'ah'
-      flat: "M 10 34 Q 64 38 118 34 Q 64 42 10 34 Z", // very thin flat mouth
-      smile: "M 14 34 Q 64 54 114 34 Q 64 46 14 34 Z", // classic smile
-    } as const;
-  }, []);
+  const mouthShapes = useMemo(
+    () =>
+      ({
+        rest: "M 12 30 Q 64 40 116 30 Q 64 50 12 30 Z",
+        speak1: "M 12 30 Q 64 62 116 30 Q 64 82 12 30 Z",
+        speak2: "M 16 34 Q 64 56 112 34 Q 64 72 16 34 Z",
+        grin: "M 12 36 Q 64 66 116 36 Q 64 70 12 36 Z",
+        ee: "M 18 36 Q 64 44 110 36 Q 64 48 18 36 Z",
+        ah: "M 22 32 Q 64 68 106 32 Q 64 86 22 32 Z",
+        flat: "M 10 34 Q 64 38 118 34 Q 64 42 10 34 Z",
+        smile: "M 14 34 Q 64 54 114 34 Q 64 46 14 34 Z",
+      }) as const,
+    []
+  );
 
   const mouthControls = useAnimation();
   useEffect(() => {
+    if (isDisappearing) return;
+
     let mounted = true;
     const seq = async () => {
       while (mounted) {
@@ -223,19 +264,27 @@ export default function RobotFace() {
     return () => {
       mounted = false;
     };
-  }, [isTalking, mouthControls, mouthShapes]);
+  }, [isTalking, mouthControls, mouthShapes, isDisappearing]);
 
   return (
     <div className="flex h-screen w-screen items-center justify-center">
-      <div
+      <motion.div
+        animate={{
+          opacity: animationPhase === "fading" ? 0 : 1,
+          scale: animationPhase === "fading" ? 0.85 : 1,
+        }}
         className="relative isolate h-full w-full rounded-none p-0"
         ref={faceRef}
         style={{
           background:
             "radial-gradient(120% 120% at 50% 0%, oklch(0.97 0.02 240 / 0.8), oklch(0.92 0.03 210 / 0.7) 40%, oklch(0.96 0 0 / 0.7) 100%)",
           boxShadow:
-            "inset 0 1px 0 0 oklch(1 0 0 / 0.4), 0 20px 44px oklch(0 0 0 / 0.12)", // softened outer shadow
+            "inset 0 1px 0 0 oklch(1 0 0 / 0.4), 0 20px 44px oklch(0 0 0 / 0.12)",
           border: "1px solid oklch(0 0 0 / 0.06)",
+        }}
+        transition={{
+          duration: 1.2,
+          ease: [0.4, 0, 0.2, 1],
         }}
       >
         {/* Subtle top glow */}
@@ -249,7 +298,17 @@ export default function RobotFace() {
         />
 
         {/* Eyes Row */}
-        <div className="-translate-x-1/2 absolute top-[8%] left-1/2 flex w-[90%] items-center justify-center gap-[8vmin] sm:top-[10%] sm:w-[84%] sm:gap-[9vmin] md:top-[12%] md:w-[80%] md:gap-[10vmin]">
+        <motion.div
+          animate={{
+            opacity: animationPhase === "fading" ? 0 : 1,
+          }}
+          className="-translate-x-1/2 absolute top-[8%] left-1/2 flex w-[90%] items-center justify-center gap-[8vmin] sm:top-[10%] sm:w-[84%] sm:gap-[9vmin] md:top-[12%] md:w-[80%] md:gap-[10vmin]"
+          transition={{
+            duration: 0.8,
+            delay: 0.1,
+            ease: [0.4, 0, 0.2, 1],
+          }}
+        >
           <Eye
             isBlinking={isBlinking}
             isHalfBlink={isHalfBlink}
@@ -263,34 +322,56 @@ export default function RobotFace() {
             pupilX={pupilX}
             pupilY={pupilY}
           />
-        </div>
+        </motion.div>
 
-        {/* Cheeks */}
-        <div className="-translate-x-1/2 -translate-y-1/2 pointer-events-none absolute top-[50%] left-1/2 flex w-[78%] justify-between sm:w-[80%]">
+        {/* Cheeks - fade last */}
+        <motion.div
+          animate={{
+            opacity: animationPhase === "fading" ? 0 : 1,
+          }}
+          className="-translate-x-1/2 -translate-y-1/2 pointer-events-none absolute top-[50%] left-1/2 flex w-[78%] justify-between sm:w-[80%]"
+          transition={{
+            duration: 1,
+            delay: 0.4, // Cheeks fade last
+            ease: [0.4, 0, 0.2, 1],
+          }}
+        >
           <GlowingCheek activity={activity} side="left" />
           <GlowingCheek activity={activity} side="right" />
-        </div>
+        </motion.div>
 
         {/* Mouth */}
-        <div className="-translate-x-1/2 absolute bottom-[8%] left-1/2 w-[70%] sm:bottom-[10%] sm:w-[62%] md:bottom-[12%] md:w-[56%]">
+        <motion.div
+          animate={{
+            opacity: animationPhase === "fading" ? 0 : 1,
+          }}
+          className="-translate-x-1/2 absolute bottom-[8%] left-1/2 w-[70%] sm:bottom-[10%] sm:w-[62%] md:bottom-[12%] md:w-[56%]"
+          transition={{
+            duration: 0.9,
+            delay: 0.15,
+            ease: [0.4, 0, 0.2, 1],
+          }}
+        >
           <Mouth animateControls={mouthControls} mouthShapes={mouthShapes} />
-        </div>
+        </motion.div>
 
         {/* Subtle status light */}
         <motion.div
-          animate={{ opacity: [0.7, 1, 0.7] }}
+          animate={{
+            opacity: animationPhase === "fading" ? 0 : [0.7, 1, 0.7],
+          }}
           className="absolute top-4 right-4 h-2.5 w-2.5 rounded-full"
           style={{
             background:
               "radial-gradient(70% 70% at 50% 50%, oklch(0.9 0.18 148 / 1) 0%, oklch(0.8 0.18 148 / 0.7) 55%, transparent 65%)",
           }}
           transition={{
-            duration: 3.2,
-            repeat: Number.POSITIVE_INFINITY,
+            duration: animationPhase === "fading" ? 0.6 : 3.2,
+            repeat: animationPhase === "fading" ? 0 : Number.POSITIVE_INFINITY,
             ease: "easeInOut",
           }}
         />
-      </div>
+      </motion.div>
     </div>
   );
 }
