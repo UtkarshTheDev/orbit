@@ -1,28 +1,29 @@
-"use client";
-
 import { useState } from "react";
-import RobotFace from "./components/RobotFace";
+import GreetingAnimation from "@/components/GreetingAnimation";
+import RobotFace from "@/components/RobotFace";
 
 export default function Home() {
   const [isDisappearing, setIsDisappearing] = useState(false);
+  const [showGreeting, setShowGreeting] = useState(false);
 
   const handleClick = () => {
     if (!isDisappearing) {
       setIsDisappearing(true);
+      // Show greeting after face disappears (2 seconds)
+      setTimeout(() => setShowGreeting(true), 2000);
     }
   };
 
   return (
-    <main className="flex min-h-screen w-full items-center justify-center bg-background p-0 text-foreground">
-      <button
-        className="flex h-full w-full items-center justify-center"
-        onClick={handleClick}
-        onKeyDown={(e) => e.key === "Enter" && handleClick()}
-        type="button"
-      >
-        {/* Full-screen face only */}
-        <RobotFace isDisappearing={isDisappearing} />
-      </button>
+    <main
+      className="flex h-screen w-full cursor-pointer items-center justify-center overflow-hidden bg-background text-foreground"
+      onClick={handleClick}
+    >
+      {/* Full-screen face only */}
+      <RobotFace isDisappearing={isDisappearing} />
+
+      {/* Greeting appears after face hides */}
+      {showGreeting && <GreetingAnimation />}
     </main>
   );
 }
