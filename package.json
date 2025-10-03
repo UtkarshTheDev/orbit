@@ -32,5 +32,10 @@
     "*.{js,jsx,ts,tsx,json,jsonc,css,scss,md,mdx}": [
       "bun x ultracite fix"
     ]
+  },
+  "dependencies": {
+    "@fontsource-variable/space-grotesk": "^5.2.10",
+    "@fontsource/inter": "^5.2.8",
+    "@fontsource/pacifico": "^5.2.7"
   }
 }

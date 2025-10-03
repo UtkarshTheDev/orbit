@@ -1,5 +1,3 @@
-"use client";
-
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import {
@@ -31,9 +29,10 @@ export default function GreetingAnimation() {
   }, [step]);
 
   return (
-    <div className="flex h-screen w-full flex-col items-center justify-center">
+    <div className="absolute inset-0 z-50 flex flex-col items-center justify-center">
       {/* Step 1: "Welcome Sir" handwriting with entrance animation */}
       <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
         animate={
           step === 1
             ? { opacity: 1, scale: 1 }
@@ -45,29 +44,29 @@ export default function GreetingAnimation() {
               }
               : {}
         }
-        className="absolute"
-        initial={{ opacity: 0, scale: 0.8 }}
-        style={{
-          filter: "drop-shadow(0 6px 24px rgba(109, 40, 217, 0.4))",
-          color: "#1a1a1a",
-        }}
         transition={{
           duration: 0.8,
           ease: [0.4, 0, 0.2, 1],
         }}
+        className="absolute"
+        style={{
+          filter: "drop-shadow(0 4px 20px rgba(88, 28, 135, 0.3))",
+          color: "#6b21a8",
+        }}
       >
         <WritingWelcomeEffect
-          className="h-40"
+          speed={1.2}
           onAnimationComplete={() => {
             setTimeout(() => setStep(2), 800);
           }}
-          speed={1.2}
+          className="h-40"
         />
       </motion.div>
 
       {/* Step 3: "Good Morning/Afternoon" text */}
       {step >= 3 && (
         <motion.div
+          initial={{ opacity: 0, y: 20 }}
           animate={
             step === 3
               ? { opacity: 1, y: 0 }
@@ -79,21 +78,20 @@ export default function GreetingAnimation() {
                 }
                 : {}
           }
-          className="absolute font-bold text-7xl tracking-wide"
-          initial={{ opacity: 0, y: 20 }}
+          transition={{
+            duration: 0.6,
+            ease: [0.4, 0, 0.2, 1],
+            delay: step === 3 ? 0.3 : 0,
+          }}
           onAnimationComplete={() => {
             if (step === 3) {
               setTimeout(() => setStep(4), 1200);
             }
           }}
+          className="absolute text-7xl font-space font-bold tracking-wide"
           style={{
-            textShadow: "0 6px 20px rgba(0, 0, 0, 0.35)",
-            color: "#1a1a1a",
-          }}
-          transition={{
-            duration: 0.6,
-            ease: [0.4, 0, 0.2, 1],
-            delay: step === 3 ? 0.3 : 0,
+            textShadow: "0 4px 16px rgba(71, 85, 105, 0.2)",
+            color: "#475569",
           }}
         >
           {greeting}
@@ -103,31 +101,31 @@ export default function GreetingAnimation() {
       {/* Step 5: "I am Orbit" handwriting in center */}
       {step >= 5 && (
         <motion.div
-          animate={{ opacity: 1, scale: 1 }}
-          className="absolute flex items-center gap-6"
           initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
           transition={{
             duration: 0.9,
             ease: [0.4, 0, 0.2, 1],
             delay: 0.4,
           }}
+          className="absolute font-inter flex items-center gap-6"
         >
           <span
-            className="font-semibold text-8xl tracking-wide"
+            className="text-8xl font-semibold tracking-wide"
             style={{
-              textShadow: "0 6px 20px rgba(0, 0, 0, 0.35)",
-              color: "#1a1a1a",
+              textShadow: "0 4px 16px rgba(71, 85, 105, 0.2)",
+              color: "#475569",
             }}
           >
             I am
           </span>
           <div
             style={{
-              filter: "drop-shadow(0 6px 24px rgba(120, 190, 255, 0.5))",
-              color: "#1a1a1a",
+              filter: "drop-shadow(0 4px 16px rgba(100, 116, 139, 0.25))",
+              color: "#64748b",
             }}
           >
-            <OrbitWritingEffect className="h-32" speed={1.0} />
+            <OrbitWritingEffect speed={1.0} className="h-32" />
           </div>
         </motion.div>
       )}
