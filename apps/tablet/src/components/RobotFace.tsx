@@ -8,8 +8,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 export default function RobotFace({
   isDisappearing = false,
+  onAnimationComplete,
 }: {
   isDisappearing?: boolean;
+  onAnimationComplete?: () => void;
 }) {
   const faceRef = useRef<HTMLDivElement>(null);
 
@@ -61,7 +63,7 @@ export default function RobotFace({
 
       let clientX: number;
       let clientY: number;
-      if (e instanceof TouchEvent) {
+      if (typeof TouchEvent !== 'undefined' && e instanceof TouchEvent) {
         clientX = e.touches[0]?.clientX ?? 0;
         clientY = e.touches[0]?.clientY ?? 0;
       } else {
@@ -263,6 +265,14 @@ export default function RobotFace({
       mounted = false;
     };
   }, [isTalking, mouthControls, mouthShapes, isDisappearing]);
+
+  // Add onAnimationComplete callback to the fading phase
+  useEffect(() => {
+    if (animationPhase === "fading" && onAnimationComplete) {
+      const timer = setTimeout(onAnimationComplete, 1200); // Match the fade duration
+      return () => clearTimeout(timer);
+    }
+  }, [animationPhase, onAnimationComplete]);
 
   return (
     <div className="flex h-screen w-screen items-center justify-center">
