@@ -5,9 +5,10 @@
 
 @theme inline {
   /* Tailwind v4: use --font-* tokens to generate font-* utilities */
-  --font-pacifico: 'Pacifico', cursive;
-  --font-inter: 'Inter', system-ui, sans-serif;
-  --font-space: 'Space Grotesk Variable', 'Space Grotesk', sans-serif;
+  --font-pacifico: "Pacifico", cursive;
+  --font-inter: "Inter", system-ui, sans-serif;
+  --font-space: "Space Grotesk Variable", "Space Grotesk", sans-serif;
+  --font-orbitron: "Orbitron", sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
