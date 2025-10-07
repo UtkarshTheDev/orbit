@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import RobotHead from "./RobotHead";
 
 export default function OrbitGreeting() {
   const [stage, setStage] = useState<"detecting" | "greeting" | "complete">(
@@ -79,95 +80,9 @@ export default function OrbitGreeting() {
               initial={{ opacity: 0, scale: 0.9 }}
               key="detecting"
             >
-              {/* Futuristic robot face detecting */}
-              <motion.div className="relative">
-                {/* Hexagonal head */}
-                <motion.div
-                  animate={{
-                    y: [-3, 3, -3],
-                  }}
-                  className="relative h-32 w-32"
-                  style={{
-                    clipPath:
-                      "polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)",
-                  }}
-                  transition={{
-                    duration: 2.5,
-                    repeat: Number.POSITIVE_INFINITY,
-                    ease: "easeInOut",
-                  }}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-blue-600 to-cyan-600 shadow-2xl shadow-blue-500/30" />
-
-                  {/* Tech lines */}
-                  <div
-                    className="absolute inset-2 border-2 border-blue-200/40"
-                    style={{
-                      clipPath:
-                        "polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)",
-                    }}
-                  />
-
-                  {/* Eyes */}
-                  <motion.div
-                    animate={{
-                      scaleY: [1, 0.1, 1],
-                    }}
-                    className="absolute top-10 left-8 flex gap-8"
-                    transition={{
-                      duration: 3,
-                      repeat: Number.POSITIVE_INFINITY,
-                      repeatDelay: 2,
-                    }}
-                  >
-                    <div
-                      className="h-4 w-4 bg-white shadow-blue-300/60 shadow-lg"
-                      style={{
-                        clipPath:
-                          "polygon(20% 0%, 80% 0%, 100% 50%, 80% 100%, 20% 100%, 0% 50%)",
-                      }}
-                    />
-                    <div
-                      className="h-4 w-4 bg-white shadow-blue-300/60 shadow-lg"
-                      style={{
-                        clipPath:
-                          "polygon(20% 0%, 80% 0%, 100% 50%, 80% 100%, 20% 100%, 0% 50%)",
-                      }}
-                    />
-                  </motion.div>
-
-                  {/* Antenna array */}
-                  <motion.div
-                    animate={{
-                      rotate: [-10, 10, -10],
-                    }}
-                    className="-top-8 -translate-x-1/2 absolute left-1/2 flex gap-2"
-                    transition={{
-                      duration: 2,
-                      repeat: Number.POSITIVE_INFINITY,
-                      ease: "easeInOut",
-                    }}
-                  >
-                    <div className="h-8 w-0.5 bg-gradient-to-t from-blue-500 to-transparent" />
-                    <motion.div
-                      animate={{
-                        scale: [1, 1.4, 1],
-                        boxShadow: [
-                          "0 0 10px #3b82f6",
-                          "0 0 25px #3b82f6",
-                          "0 0 10px #3b82f6",
-                        ],
-                      }}
-                      className="h-8 w-2 bg-blue-500"
-                      transition={{
-                        duration: 1.5,
-                        repeat: Number.POSITIVE_INFINITY,
-                      }}
-                    />
-                    <div className="h-8 w-0.5 bg-gradient-to-t from-blue-500 to-transparent" />
-                  </motion.div>
-                </motion.div>
-              </motion.div>
+              <div className="scale-[0.8]">
+                <RobotHead />
+              </div>
 
               <motion.p
                 animate={{ opacity: [0.4, 1, 0.4] }}
@@ -183,7 +98,7 @@ export default function OrbitGreeting() {
           {(stage === "greeting" || stage === "complete") && (
             <motion.div
               animate={{ opacity: 1, y: 0 }}
-              className="flex max-w-5xl flex-col items-center gap-16 text-center"
+              className="flex max-w-5xl flex-col items-center gap-16 mt-8 text-center"
               initial={{ opacity: 0, y: 20 }}
               key="greeting"
             >
@@ -202,7 +117,7 @@ export default function OrbitGreeting() {
                 {/* Orbital rings */}
                 <motion.div
                   animate={{ rotate: 360 }}
-                  className="-m-16 absolute inset-0"
+                  className="-m-0 absolute inset-0"
                   transition={{
                     duration: 20,
                     repeat: Number.POSITIVE_INFINITY,
@@ -213,7 +128,7 @@ export default function OrbitGreeting() {
                 </motion.div>
                 <motion.div
                   animate={{ rotate: -360 }}
-                  className="-m-20 absolute inset-0"
+                  className="-m-8 absolute inset-0"
                   transition={{
                     duration: 15,
                     repeat: Number.POSITIVE_INFINITY,
@@ -237,120 +152,9 @@ export default function OrbitGreeting() {
                   }}
                 />
 
-                {/* Robot head - hexagonal */}
-                <motion.div
-                  animate={{
-                    y: [-2, 2, -2],
-                  }}
-                  className="relative h-40 w-40"
-                  style={{
-                    clipPath:
-                      "polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)",
-                  }}
-                  transition={{
-                    duration: 3,
-                    repeat: Number.POSITIVE_INFINITY,
-                    ease: "easeInOut",
-                  }}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-blue-600 to-cyan-600 shadow-2xl shadow-blue-500/40" />
-
-                  {/* Inner tech details */}
-                  <div
-                    className="absolute inset-3 border-2 border-blue-200/50"
-                    style={{
-                      clipPath:
-                        "polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)",
-                    }}
-                  />
-
-                  <div
-                    className="absolute inset-6 border border-blue-100/30"
-                    style={{
-                      clipPath:
-                        "polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)",
-                    }}
-                  />
-
-                  {/* Digital eyes */}
-                  <div className="absolute top-14 left-10 flex gap-12">
-                    <motion.div
-                      animate={{
-                        scaleY: [1, 0.1, 1],
-                      }}
-                      className="h-5 w-5 bg-white shadow-[0_0_15px_rgba(255,255,255,0.9)]"
-                      style={{
-                        clipPath:
-                          "polygon(20% 0%, 80% 0%, 100% 50%, 80% 100%, 20% 100%, 0% 50%)",
-                      }}
-                      transition={{
-                        duration: 4,
-                        repeat: Number.POSITIVE_INFINITY,
-                        repeatDelay: 3,
-                      }}
-                    />
-                    <motion.div
-                      animate={{
-                        scaleY: [1, 0.1, 1],
-                      }}
-                      className="h-5 w-5 bg-white shadow-[0_0_15px_rgba(255,255,255,0.9)]"
-                      style={{
-                        clipPath:
-                          "polygon(20% 0%, 80% 0%, 100% 50%, 80% 100%, 20% 100%, 0% 50%)",
-                      }}
-                      transition={{
-                        duration: 4,
-                        repeat: Number.POSITIVE_INFINITY,
-                        repeatDelay: 3,
-                      }}
-                    />
-                  </div>
-
-                  {/* Antenna array */}
-                  <motion.div
-                    animate={{
-                      rotate: [-8, 8, -8],
-                    }}
-                    className="-top-10 -translate-x-1/2 absolute left-1/2 flex items-end gap-2"
-                    transition={{
-                      duration: 2.5,
-                      repeat: Number.POSITIVE_INFINITY,
-                      ease: "easeInOut",
-                    }}
-                  >
-                    <div className="h-8 w-0.5 bg-gradient-to-t from-blue-500 to-blue-400/50" />
-                    <motion.div
-                      animate={{
-                        scaleY: [1, 1.3, 1],
-                        boxShadow: [
-                          "0 0 15px #3b82f6",
-                          "0 0 30px #3b82f6",
-                          "0 0 15px #3b82f6",
-                        ],
-                      }}
-                      className="h-10 w-2 bg-gradient-to-t from-blue-500 to-blue-400"
-                      transition={{
-                        duration: 2,
-                        repeat: Number.POSITIVE_INFINITY,
-                      }}
-                    />
-                    <div className="h-8 w-0.5 bg-gradient-to-t from-blue-500 to-blue-400/50" />
-                  </motion.div>
-
-                  {/* Tech details */}
-                  <motion.div
-                    animate={{ opacity: [0.4, 0.9, 0.4] }}
-                    className="-translate-x-1/2 absolute bottom-10 left-1/2 flex gap-1"
-                    transition={{
-                      duration: 2,
-                      repeat: Number.POSITIVE_INFINITY,
-                    }}
-                  >
-                    <div className="h-0.5 w-3 bg-blue-200/70" />
-                    <div className="h-0.5 w-5 bg-blue-100/90" />
-                    <div className="h-0.5 w-3 bg-blue-200/70" />
-                  </motion.div>
-                </motion.div>
+                <div className="scale-[0.8]">
+                  <RobotHead />
+                </div>
               </motion.div>
 
               {/* Greeting text */}
