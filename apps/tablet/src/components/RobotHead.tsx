@@ -13,7 +13,7 @@ export default function RobotHead() {
       onHoverStart={() => setIsHovered(true)}
       transition={{ duration: 0.4, ease: "easeOut" }}
     >
-      <div className="relative flex h-[320px] w-[320px] items-center justify-center">
+      <div className="relative flex h-[280px] w-[280px] items-center justify-center">
         <svg
           className="h-full w-full drop-shadow-2xl"
           viewBox="0 0 320 320"
@@ -54,28 +54,6 @@ export default function RobotHead() {
               </feMerge>
             </filter>
           </defs>
-
-          {/* Background circular borders */}
-          <circle
-            className="dark:stroke-slate-700"
-            cx="160"
-            cy="160"
-            fill="none"
-            opacity="0.4"
-            r="145"
-            stroke="#E5E7EB"
-            strokeWidth="1.5"
-          />
-          <circle
-            className="dark:stroke-slate-700"
-            cx="160"
-            cy="160"
-            fill="none"
-            opacity="0.3"
-            r="130"
-            stroke="#E5E7EB"
-            strokeWidth="1.5"
-          />
 
           {/* Main Robot Head - Perfect Geometric Octagon with straight edges */}
           <motion.path

@@ -98,7 +98,7 @@ export default function OrbitGreeting() {
           {(stage === "greeting" || stage === "complete") && (
             <motion.div
               animate={{ opacity: 1, y: 0 }}
-              className="flex max-w-5xl flex-col items-center gap-16 mt-8 text-center"
+              className="flex max-w-5xl flex-col items-center text-center"
               initial={{ opacity: 0, y: 20 }}
               key="greeting"
             >
@@ -128,7 +128,7 @@ export default function OrbitGreeting() {
                 </motion.div>
                 <motion.div
                   animate={{ rotate: -360 }}
-                  className="-m-8 absolute inset-0"
+                  className="-m-4 absolute inset-0"
                   transition={{
                     duration: 15,
                     repeat: Number.POSITIVE_INFINITY,
@@ -144,7 +144,7 @@ export default function OrbitGreeting() {
                     scale: [1, 1.15, 1],
                     opacity: [0.3, 0.5, 0.3],
                   }}
-                  className="-inset-8 absolute rounded-full bg-gradient-to-r from-blue-400/20 via-cyan-400/20 to-blue-400/20 blur-3xl"
+                  className="-inset-4 absolute rounded-full bg-gradient-to-r from-blue-400/20 via-cyan-400/20 to-blue-400/20 blur-3xl"
                   transition={{
                     duration: 3,
                     repeat: Number.POSITIVE_INFINITY,
@@ -152,13 +152,13 @@ export default function OrbitGreeting() {
                   }}
                 />
 
-                <div className="scale-[0.8]">
+                <div className="scale-[1]">
                   <RobotHead />
                 </div>
               </motion.div>
 
               {/* Greeting text */}
-              <div className="min-h-[280px] space-y-8">
+              <div className="min-h-[280px] space-y-8 mt-8">
                 {stage === "greeting" && lineIndex < greetingLines.length && (
                   <motion.div
                     animate={{ opacity: 1, y: 0 }}
@@ -212,10 +212,10 @@ export default function OrbitGreeting() {
 
                     <motion.h2
                       animate={{ opacity: 1, y: 0 }}
-                      className="font-space text-7xl text-slate-900 md:text-9xl"
+                      className="font-quicksand text-7xl text-slate-900 md:text-9xl"
                       initial={{ opacity: 0, y: 20 }}
                       style={{
-                        fontWeight: 600,
+                        fontWeight: 900,
                       }}
                       transition={{ delay: 0.3 }}
                     >
@@ -240,7 +240,7 @@ export default function OrbitGreeting() {
                       <span
                         className="font-space text-slate-500 text-xs uppercase tracking-[0.3em]"
                         style={{
-                          fontWeight: 300,
+                          fontWeight: 400,
                         }}
                       >
                         System Online
