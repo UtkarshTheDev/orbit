@@ -86,7 +86,7 @@ export default function OrbitGreeting() {
 
               <motion.p
                 animate={{ opacity: [0.4, 1, 0.4] }}
-                className="font-light font-space text-blue-600 text-xs uppercase tracking-[0.4em]"
+                className="font-light font-space text-blue-600 text-sm uppercase tracking-[0.4em]"
                 style={{ fontWeight: 400 }}
                 transition={{ duration: 1.8, repeat: Number.POSITIVE_INFINITY }}
               >
@@ -175,7 +175,7 @@ export default function OrbitGreeting() {
                           case 1:
                             return 600;
                           default:
-                            return 500;
+                            return 600;
                         }
                       })(),
                     }}
@@ -195,7 +195,7 @@ export default function OrbitGreeting() {
                 {stage === "complete" && (
                   <motion.div
                     animate={{ opacity: 1 }}
-                    className="space-y-14"
+                    className="space-y-18 -mt-8"
                     initial={{ opacity: 0 }}
                   >
                     <motion.h1
@@ -212,14 +212,14 @@ export default function OrbitGreeting() {
 
                     <motion.h2
                       animate={{ opacity: 1, y: 0 }}
-                      className="font-quicksand text-7xl text-slate-900 md:text-9xl"
+                      className="font-quicksand text-7xl -mt-8 text-slate-900 md:text-9xl"
                       initial={{ opacity: 0, y: 20 }}
                       style={{
                         fontWeight: 900,
                       }}
                       transition={{ delay: 0.3 }}
                     >
-                      I am <span className="font-orbitron">Orbit</span>
+                      I am <span className="font-orbitron text-blue-500">Orbit</span>
                     </motion.h2>
 
                     {/* Status indicator */}
