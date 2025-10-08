@@ -24,7 +24,7 @@ export default function OrbitGreeting() {
     return "Good Evening";
   };
 
-  const greetingLines = ["Welcome, Sir", getTimeBasedGreeting(), "I am Orbit"];
+  const greetingLines = ["Welcome to LPS Eldeco", getTimeBasedGreeting()];
 
   // Simulate proximity detection
   useEffect(() => {
@@ -153,16 +153,16 @@ export default function OrbitGreeting() {
                 {stage === "greeting" && lineIndex < greetingLines.length && (
                   <motion.div
                     animate={{ opacity: 1, y: 0 }}
-                    className={`${lineIndex === 0 ? "font-pacifico text-7xl text-slate-800 md:text-9xl" : ""}
+                    className={`${lineIndex === 0 ? "font-pacifico text-4xl text-slate-800 md:text-8xl" : ""}
                       ${lineIndex === 1 ? "font-space text-6xl text-blue-600 md:text-8xl" : ""}
-                      ${lineIndex === 2 ? "font-orbitron text-7xl text-slate-900 md:text-9xl" : ""} mt-4`}
+                      mt-4`}
                     initial={{ opacity: 0, y: 10 }}
                     key={lineIndex}
                     style={{
                       fontWeight: (() => {
                         switch (lineIndex) {
                           case 0:
-                            return 500;
+                            return 900;
                           case 1:
                             return 600;
                           default:
@@ -186,24 +186,12 @@ export default function OrbitGreeting() {
                 {stage === "complete" && (
                   <motion.div
                     animate={{ opacity: 1 }}
-                    className="space-y-18 -mt-8"
+                    className="space-y-18 mt-8"
                     initial={{ opacity: 0 }}
                   >
-                    <motion.h1
-                      animate={{ opacity: 1, y: 0 }}
-                      className="font-pacifico text-7xl text-slate-800 md:text-9xl"
-                      initial={{ opacity: 0, y: 20 }}
-                      style={{
-                        fontWeight: 500,
-                      }}
-                      transition={{ delay: 0.1 }}
-                    >
-                      Welcome, Sir
-                    </motion.h1>
-
                     <motion.h2
                       animate={{ opacity: 1, y: 0 }}
-                      className="font-quicksand text-7xl -mt-8 text-slate-900 md:text-9xl"
+                      className="font-quicksand text-7xl text-slate-900 md:text-9xl"
                       initial={{ opacity: 0, y: 20 }}
                       style={{
                         fontWeight: 900,
