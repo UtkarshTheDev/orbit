@@ -127,6 +127,9 @@
 		@apply border-border outline-ring/50;
 	}
 	body {
-		@apply bg-background text-foreground font-inter;
+		@apply bg-transparent text-foreground font-inter;
+	}
+	#root {
+		@apply bg-transparent;
 	}
 }

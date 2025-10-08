@@ -1,6 +1,7 @@
 import { useState } from "react";
 import OrbitGreeting from "@/components/GreetingAnimation";
 import RobotFace from "@/components/RobotFace";
+import Background from "@/components/Background";
 
 export default function Home() {
   const [isDisappearing, setIsDisappearing] = useState(false);
@@ -23,7 +24,8 @@ export default function Home() {
       role="button"
       tabIndex={0}
     >
-      <div className="relative z-10 h-full w-full">
+      <Background />
+      <div className="relative z-20 h-full w-full">
         {!showGreeting && <RobotFace isDisappearing={isDisappearing} />}
         {showGreeting && <OrbitGreeting />}
       </div>

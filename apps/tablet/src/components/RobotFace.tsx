@@ -275,35 +275,19 @@ export default function RobotFace({
   }, [animationPhase, onAnimationComplete]);
 
   return (
-    <div className="flex h-screen w-screen items-center justify-center">
+    <div className="flex h-screen w-screen items-center justify-center bg-transparent">
       <motion.div
         animate={{
           opacity: animationPhase === "fading" ? 0 : 1,
           scale: animationPhase === "fading" ? 0.85 : 1,
         }}
-        className="relative isolate h-full w-full rounded-none p-0"
+        className="relative isolate h-full w-full rounded-none p-0 bg-transparent"
         ref={faceRef}
-        style={{
-          background:
-            "radial-gradient(120% 120% at 50% 0%, oklch(0.97 0.02 240 / 0.8), oklch(0.92 0.03 210 / 0.7) 40%, oklch(0.96 0 0 / 0.7) 100%)",
-          boxShadow:
-            "inset 0 1px 0 0 oklch(1 0 0 / 0.4), 0 20px 44px oklch(0 0 0 / 0.12)",
-          border: "1px solid oklch(0 0 0 / 0.06)",
-        }}
         transition={{
           duration: 1.2,
           ease: [0.4, 0, 0.2, 1],
         }}
       >
-        {/* Subtle top glow */}
-        <div
-          className="-z-10 pointer-events-none absolute inset-0 rounded-none"
-          style={{
-            background:
-              "radial-gradient(60% 35% at 50% 0%, oklch(0.99 0.03 230 / 0.65), transparent 70%)",
-            filter: "blur(8px)",
-          }}
-        />
 
         {/* Eyes Row */}
         <motion.div

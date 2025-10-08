@@ -59,18 +59,9 @@ export default function OrbitGreeting() {
   }, [stage, lineIndex, charIndex]);
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-white">
-      {/* Subtle geometric pattern background */}
-      <div className="absolute inset-0 opacity-[0.03]">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#3b82f6_1px,transparent_1px),linear-gradient(to_bottom,#3b82f6_1px,transparent_1px)] bg-[size:80px_80px]" />
-      </div>
-
-      {/* Subtle gradient orbs */}
-      <div className="absolute top-20 right-20 h-[500px] w-[500px] rounded-full bg-blue-100/40 blur-3xl" />
-      <div className="absolute bottom-20 left-20 h-[600px] w-[600px] rounded-full bg-cyan-50/60 blur-3xl" />
-
+    <div className="relative min-h-screen w-full overflow-hidden bg-transparent">
       {/* Main content */}
-      <div className="relative z-10 flex min-h-screen items-center justify-center px-4">
+      <div className="relative z-10 flex min-h-screen items-center justify-center px-4 bg-transparent">
         <AnimatePresence mode="wait">
           {stage === "detecting" && (
             <motion.div
