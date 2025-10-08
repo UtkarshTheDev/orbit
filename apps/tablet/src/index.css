@@ -80,6 +80,13 @@
 	--sidebar-accent-foreground: oklch(0.205 0 0);
 	--sidebar-border: oklch(0.922 0 0);
 	--sidebar-ring: oklch(0.708 0 0);
+	/* increase visibility slightly (still subtle and elegant) */
+	--fx-bg-start: oklch(0.99 0.01 230); /* soft white with a hint of blue */
+	--fx-bg-end: oklch(0.964 0.03 225); /* silver-blue */
+	--fx-line: oklch(0.65 0.12 230); /* brighter tech blue for lines/dots */
+	--fx-accent: oklch(
+		0.7 0.14 195
+	); /* more vibrant holo teal for circuit glow */
 }
 
 .dark {
