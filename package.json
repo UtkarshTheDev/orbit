@@ -37,6 +37,7 @@
     "@fontsource-variable/space-grotesk": "^5.2.10",
     "@fontsource/inter": "^5.2.8",
     "@fontsource/orbitron": "^5.2.8",
+    "@fontsource/outfit": "^5.2.8",
     "@fontsource/pacifico": "^5.2.7",
     "@fontsource/quicksand": "^5.2.10"
   }

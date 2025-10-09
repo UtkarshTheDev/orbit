@@ -6,10 +6,9 @@
 @theme inline {
 	/* Tailwind v4: use --font-* tokens to generate font-* utilities */
 	--font-pacifico: "Pacifico", cursive;
-	--font-inter: "Inter", system-ui, sans-serif;
-	--font-space: "Space Grotesk Variable", "Space Grotesk", sans-serif;
+	/* --font-space: "Space Grotesk Variable", "Space Grotesk", sans-serif; */
 	--font-orbitron: "Orbitron", sans-serif;
-	--font-quicksand: "Quicksand", sans-serif;
+	--font-sans: "Outfit", sans-serif;
 	--radius-sm: calc(var(--radius) - 4px);
 	--radius-md: calc(var(--radius) - 2px);
 	--radius-lg: var(--radius);
@@ -127,7 +126,7 @@
 		@apply border-border outline-ring/50;
 	}
 	body {
-		@apply bg-transparent text-foreground font-inter;
+		@apply bg-transparent text-foreground font-sans;
 	}
 	#root {
 		@apply bg-transparent;
