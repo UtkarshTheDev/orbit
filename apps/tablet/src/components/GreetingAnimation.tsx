@@ -66,7 +66,7 @@ export default function OrbitGreeting() {
           {stage === "detecting" && (
             <motion.div
               animate={{ opacity: 1, scale: 1 }}
-              className="flex flex-col items-center gap-8"
+              className="flex flex-col items-center gap-4"
               exit={{ opacity: 0, scale: 0.9 }}
               initial={{ opacity: 0, scale: 0.9 }}
               key="detecting"
@@ -77,7 +77,7 @@ export default function OrbitGreeting() {
 
               <motion.p
                 animate={{ opacity: [0.4, 1, 0.4] }}
-                className="font-light font-sans text-blue-600 text-xl md:text-xl uppercase tracking-[0.4em]"
+                className="font-light font-sans text-blue-600 text-lg md:text-lg uppercase tracking-[0.4em]"
                 style={{ fontWeight: 400 }}
                 transition={{ duration: 1.8, repeat: Number.POSITIVE_INFINITY }}
               >
@@ -149,9 +149,9 @@ export default function OrbitGreeting() {
               </motion.div>
 
               {/* Greeting text */}
-              <div className="min-h-[280px] space-y-16 mt-20">
+              <div className="min-h-[240px] space-y-12 mt-8">
                 {stage === "greeting" && lineIndex === 0 && (
-                  <p className="font-pacifico text-6xl md:text-7xl lg:text-9xl leading-none text-foreground/90">
+                  <p className="font-pacifico text-5xl md:text-7xl lg:text-8xl leading-none text-foreground/90">
                     Welcome to
                   </p>
                 )}
@@ -163,11 +163,11 @@ export default function OrbitGreeting() {
                     animate={{ opacity: 1, y: 0 }}
                     className={`${
                       lineIndex === 0
-                        ? "font-sans text-8xl md:text-[8rem] lg:text-[12rem] font-bold text-blue-500 tracking-tight"
+                        ? "font-sans text-7xl md:text-[8rem] lg:text-[10rem] font-bold text-blue-500 tracking-tight"
                         : ""
                     } ${
                       lineIndex === 1
-                        ? "font-sans text-7xl md:text-8xl lg:text-[10rem] font-semibold tracking-tight text-blue-500"
+                        ? "font-sans text-6xl md:text-7xl lg:text-9xl font-semibold tracking-tight text-blue-500"
                         : ""
                     } mt-6`}
                     initial={{ opacity: 0, y: 10 }}
@@ -186,12 +186,12 @@ export default function OrbitGreeting() {
                 {stage === "complete" && (
                   <motion.div
                     animate={{ opacity: 1 }}
-                    className="sans-y-18 mt-12"
+                    className="sans-y-18 mt-8"
                     initial={{ opacity: 0 }}
                   >
                     <motion.h2
                       animate={{ opacity: 1, y: 0 }}
-                      className="font-sans text-8xl text-slate-900 md:text-[8rem] lg:text-[12rem]"
+                      className="font-sans text-7xl text-slate-900 md:text-[7rem] lg:text-[10rem]"
                       initial={{ opacity: 0, y: 20 }}
                       style={{
                         fontWeight: 900,
@@ -204,7 +204,7 @@ export default function OrbitGreeting() {
                     {/* Status indicator */}
                     <motion.div
                       animate={{ opacity: 1 }}
-                      className="flex items-center justify-center gap-4 pt-12"
+                      className="flex items-center justify-center gap-4 pt-8"
                       initial={{ opacity: 0 }}
                       transition={{ delay: 0.6 }}
                     >
@@ -217,7 +217,7 @@ export default function OrbitGreeting() {
                         }}
                       />
                       <span
-                        className="font-sans text-slate-500 text-base md:text-lg uppercase tracking-[0.3em]"
+                        className="font-sans text-sm md:text-base uppercase tracking-[0.3em]"
                         style={{
                           fontWeight: 400,
                         }}
