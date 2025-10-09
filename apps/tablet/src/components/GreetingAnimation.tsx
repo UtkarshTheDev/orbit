@@ -77,7 +77,7 @@ export default function OrbitGreeting() {
 
               <motion.p
                 animate={{ opacity: [0.4, 1, 0.4] }}
-                className="font-light font-sans text-blue-600 text-2xl uppercase tracking-[0.4em]"
+                className="font-light font-sans text-blue-600 text-xl md:text-xl uppercase tracking-[0.4em]"
                 style={{ fontWeight: 400 }}
                 transition={{ duration: 1.8, repeat: Number.POSITIVE_INFINITY }}
               >
@@ -151,7 +151,7 @@ export default function OrbitGreeting() {
               {/* Greeting text */}
               <div className="min-h-[280px] space-y-16 mt-20">
                 {stage === "greeting" && lineIndex === 0 && (
-                  <p className="font-pacifico text-7xl md:text-8xl lg:text-9xl leading-none text-foreground/90">
+                  <p className="font-pacifico text-6xl md:text-7xl lg:text-9xl leading-none text-foreground/90">
                     Welcome to
                   </p>
                 )}
@@ -163,11 +163,11 @@ export default function OrbitGreeting() {
                     animate={{ opacity: 1, y: 0 }}
                     className={`${
                       lineIndex === 0
-                        ? "font-sans text-9xl md:text-[10rem] lg:text-[12rem] font-bold text-blue-500 tracking-tight"
+                        ? "font-sans text-8xl md:text-[8rem] lg:text-[12rem] font-bold text-blue-500 tracking-tight"
                         : ""
                     } ${
                       lineIndex === 1
-                        ? "font-sans text-8xl md:text-9xl lg:text-[10rem] font-semibold tracking-tight text-blue-500"
+                        ? "font-sans text-7xl md:text-8xl lg:text-[10rem] font-semibold tracking-tight text-blue-500"
                         : ""
                     } mt-6`}
                     initial={{ opacity: 0, y: 10 }}
@@ -191,7 +191,7 @@ export default function OrbitGreeting() {
                   >
                     <motion.h2
                       animate={{ opacity: 1, y: 0 }}
-                      className="font-sans text-9xl text-slate-900 md:text-[10rem] lg:text-[12rem]"
+                      className="font-sans text-8xl text-slate-900 md:text-[8rem] lg:text-[12rem]"
                       initial={{ opacity: 0, y: 20 }}
                       style={{
                         fontWeight: 900,
@@ -217,7 +217,7 @@ export default function OrbitGreeting() {
                         }}
                       />
                       <span
-                        className="font-sans text-slate-500 text-lg uppercase tracking-[0.3em]"
+                        className="font-sans text-slate-500 text-base md:text-lg uppercase tracking-[0.3em]"
                         style={{
                           fontWeight: 400,
                         }}
