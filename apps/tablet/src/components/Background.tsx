@@ -31,7 +31,7 @@ export default function Background({
           </linearGradient>
 
           {/* Subtle grid pattern (very low opacity) */}
-          <pattern id="microGrid" width="80" height="80" patternUnits="userSpaceOnUse">
+          <pattern id="microGrid" width="80" height="80" patternUnits="usersansOnUse">
             <path d="M 0 0 L 80 0 M 0 0 L 0 80" stroke="oklch(0.65 0.18 240)" strokeOpacity="0.05" strokeWidth="1" />
           </pattern>
         </defs>
@@ -64,31 +64,31 @@ export default function Background({
           letterSpacing="0.08em"
         >
           {/* #LPS — Top Left corner area */}
-          <text x="200" y="200" fontSize="32" textAnchor="start">
+          <text x="150" y="150" fontSize="32" textAnchor="start" className="font-orbitron">
             #LPS
           </text>
 
           {/* #Eldeco — Top Right corner area */}
-          <text x="1400" y="200" fontSize="32" textAnchor="end">
+          <text x="1450" y="150" fontSize="32" textAnchor="end" className="font-orbitron">
             #Eldeco
           </text>
 
           {/* #Science — Bottom Left area (vertical) */}
-          <g transform="translate(260,740) rotate(-90)">
+          <g transform="translate(200,750) rotate(-90)" className="font-orbitron">
             <text fontSize="30" textAnchor="start">
               #Science
             </text>
           </g>
 
           {/* #Exhibition — Bottom Right (vertical) */}
-          <g transform="translate(1380,750) rotate(-90)">
+          <g transform="translate(1450,750) rotate(-90)" className="font-orbitron">
             <text fontSize="30" textAnchor="start">
               #Exhibition
             </text>
           </g>
 
           {/* #2025 — Bottom Center */}
-          <text x="800" y="780" fontSize="34" textAnchor="middle">
+          <text x="800" y="850" fontSize="34" textAnchor="middle" className="font-pacifico">
             #2025
           </text>
         </g>

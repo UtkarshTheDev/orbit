@@ -24,7 +24,7 @@ export default function OrbitGreeting() {
     return "Good Evening";
   };
 
-  const greetingLines = ["Welcome to LPS Eldeco", getTimeBasedGreeting()];
+  const greetingLines = ["LPS Eldeco", getTimeBasedGreeting()];
 
   // Simulate proximity detection
   useEffect(() => {
@@ -77,7 +77,7 @@ export default function OrbitGreeting() {
 
               <motion.p
                 animate={{ opacity: [0.4, 1, 0.4] }}
-                className="font-light font-space text-blue-600 text-sm uppercase tracking-[0.4em]"
+                className="font-light font-sans text-blue-600 text-2xl uppercase tracking-[0.4em]"
                 style={{ fontWeight: 400 }}
                 transition={{ duration: 1.8, repeat: Number.POSITIVE_INFINITY }}
               >
@@ -149,49 +149,49 @@ export default function OrbitGreeting() {
               </motion.div>
 
               {/* Greeting text */}
-              <div className="min-h-[280px] space-y-8 mt-8">
+              <div className="min-h-[280px] space-y-16 mt-20">
+                {stage === "greeting" && lineIndex === 0 && (
+                  <p className="font-pacifico text-7xl md:text-8xl lg:text-9xl leading-none text-foreground/90">
+                    Welcome to
+                  </p>
+                )}
+
+                {/* make the time-based greeting (lineIndex === 1) big, bold, and blue like the reference image.
+                    Also, color the caret to match the current line (blue for time greeting, neutral for brand). */}
                 {stage === "greeting" && lineIndex < greetingLines.length && (
                   <motion.div
                     animate={{ opacity: 1, y: 0 }}
-                    className={`${lineIndex === 0 ? "font-pacifico text-4xl text-slate-800 md:text-8xl" : ""}
-                      ${lineIndex === 1 ? "font-space text-6xl text-blue-600 md:text-8xl" : ""}
-                      mt-4`}
+                    className={`${
+                      lineIndex === 0
+                        ? "font-sans text-9xl md:text-[10rem] lg:text-[12rem] font-bold text-blue-500 tracking-tight"
+                        : ""
+                    } ${
+                      lineIndex === 1
+                        ? "font-sans text-8xl md:text-9xl lg:text-[10rem] font-semibold tracking-tight text-blue-500"
+                        : ""
+                    } mt-6`}
                     initial={{ opacity: 0, y: 10 }}
                     key={lineIndex}
-                    style={{
-                      fontWeight: (() => {
-                        switch (lineIndex) {
-                          case 0:
-                            return 900;
-                          case 1:
-                            return 600;
-                          default:
-                            return 600;
-                        }
-                      })(),
-                    }}
                   >
                     {currentText}
                     <motion.span
-                      animate={{ opacity: [1, 0] }}
-                      className="ml-1 inline-block h-[0.85em] w-1 bg-blue-500 align-middle"
-                      transition={{
-                        duration: 0.8,
-                        repeat: Number.POSITIVE_INFINITY,
-                      }}
+                      animate={{ opacity: [1, 0.35] }}
+                      className={`ml-1 inline-block h-[0.85em] w-[3px] align-middle ${
+                        lineIndex === 1 ? "bg-blue-600" : "bg-foreground/60"
+                      }`}
+                      transition={{ duration: 0.8, repeat: Number.POSITIVE_INFINITY }}
                     />
                   </motion.div>
                 )}
-
                 {stage === "complete" && (
                   <motion.div
                     animate={{ opacity: 1 }}
-                    className="space-y-18 mt-8"
+                    className="sans-y-18 mt-12"
                     initial={{ opacity: 0 }}
                   >
                     <motion.h2
                       animate={{ opacity: 1, y: 0 }}
-                      className="font-quicksand text-7xl text-slate-900 md:text-9xl"
+                      className="font-sans text-9xl text-slate-900 md:text-[10rem] lg:text-[12rem]"
                       initial={{ opacity: 0, y: 20 }}
                       style={{
                         fontWeight: 900,
@@ -204,20 +204,20 @@ export default function OrbitGreeting() {
                     {/* Status indicator */}
                     <motion.div
                       animate={{ opacity: 1 }}
-                      className="flex items-center justify-center gap-3 pt-8"
+                      className="flex items-center justify-center gap-4 pt-12"
                       initial={{ opacity: 0 }}
                       transition={{ delay: 0.6 }}
                     >
                       <motion.div
                         animate={{ scale: [1, 1.3, 1], opacity: [0.6, 1, 0.6] }}
-                        className="h-2 w-2 bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]"
+                        className="h-3 w-3 bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]"
                         transition={{
                           duration: 2,
                           repeat: Number.POSITIVE_INFINITY,
                         }}
                       />
                       <span
-                        className="font-space text-slate-500 text-xs uppercase tracking-[0.3em]"
+                        className="font-sans text-slate-500 text-lg uppercase tracking-[0.3em]"
                         style={{
                           fontWeight: 400,
                         }}
@@ -226,7 +226,7 @@ export default function OrbitGreeting() {
                       </span>
                       <motion.div
                         animate={{ scale: [1, 1.3, 1], opacity: [0.6, 1, 0.6] }}
-                        className="h-2 w-2 bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]"
+                        className="h-3 w-3 bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]"
                         transition={{
                           duration: 2,
                           repeat: Number.POSITIVE_INFINITY,
