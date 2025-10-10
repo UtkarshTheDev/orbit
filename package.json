@@ -39,6 +39,7 @@
     "@fontsource/orbitron": "^5.2.8",
     "@fontsource/outfit": "^5.2.8",
     "@fontsource/pacifico": "^5.2.7",
-    "@fontsource/quicksand": "^5.2.10"
+    "@fontsource/quicksand": "^5.2.10",
+    "@types/howler": "^2.2.12"
   }
 }
