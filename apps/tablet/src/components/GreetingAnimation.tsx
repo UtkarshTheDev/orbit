@@ -2,10 +2,16 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import RobotHead from "./RobotHead";
 import AudioSync from "./AudioSync";
+import RobotHead from "./RobotHead";
 
-export default function OrbitGreeting() {
+type GreetingAnimationProps = {
+  onComplete: () => void;
+};
+
+export default function GreetingAnimation({
+  onComplete,
+}: GreetingAnimationProps) {
   const [stage, setStage] = useState<"detecting" | "greeting" | "complete">(
     "detecting"
   );
@@ -13,7 +19,6 @@ export default function OrbitGreeting() {
   const [lineIndex, setLineIndex] = useState(0);
   const [charIndex, setCharIndex] = useState(0);
 
-  // Get time-based greeting
   const getTimeBasedGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) {
@@ -27,7 +32,12 @@ export default function OrbitGreeting() {
 
   const greetingLines = ["LPS Eldeco", getTimeBasedGreeting()];
 
-  // Simulate proximity detection
+  const completeAnimation = () => {
+    if (stage === "complete") {
+      onComplete();
+    }
+  };
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setStage("greeting");
@@ -35,7 +45,6 @@ export default function OrbitGreeting() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Typing animation effect
   useEffect(() => {
     if (stage !== "greeting") {
       return;
@@ -56,26 +65,34 @@ export default function OrbitGreeting() {
       }, 800);
       return () => clearTimeout(timer);
     }
-    setStage("complete");
-  }, [stage, lineIndex, charIndex]);
+
+    const completeTimer = setTimeout(() => {
+      setStage("complete");
+    }, 100);
+    return () => clearTimeout(completeTimer);
+  }, [stage, lineIndex, charIndex, greetingLines.length]);
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-transparent">
-      {/* Audio Sync Component */}
-      <AudioSync 
-        isPlaying={stage !== "detecting"} 
-        stage={stage} 
-        lineIndex={lineIndex} 
-        charIndex={charIndex} 
+    <motion.div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50"
+      exit={{ opacity: 0, scale: 0.95 }}
+      initial={{ opacity: 1 }}
+      onClick={completeAnimation}
+      transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
+    >
+      <AudioSync
+        charIndex={charIndex}
+        isPlaying={stage !== "detecting"}
+        lineIndex={lineIndex}
+        stage={stage}
       />
-      
-      {/* Main content */}
-      <div className="relative z-10 flex min-h-screen items-center justify-center px-4 bg-transparent">
+
+      <div className="relative z-10 flex min-h-screen items-center justify-center px-4">
         <AnimatePresence mode="wait">
           {stage === "detecting" && (
             <motion.div
               animate={{ opacity: 1, scale: 1 }}
-              className="flex flex-col items-center gap-4"
+              className="flex flex-col items-center gap-6"
               exit={{ opacity: 0, scale: 0.9 }}
               initial={{ opacity: 0, scale: 0.9 }}
               key="detecting"
@@ -86,8 +103,7 @@ export default function OrbitGreeting() {
 
               <motion.p
                 animate={{ opacity: [0.4, 1, 0.4] }}
-                className="font-light font-sans text-blue-600 text-lg md:text-lg uppercase tracking-[0.4em]"
-                style={{ fontWeight: 400 }}
+                className="font-light font-sans text-blue-600 text-lg uppercase tracking-[0.2] md:text-xl"
                 transition={{ duration: 1.8, repeat: Number.POSITIVE_INFINITY }}
               >
                 Scanning Systems
@@ -102,7 +118,6 @@ export default function OrbitGreeting() {
               initial={{ opacity: 0, y: 20 }}
               key="greeting"
             >
-              {/* Futuristic Robot Avatar */}
               <motion.div
                 animate={{ scale: 1 }}
                 className="relative"
@@ -114,10 +129,9 @@ export default function OrbitGreeting() {
                   delay: 0.2,
                 }}
               >
-                {/* Orbital rings */}
                 <motion.div
                   animate={{ rotate: 360 }}
-                  className="-m-0 absolute inset-0"
+                  className="-m-8 absolute inset-0"
                   transition={{
                     duration: 20,
                     repeat: Number.POSITIVE_INFINITY,
@@ -128,7 +142,7 @@ export default function OrbitGreeting() {
                 </motion.div>
                 <motion.div
                   animate={{ rotate: -360 }}
-                  className="-m-4 absolute inset-0"
+                  className="-m-12 absolute inset-0"
                   transition={{
                     duration: 15,
                     repeat: Number.POSITIVE_INFINITY,
@@ -138,13 +152,12 @@ export default function OrbitGreeting() {
                   <div className="absolute inset-0 rounded-full border border-cyan-200/20" />
                 </motion.div>
 
-                {/* Energy glow */}
                 <motion.div
                   animate={{
                     scale: [1, 1.15, 1],
                     opacity: [0.3, 0.5, 0.3],
                   }}
-                  className="-inset-4 absolute rounded-full bg-gradient-to-r from-blue-400/20 via-cyan-400/20 to-blue-400/20 blur-3xl"
+                  className="-inset-8 absolute rounded-full bg-gradient-to-r from-blue-400/20 via-cyan-400/20 to-blue-400/20 blur-3xl"
                   transition={{
                     duration: 3,
                     repeat: Number.POSITIVE_INFINITY,
@@ -152,32 +165,23 @@ export default function OrbitGreeting() {
                   }}
                 />
 
-                <div className="scale-[1]">
-                  <RobotHead />
-                </div>
+                <RobotHead />
               </motion.div>
 
-              {/* Greeting text */}
-              <div className="min-h-[240px] space-y-12 mt-8">
+              <div className="mt-12 min-h-[240px] space-y-12">
                 {stage === "greeting" && lineIndex === 0 && (
-                  <p className="font-pacifico text-5xl md:text-7xl lg:text-8xl leading-none text-foreground/90">
+                  <p className="font-pacifico text-5xl text-gray-900 leading-none md:text-7xl lg:text-8xl">
                     Welcome to
                   </p>
                 )}
 
-                {/* make the time-based greeting (lineIndex === 1) big, bold, and blue like the reference image.
-                    Also, color the caret to match the current line (blue for time greeting, neutral for brand). */}
                 {stage === "greeting" && lineIndex < greetingLines.length && (
                   <motion.div
                     animate={{ opacity: 1, y: 0 }}
                     className={`${
                       lineIndex === 0
-                        ? "font-sans text-7xl md:text-[8rem] lg:text-[10rem] font-bold text-blue-500 tracking-tight"
-                        : ""
-                    } ${
-                      lineIndex === 1
-                        ? "font-sans text-6xl md:text-7xl lg:text-9xl font-semibold tracking-tight text-blue-500"
-                        : ""
+                        ? "font-bold font-sans text-6xl text-blue-500 tracking-tight md:text-8xl lg:text-9xl"
+                        : "font-sans font-semibold text-5xl text-blue-500 tracking-tight md:text-7xl lg:text-8xl"
                     } mt-6`}
                     initial={{ opacity: 0, y: 10 }}
                     key={lineIndex}
@@ -186,31 +190,32 @@ export default function OrbitGreeting() {
                     <motion.span
                       animate={{ opacity: [1, 0.35] }}
                       className={`ml-1 inline-block h-[0.85em] w-[3px] align-middle ${
-                        lineIndex === 1 ? "bg-blue-600" : "bg-foreground/60"
+                        lineIndex === 1 ? "bg-blue-600" : "bg-gray-900"
                       }`}
-                      transition={{ duration: 0.8, repeat: Number.POSITIVE_INFINITY }}
+                      transition={{
+                        duration: 0.8,
+                        repeat: Number.POSITIVE_INFINITY,
+                      }}
                     />
                   </motion.div>
                 )}
+
                 {stage === "complete" && (
                   <motion.div
                     animate={{ opacity: 1 }}
-                    className="sans-y-18 mt-8"
+                    className="mt-8 space-y-8"
                     initial={{ opacity: 0 }}
                   >
                     <motion.h2
                       animate={{ opacity: 1, y: 0 }}
-                      className="font-sans text-7xl text-slate-900 md:text-[7rem] lg:text-[10rem]"
+                      className="font-black font-sans text-6xl text-gray-900 md:text-8xl lg:text-9xl"
                       initial={{ opacity: 0, y: 20 }}
-                      style={{
-                        fontWeight: 900,
-                      }}
                       transition={{ delay: 0.3 }}
                     >
-                      I am <span className="font-orbitron text-blue-500">Orbit</span>
+                      I am{" "}
+                      <span className="font-orbitron text-blue-500">Orbit</span>
                     </motion.h2>
 
-                    {/* Status indicator */}
                     <motion.div
                       animate={{ opacity: 1 }}
                       className="flex items-center justify-center gap-4 pt-8"
@@ -219,23 +224,18 @@ export default function OrbitGreeting() {
                     >
                       <motion.div
                         animate={{ scale: [1, 1.3, 1], opacity: [0.6, 1, 0.6] }}
-                        className="h-3 w-3 bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]"
+                        className="h-3 w-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]"
                         transition={{
                           duration: 2,
                           repeat: Number.POSITIVE_INFINITY,
                         }}
                       />
-                      <span
-                        className="font-sans text-sm md:text-base uppercase tracking-[0.3em]"
-                        style={{
-                          fontWeight: 400,
-                        }}
-                      >
+                      <span className="font-light font-sans text-sm uppercase tracking-[0.3em] md:text-base">
                         System Online
                       </span>
                       <motion.div
                         animate={{ scale: [1, 1.3, 1], opacity: [0.6, 1, 0.6] }}
-                        className="h-3 w-3 bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]"
+                        className="h-3 w-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]"
                         transition={{
                           duration: 2,
                           repeat: Number.POSITIVE_INFINITY,
@@ -251,11 +251,10 @@ export default function OrbitGreeting() {
         </AnimatePresence>
       </div>
 
-      {/* Minimal corner accents */}
       <div className="absolute top-8 left-8 h-24 w-24 border-blue-200/40 border-t-2 border-l-2" />
       <div className="absolute top-8 right-8 h-24 w-24 border-blue-200/40 border-t-2 border-r-2" />
       <div className="absolute bottom-8 left-8 h-24 w-24 border-blue-200/40 border-b-2 border-l-2" />
       <div className="absolute right-8 bottom-8 h-24 w-24 border-blue-200/40 border-r-2 border-b-2" />
-    </div>
+    </motion.div>
   );
 }

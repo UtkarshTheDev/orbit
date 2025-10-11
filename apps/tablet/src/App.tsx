@@ -1,12 +1,14 @@
+import { AnimatePresence } from "framer-motion";
 import { useState } from "react";
+import Background from "@/components/Background";
 import OrbitGreeting from "@/components/GreetingAnimation";
 import RobotFace from "@/components/RobotFace";
-import Background from "@/components/Background";
+import { OrbitMain } from "./components/OrbitMain";
 
 export default function Home() {
   const [isDisappearing, setIsDisappearing] = useState(false);
   const [showGreeting, setShowGreeting] = useState(false);
-
+  const [showMainApp, setShowMainApp] = useState(false);
   const handleClick = () => {
     if (!isDisappearing) {
       setIsDisappearing(true);
@@ -26,8 +28,20 @@ export default function Home() {
     >
       <Background />
       <div className="relative z-20 h-full w-full">
-        {!showGreeting && <RobotFace isDisappearing={isDisappearing} />}
-        {showGreeting && <OrbitGreeting />}
+        {!(showGreeting || showMainApp) && (
+          <RobotFace isDisappearing={isDisappearing} />
+        )}
+        <AnimatePresence mode="wait">
+          {showGreeting && (
+            <OrbitGreeting
+              onComplete={() => {
+                setShowGreeting(false);
+                setShowMainApp(true);
+              }}
+            />
+          )}
+        </AnimatePresence>
+        {!showGreeting && showMainApp && <OrbitMain />}
       </div>
     </main>
   );
