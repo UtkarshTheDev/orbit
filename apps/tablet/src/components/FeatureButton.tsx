@@ -1,13 +1,13 @@
 import type { LucideIcon } from "lucide-react";
 import { ChevronRight } from "lucide-react";
 
-interface FeatureButtonProps {
+type FeatureButtonProps = {
   title: string;
   subtitle: string;
   icon: LucideIcon;
   delay: number;
   animationClass: string;
-}
+};
 
 export function FeatureButton({
   title,
@@ -18,11 +18,12 @@ export function FeatureButton({
 }: FeatureButtonProps) {
   return (
     <button
-      className={`group relative w-full overflow-hidden rounded-2xl border-2 border-blue-200/60 bg-white/95 p-5 shadow-blue-500/20 shadow-lg ring-1 ring-blue-100/50 backdrop-blur-sm transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:shadow-blue-500/30 hover:shadow-xl active:scale-[1.02] active:border-blue-400 active:bg-blue-50/80 active:shadow-2xl active:shadow-blue-500/40 md:p-6 ${animationClass} opacity-0`}
+      className={`group relative w-full overflow-hidden rounded-2xl border-2 border-blue-200/60 bg-white/95 p-5 font-sans shadow-blue-500/20 shadow-lg ring-1 ring-blue-100/50 backdrop-blur-sm transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:shadow-blue-500/30 hover:shadow-xl active:scale-[1.02] active:border-blue-400 active:bg-blue-50/80 active:shadow-2xl active:shadow-blue-500/40 md:p-6 ${animationClass} animate-fade-in`}
       style={{
         animationDelay: `${delay}ms`,
-        fontFamily: "var(--font-outfit)",
+        animationFillMode: 'forwards',
       }}
+      type="button"
     >
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-transparent opacity-60" />
 
@@ -32,16 +33,10 @@ export function FeatureButton({
         </div>
 
         <div className="flex-1 space-y-1 text-left">
-          <h3
-            className="font-orbitron font-semibold text-gray-900 text-lg md:text-xl"
-            style={{ fontFamily: "var(--font-orbitron)" }}
-          >
+          <h3 className="font-orbitron font-semibold text-gray-900 text-lg md:text-xl">
             {title}
           </h3>
-          <p
-            className="font-outfit text-gray-600 text-sm leading-snug md:text-base"
-            style={{ fontFamily: "var(--font-outfit)" }}
-          >
+          <p className="font-sans text-gray-600 text-sm leading-snug md:text-base">
             {subtitle}
           </p>
         </div>
