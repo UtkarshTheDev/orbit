@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import AudioSync from "./AudioSync";
+import Background from "./Background";
 import RobotHead from "./RobotHead";
 import { SystemStatus } from "./SystemStatus";
 
@@ -75,12 +76,14 @@ export default function GreetingAnimation({
 
 	return (
 		<motion.div
-			className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50"
+			className="fixed inset-0 z-50 flex items-center justify-center"
 			exit={{ opacity: 0, scale: 0.95 }}
 			initial={{ opacity: 1 }}
 			onClick={completeAnimation}
 			transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
 		>
+			<Background />
+
 			<AudioSync
 				charIndex={charIndex}
 				isPlaying={stage !== "detecting"}
@@ -163,7 +166,7 @@ export default function GreetingAnimation({
 								<RobotHead />
 							</motion.div>
 
-							<div className="mt-12 min-h-[240px] space-y-12">
+							<div className="mt-8 min-h-[240px] space-y-12">
 								{stage === "greeting" && lineIndex === 0 && (
 									<p className="font-pacifico text-5xl text-gray-900 leading-none md:text-7xl lg:text-8xl">
 										Welcome to
@@ -219,11 +222,6 @@ export default function GreetingAnimation({
 					)}
 				</AnimatePresence>
 			</div>
-
-			<div className="absolute top-8 left-8 h-24 w-24 border-blue-200/40 border-t-2 border-l-2" />
-			<div className="absolute top-8 right-8 h-24 w-24 border-blue-200/40 border-t-2 border-r-2" />
-			<div className="absolute bottom-8 left-8 h-24 w-24 border-blue-200/40 border-b-2 border-l-2" />
-			<div className="absolute right-8 bottom-8 h-24 w-24 border-blue-200/40 border-r-2 border-b-2" />
 		</motion.div>
 	);
 }
