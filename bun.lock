@@ -10,6 +10,7 @@
         "@fontsource/outfit": "^5.2.8",
         "@fontsource/pacifico": "^5.2.7",
         "@fontsource/quicksand": "^5.2.10",
+        "@fontsource/space-grotesk": "^5.2.10",
         "@types/howler": "^2.2.12",
       },
       "devDependencies": {
@@ -358,6 +359,8 @@
     "@fontsource/pacifico": ["@fontsource/pacifico@5.2.7", "", {}, "sha512-L+YiZn3Lb8rVN15zcLlti62doVxQeFpS+dJmulKkFrUo3dZIAxZLHwXoKaaHm+VVcOTrT/mmKCZqGOIWVmFV2w=="],
 
     "@fontsource/quicksand": ["@fontsource/quicksand@5.2.10", "", {}, "sha512-rck0ccT6vJF9RnbSW2ON1grq5qFZvjVOGvYIUixATXF8mNh4KglD+8Sn8QpRgKQBSBJF5yOR3SBYBWPg/Y8YbQ=="],
+
+    "@fontsource/space-grotesk": ["@fontsource/space-grotesk@5.2.10", "", {}, "sha512-XNXEbT74OIITPqw2H6HXwPDp85fy43uxfBwFR5PU+9sLnjuLj12KlhVM9nZVN6q6dlKjkuN8JisW/OBxwxgUew=="],
 
     "@humanfs/core": ["@humanfs/core@0.19.1", "", {}, "sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA=="],
 
