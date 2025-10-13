@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  # Main development container with all tools
+  orbit-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev-environment
+    ports:
+      - "3000:3000"    # Web app
+      - "8000:8000"    # Backend API
+      - "6379:6379"    # Redis
+      - "1883:1883"    # MQTT
+      - "9001:9001"    # MQTT WebSocket
+      - "6333:6333"    # Qdrant
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/apps/backend/node_modules
+      - /app/apps/tablet/node_modules
+      - /app/.turbo
+      - ~/.bun:/root/.bun  # Share bun cache
+    environment:
+      - NODE_ENV=development
+      - BUN_INSTALL=/root/.bun
+    working_dir: /app
+    command: ["/bin/sh", "-c", "while sleep 1000; do :; done"]
+    stdin_open: true
+    tty: true
+
+  # ESP32 development container
+  orbit-esp32:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: esp32-builder
+    volumes:
+      - .:/app
+      - ~/.arduino15:/root/.arduino15  # Share Arduino CLI cache
+    working_dir: /app
+    command: ["/bin/sh", "-c", "while sleep 1000; do :; done"]
+    stdin_open: true
+    tty: true
+
+volumes:
+  node_modules:
+  turbo_cache:
