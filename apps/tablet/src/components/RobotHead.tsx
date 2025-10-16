@@ -13,12 +13,14 @@ export default function RobotHead() {
       onHoverStart={() => setIsHovered(true)}
       transition={{ duration: 0.4, ease: "easeOut" }}
     >
-      <div className="relative flex h-[280px] w-[280px] items-center justify-center">
+      <div className="relative flex h-full w-full items-center justify-center">
         <svg
+          aria-label="Orbit Robot Head"
           className="h-full w-full drop-shadow-2xl"
           viewBox="0 0 320 320"
           xmlns="http://www.w3.org/2000/svg"
         >
+          <title>Orbit Robot Head</title>
           <defs>
             {/* Vibrant gradient for robot body */}
             <linearGradient
