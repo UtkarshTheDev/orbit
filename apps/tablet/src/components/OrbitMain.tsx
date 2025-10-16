@@ -111,7 +111,7 @@ export function OrbitMain() {
 
 			<motion.div
 				animate={{ opacity: 1, y: 0 }}
-				className="mb-8 w-full max-w-2xl px-4"
+				className="mb-8 mt-12 w-full max-w-2xl px-4 md:mt-16"
 				initial={{ opacity: 0, y: 20 }}
 				transition={{
 					delay: 0.9,
