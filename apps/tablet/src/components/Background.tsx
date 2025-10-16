@@ -26,8 +26,8 @@ export default function Background({
       >
         <defs>
           <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--fx-bg-start)" />
-            <stop offset="100%" stopColor="var(--fx-bg-end)" />
+            <stop offset="0%" stopColor="#FAFBFC" />
+            <stop offset="100%" stopColor="#F0F4F8" />
           </linearGradient>
 
           {/* Subtle grid pattern (very low opacity) */}
