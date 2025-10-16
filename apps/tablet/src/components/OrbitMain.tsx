@@ -1,12 +1,14 @@
-import { motion } from "framer-motion";
-import { Box, Camera, MapPin, MessageCircle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Box, Camera, MapPin, MessageCircle, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { FeatureButton } from "@/components/FeatureButton";
 import { InteractionBar } from "@/components/InteractionBar";
 import RobotHead from "./RobotHead";
+import PhotoBooth from "./PhotoBooth";
 
 export function OrbitMain() {
 	const [inputMode, setInputMode] = useState<"voice" | "text">("voice");
+	const [activeView, setActiveView] = useState<"main" | "photobooth">("main");
 
 	const features = [
 		{
@@ -35,13 +37,28 @@ export function OrbitMain() {
 		},
 	];
 
+	const handleFeatureClick = (feature: string) => {
+		if (feature === "Photo Booth") {
+			setActiveView("photobooth");
+		}
+	};
+
+	const handleBackToMain = () => {
+		setActiveView("main");
+	};
+
 	return (
-		<motion.main
-			animate={{ opacity: 1 }}
-			className="flex min-h-screen flex-col items-center justify-between bg-[#F9FAFB] pb-4 md:pb-8 lg:pb-10"
-			initial={{ opacity: 0 }}
-			transition={{ duration: 0.6, ease: "easeOut" }}
-		>
+		<div className="relative min-h-screen bg-[#F9FAFB]">
+			<AnimatePresence mode="wait">
+				{activeView === "main" && (
+					<motion.main
+						animate={{ opacity: 1 }}
+						className="flex min-h-screen flex-col items-center justify-between pb-4 md:pb-8 lg:pb-10"
+						exit={{ opacity: 0 }}
+						initial={{ opacity: 0 }}
+						key="main"
+						transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+					>
 			<div className="flex w-full flex-1 items-start justify-center pt-8 md:pt-12">
 				<div className="flex w-full max-w-5xl flex-col items-center text-center">
 					<div className="relative flex h-[240px] w-[240px] items-center justify-center">
@@ -82,6 +99,7 @@ export function OrbitMain() {
 									animationClass=""
 									delay={feature.delay}
 									icon={feature.icon}
+									onClick={() => handleFeatureClick(feature.title)}
 									subtitle={feature.subtitle}
 									title={feature.title}
 								/>
@@ -103,6 +121,30 @@ export function OrbitMain() {
 			>
 				<InteractionBar mode={inputMode} onModeChange={setInputMode} />
 			</motion.div>
-		</motion.main>
+					</motion.main>
+				)}
+
+				{activeView === "photobooth" && (
+					<motion.div
+						animate={{ opacity: 1 }}
+						className="min-h-screen"
+						exit={{ opacity: 0 }}
+						initial={{ opacity: 0 }}
+						key="photobooth"
+						transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+					>
+						<button
+							className="absolute top-6 left-6 z-20 flex items-center gap-2 rounded-xl bg-white/90 px-4 py-2.5 font-sans text-gray-700 text-sm shadow-lg backdrop-blur-sm transition-all duration-200 hover:bg-white hover:shadow-xl active:scale-95"
+							onClick={handleBackToMain}
+							type="button"
+						>
+							<ArrowLeft className="h-4 w-4" />
+							<span className="font-medium">Back</span>
+						</button>
+						<PhotoBooth />
+					</motion.div>
+				)}
+			</AnimatePresence>
+		</div>
 	);
 }

@@ -7,6 +7,7 @@ type FeatureButtonProps = {
   icon: LucideIcon;
   delay: number;
   animationClass: string;
+  onClick?: () => void;
 };
 
 export function FeatureButton({
@@ -15,6 +16,7 @@ export function FeatureButton({
   icon: Icon,
   delay,
   animationClass,
+  onClick,
 }: FeatureButtonProps) {
   return (
     <button
@@ -24,6 +26,7 @@ export function FeatureButton({
         animationFillMode: 'forwards',
       }}
       type="button"
+      onClick={onClick}
     >
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-transparent opacity-60" />
 

@@ -10,7 +10,7 @@ export default function Home() {
 			{/* Main content */}
 			<div className="relative z-10 container mx-auto px-6 py-6 w-full">
 				<div className="text-center mb-8">
-					<h1 className="text-4xl md:text-5xl font-[family-name:var(--font-brand)] text-primary animate-in fade-in duration-700">
+					<h1 className="text-4xl md:text-5xl font-[family-name:var(--font-pacifico)] text-blue-600 animate-scale-in">
 						Photo Booth
 					</h1>
 				</div>
@@ -22,9 +22,9 @@ export default function Home() {
 			</div>
 
 			{/* Decorative elements */}
-			<div className="absolute top-20 right-10 w-32 h-32 bg-accent/10 rounded-full blur-3xl animate-pulse-glow pointer-events-none" />
+			<div className="absolute top-20 right-10 w-32 h-32 bg-cyan-400/20 rounded-full blur-3xl animate-pulse-glow pointer-events-none" />
 			<div
-				className="absolute bottom-20 left-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl animate-pulse-glow pointer-events-none"
+				className="absolute bottom-20 left-10 w-40 h-40 bg-blue-500/20 rounded-full blur-3xl animate-pulse-glow pointer-events-none"
 				style={{ animationDelay: "1s" }}
 			/>
 		</main>
