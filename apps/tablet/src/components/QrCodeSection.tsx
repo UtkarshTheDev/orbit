@@ -6,7 +6,10 @@ export function QRCodeSection() {
 	const [isHovered, setIsHovered] = useState(false);
 
 	return (
-		<div className="flex flex-col items-center gap-6 animate-slide-in-left" style={{ animationDelay: "0.2s" }}>
+		<div
+			className="flex flex-col items-center gap-6 animate-slide-in-left"
+			style={{ animationDelay: "0.2s" }}
+		>
 			{/* QR Code Container */}
 			<div
 				className="relative group"
@@ -45,9 +48,7 @@ export function QRCodeSection() {
 			<div className="relative animate-float">
 				<div className="bg-white p-2 rounded-lg shadow-xl border border-gray-200 rotate-[-2deg] hover:rotate-0 transition-transform duration-300">
 					<div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-md overflow-hidden flex items-center justify-center w-36 h-36">
-						<div className="text-center p-4">
-							<p className="text-xs text-gray-400 font-[family-name:var(--font-orbitron)]">Photo Preview</p>
-						</div>
+						<img src="/polaroid-sample.png" alt="Sample Poloroid image" />
 					</div>
 					<div className="mt-1 text-center">
 						<p className="text-xs font-[family-name:var(--font-pacifico)] text-gray-900">
