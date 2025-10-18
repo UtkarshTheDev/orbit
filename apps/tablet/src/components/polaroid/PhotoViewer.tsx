@@ -214,7 +214,7 @@ export default function PhotoViewer({
 			const captionY = topBorder + imageSize + 70;
 			ctx.fillText("Science Exhibition 2025", polaroidWidth / 2, captionY);
 
-			ctx.font = "500 20px 'Courier New', monospace";
+			ctx.font = "500 24px 'Courier New', monospace";
 			ctx.fillStyle = "#4a4a4a";
 			ctx.fillText("LPS Eldeco", polaroidWidth / 2, captionY + 35);
 
@@ -315,7 +315,7 @@ export default function PhotoViewer({
 						className="relative w-full h-14 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md active:scale-95 transition-all duration-150 font-semibold text-base font-sans"
 					>
 						<Sparkles className="mr-2 h-5 w-5" />
-						<span>
+						<span className="tracking-wide">
 							Edit with <span className="font-orbitron">Orbit AI</span>
 						</span>
 					</Button>
