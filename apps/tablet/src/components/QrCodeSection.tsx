@@ -18,7 +18,7 @@ export function QRCodeSection() {
 			>
 				{/* Outer frame */}
 				<div
-					className={`relative p-6 bg-white rounded-2xl border-2 border-blue-400/40 transition-all duration-500 ${isHovered ? "scale-105 glow-effect" : "shadow-lg"}`}
+					className={`relative p-4 bg-white rounded-2xl border-2 border-blue-400/40 transition-all duration-500 ${isHovered ? "scale-105 glow-effect" : "shadow-lg"}`}
 				>
 					{/* Corner decorations */}
 					<div className="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-blue-400" />
@@ -27,11 +27,11 @@ export function QRCodeSection() {
 					<div className="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 border-blue-400" />
 
 					{/* QR Code */}
-					<div className="bg-white p-4 rounded-xl">
+					<div className="bg-white p-2 rounded-xl">
 						<img
 							src="/qr/capture-qr.svg"
 							alt="Scan QR Code"
-							className="w-64 h-64 md:w-72 md:h-72"
+							className="w-64 h-64 md:w-78 md:h-78"
 						/>
 					</div>
 

@@ -18,8 +18,8 @@ export function OrbitMain() {
 			delay: 0,
 		},
 		{
-			title: "Photo Booth",
-			subtitle: "Scan QR, snap a pic, get instant polaroid!",
+			title: "Instant Polaroid",
+			subtitle: "Snap a selfie and get your instant Polaroid-style photo!",
 			icon: Camera,
 			delay: 100,
 		},
