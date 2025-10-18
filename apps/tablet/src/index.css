@@ -266,3 +266,20 @@
 .animate-pulse-glow {
 	animation: pulse-glow 2s ease-in-out infinite;
 }
+
+/* Custom animations for camera UI */
+@keyframes flash {
+	0% {
+		opacity: 0;
+	}
+	50% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+	}
+}
+
+.animate-flash {
+	animation: flash 0.5s ease-out;
+}

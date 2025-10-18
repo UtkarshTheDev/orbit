@@ -2,7 +2,7 @@
 
 import { Camera, Download, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 
 interface PhotoViewerProps {
 	capturedImage: string;
@@ -312,16 +312,18 @@ export default function PhotoViewer({
 							/* TODO: Implement AI editing */
 						}}
 						size="lg"
-						className="relative w-full h-14 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md active:scale-95 transition-all duration-150 font-semibold text-base"
+						className="relative w-full h-14 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md active:scale-95 transition-all duration-150 font-semibold text-base font-sans"
 					>
 						<Sparkles className="mr-2 h-5 w-5" />
-						<span>Edit with Orbit AI</span>
+						<span>
+							Edit with <span className="font-orbitron">Orbit AI</span>
+						</span>
 					</Button>
 
 					<Button
 						onClick={downloadPolaroid}
 						size="lg"
-						className="relative w-full h-14 rounded-2xl bg-amber-100 border-2 border-amber-200 text-amber-900 hover:bg-amber-150 active:scale-95 transition-all duration-150 font-semibold text-base shadow-sm"
+						className="relative w-full h-14 rounded-2xl bg-amber-100 border-2 border-amber-200 text-amber-900 hover:bg-amber-150 active:scale-95 transition-all duration-150 font-semibold text-base shadow-sm font-sans"
 					>
 						<Download className="mr-2 h-5 w-5 flex-shrink-0" />
 						<span className="text-amber-900">Download Image</span>
@@ -329,7 +331,7 @@ export default function PhotoViewer({
 
 					<button
 						onClick={onRetake}
-						className="mt-2 flex items-center gap-2 px-6 py-3 text-base font-medium text-amber-800 active:text-amber-900 transition-colors duration-150 underline underline-offset-4 decoration-2"
+						className="mt-2 flex items-center gap-2 px-6 py-3 text-base font-medium text-amber-800 active:text-amber-900 transition-colors duration-150 underline underline-offset-4 decoration-2 font-sans"
 						type="button"
 					>
 						<Camera className="h-4 w-4" />
