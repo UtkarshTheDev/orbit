@@ -25,7 +25,7 @@ export function OrbitMain() {
 		},
 		{
 			title: "Ask Questions",
-			subtitle: "Learn about the school and students",
+			subtitle: "Ask anything about the school or anything else",
 			icon: MessageCircle,
 			delay: 200,
 		},
@@ -38,7 +38,7 @@ export function OrbitMain() {
 	];
 
 	const handleFeatureClick = (feature: string) => {
-		if (feature === "Photo Booth") {
+		if (feature === "Instant Polaroid") {
 			setActiveView("photobooth");
 		}
 	};
