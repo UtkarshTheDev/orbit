@@ -1,7 +1,8 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
-import App from "./App.tsx";
+import { RouterProvider } from "@tanstack/react-router";
+import { router } from "./router";
 
 // Import fonts for optimal performance
 import "@fontsource/pacifico";
@@ -19,6 +20,6 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
 	<StrictMode>
-		<App />
+		<RouterProvider router={router} />
 	</StrictMode>,
 );
