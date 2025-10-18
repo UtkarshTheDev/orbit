@@ -3,9 +3,9 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import AudioSync from "./AudioSync";
-import Background from "./Background";
-import RobotHead from "./RobotHead";
-import { SystemStatus } from "./SystemStatus";
+import Background from "../ui/Background";
+import RobotHead from "../robot/RobotHead";
+import { SystemStatus } from "../ui/SystemStatus";
 
 type GreetingAnimationProps = {
 	onComplete: () => void;

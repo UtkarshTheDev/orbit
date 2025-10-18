@@ -1,10 +1,10 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Box, Camera, MapPin, MessageCircle, ArrowLeft } from "lucide-react";
 import { useState } from "react";
-import { FeatureButton } from "@/components/FeatureButton";
-import { InteractionBar } from "@/components/InteractionBar";
-import RobotHead from "./RobotHead";
-import PhotoBooth from "./PhotoBooth";
+import { FeatureButton } from "./ui/FeatureButton";
+import { InteractionBar } from "./interaction/InteractionBar";
+import RobotHead from "./robot/RobotHead";
+import PhotoBooth from "./photobooth/PhotoBooth";
 
 export function OrbitMain() {
 	const [inputMode, setInputMode] = useState<"voice" | "text">("voice");

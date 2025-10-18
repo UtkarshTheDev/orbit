@@ -1,8 +1,8 @@
 import { AnimatePresence } from "framer-motion";
 import { useState } from "react";
-import Background from "@/components/Background";
-import OrbitGreeting from "@/components/GreetingAnimation";
-import RobotFace from "@/components/RobotFace";
+import Background from "@/components/ui/Background";
+import OrbitGreeting from "@/components/greeting/GreetingAnimation";
+import RobotFace from "@/components/robot/RobotFace";
 import { OrbitMain } from "./components/OrbitMain";
 
 export default function Home() {
