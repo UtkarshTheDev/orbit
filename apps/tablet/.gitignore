@@ -24,3 +24,8 @@ dist-ssr
 *.sw?
 
 .tanstack/
+
+# Ignore sensitive env files but keep example
+.env
+.env.*
+!.env.example

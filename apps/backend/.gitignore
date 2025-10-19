@@ -1,5 +1,23 @@
-# deps
-node_modules/
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# dist
-dist/
+node_modules
+dist
+*.local
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+
+# Ignore sensitive env files but keep example
+.env
+.env.*
+!.env.example

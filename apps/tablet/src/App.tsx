@@ -13,8 +13,9 @@ export default function Home() {
   // WebSocket client (dev/prototype)
   const wsRef = useRef<WebSocket | null>(null);
   useEffect(() => {
-    // Connect to backend WebSocket server
-    const ws = new WebSocket("ws://localhost:3001");
+    // Use env-var for URL; default to localhost in dev
+    const WsUrl = import.meta.env.VITE_WS_URL || "ws://localhost:3001";
+    const ws = new WebSocket(WsUrl);
     wsRef.current = ws;
     ws.onopen = () => {
       console.log("[Tablet] WebSocket connected");
