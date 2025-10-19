@@ -9,23 +9,30 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PolaroidRouteImport } from './routes/polaroid'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PolaroidIndexRouteImport } from './routes/polaroid/index'
 
+const PolaroidRoute = PolaroidRouteImport.update({
+  id: '/polaroid',
+  path: '/polaroid',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PolaroidIndexRoute = PolaroidIndexRouteImport.update({
-  id: '/polaroid/',
-  path: '/polaroid/',
-  getParentRoute: () => rootRouteImport,
+  id: '/',
+  path: '/',
+  getParentRoute: () => PolaroidRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/polaroid': typeof PolaroidIndexRoute
+  '/polaroid': typeof PolaroidRouteWithChildren
+  '/polaroid/': typeof PolaroidIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -34,23 +41,31 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/polaroid': typeof PolaroidRouteWithChildren
   '/polaroid/': typeof PolaroidIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/polaroid'
+  fullPaths: '/' | '/polaroid' | '/polaroid/'
   fileRoutesByTo: FileRoutesByTo
   to: '/' | '/polaroid'
-  id: '__root__' | '/' | '/polaroid/'
+  id: '__root__' | '/' | '/polaroid' | '/polaroid/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  PolaroidIndexRoute: typeof PolaroidIndexRoute
+  PolaroidRoute: typeof PolaroidRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/polaroid': {
+      id: '/polaroid'
+      path: '/polaroid'
+      fullPath: '/polaroid'
+      preLoaderRoute: typeof PolaroidRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -60,17 +75,29 @@ declare module '@tanstack/react-router' {
     }
     '/polaroid/': {
       id: '/polaroid/'
-      path: '/polaroid'
-      fullPath: '/polaroid'
+      path: '/'
+      fullPath: '/polaroid/'
       preLoaderRoute: typeof PolaroidIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof PolaroidRoute
     }
   }
 }
 
+interface PolaroidRouteChildren {
+  PolaroidIndexRoute: typeof PolaroidIndexRoute
+}
+
+const PolaroidRouteChildren: PolaroidRouteChildren = {
+  PolaroidIndexRoute: PolaroidIndexRoute,
+}
+
+const PolaroidRouteWithChildren = PolaroidRoute._addFileChildren(
+  PolaroidRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  PolaroidIndexRoute: PolaroidIndexRoute,
+  PolaroidRoute: PolaroidRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
