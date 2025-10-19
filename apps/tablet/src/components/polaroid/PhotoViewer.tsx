@@ -26,18 +26,18 @@ export default function PhotoViewer({
 		const canvas = canvasRef.current;
 		if (!canvas) return;
 
-		const ctx = canvasRef.current.getContext("2d");
+		const ctx = canvas.getContext("2d");
 		if (!ctx) return;
 
 		const img = new Image();
 		img.crossOrigin = "anonymous";
 		img.onload = () => {
 			const polaroidWidth = 700;
-			const polaroidHeight = 840;
 			const topBorder = 40;
 			const sideBorder = 40;
 			const bottomBorder = 200;
 			const imageSize = polaroidWidth - sideBorder * 2;
+			const polaroidHeight = topBorder + bottomBorder + imageSize;
 			const borderRadius = 8;
 
 			canvas.width = polaroidWidth;

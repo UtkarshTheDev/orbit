@@ -86,15 +86,6 @@ export default function CameraInterface() {
 		startCamera();
 	};
 
-	const downloadPhoto = () => {
-		if (!capturedImage) return;
-
-		const link = document.createElement("a");
-		link.href = capturedImage;
-		link.download = `orbit-photo-${Date.now()}.png`;
-		link.click();
-	};
-
 	const toggleCamera = () => {
 		if (stream) {
 			stream.getTracks().forEach((track) => track.stop());
