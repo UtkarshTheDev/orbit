@@ -9,9 +9,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 export default function RobotFace({
   isDisappearing = false,
   onAnimationComplete,
+  isPhotoBooth = false,
 }: {
   isDisappearing?: boolean;
   onAnimationComplete?: () => void;
+  isPhotoBooth?: boolean;
 }) {
   const faceRef = useRef<HTMLDivElement>(null);
 
@@ -63,7 +65,7 @@ export default function RobotFace({
 
       let clientX: number;
       let clientY: number;
-      if (typeof TouchEvent !== 'undefined' && e instanceof TouchEvent) {
+      if (typeof TouchEvent !== "undefined" && e instanceof TouchEvent) {
         clientX = e.touches[0]?.clientX ?? 0;
         clientY = e.touches[0]?.clientY ?? 0;
       } else {
@@ -281,14 +283,13 @@ export default function RobotFace({
           opacity: animationPhase === "fading" ? 0 : 1,
           scale: animationPhase === "fading" ? 0.85 : 1,
         }}
-        className="relative isolate h-full w-full rounded-none p-0 bg-transparent"
+        className="relative isolate h-full w-full rounded-none bg-transparent p-0"
         ref={faceRef}
         transition={{
           duration: 1.2,
           ease: [0.4, 0, 0.2, 1],
         }}
       >
-
         {/* Eyes Row */}
         <motion.div
           animate={{

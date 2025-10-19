@@ -11,8 +11,11 @@ export default function Home() {
   const [showGreeting, setShowGreeting] = useState(false);
   const [showMainApp, setShowMainApp] = useState(false);
 
-  // Connect the global websocket client on load
+  // Session state: isTablet + photo booth mode
   const connectWs = useSessionStore((s) => s.connectWs);
+  const isTablet = useSessionStore((s) => s.isTablet);
+  const photoBoothActive = useSessionStore((s) => s.photoBoothActive);
+
   useEffect(() => {
     connectWs();
   }, [connectWs]);
@@ -25,6 +28,18 @@ export default function Home() {
       }, 2000);
     }
   };
+
+  // Tablet should always display specialized robotface in booth mode
+  if (isTablet && photoBoothActive) {
+    return (
+      <main className="relative flex h-screen w-full items-center justify-center overflow-hidden text-foreground">
+        <Background />
+        <div className="relative z-20 h-full w-full">
+          <RobotFace isPhotoBooth />
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main
