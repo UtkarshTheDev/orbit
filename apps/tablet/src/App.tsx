@@ -1,14 +1,37 @@
 import { AnimatePresence } from "framer-motion";
-import { useState } from "react";
-import Background from "@/components/ui/Background";
+import { useEffect, useRef, useState } from "react";
 import OrbitGreeting from "@/components/greeting/GreetingAnimation";
 import RobotFace from "@/components/robot/RobotFace";
+import Background from "@/components/ui/Background";
 import { OrbitMain } from "./components/OrbitMain";
 
 export default function Home() {
   const [isDisappearing, setIsDisappearing] = useState(false);
   const [showGreeting, setShowGreeting] = useState(false);
   const [showMainApp, setShowMainApp] = useState(false);
+
+  // WebSocket client (dev/prototype)
+  const wsRef = useRef<WebSocket | null>(null);
+  useEffect(() => {
+    // Connect to backend WebSocket server
+    const ws = new WebSocket("ws://localhost:3001");
+    wsRef.current = ws;
+    ws.onopen = () => {
+      console.log("[Tablet] WebSocket connected");
+      ws.send("Hello from tablet");
+    };
+    ws.onmessage = (event) => {
+      console.log("[Tablet] WebSocket message:", event.data);
+    };
+    ws.onerror = (err) => {
+      console.error("[Tablet] WebSocket error:", err);
+    };
+    ws.onclose = () => {
+      console.log("[Tablet] WebSocket connection closed");
+    };
+    return () => ws.close();
+  }, []);
+
   const handleClick = () => {
     if (!isDisappearing) {
       setIsDisappearing(true);

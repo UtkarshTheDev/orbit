@@ -43,6 +43,7 @@
     "@fontsource/quicksand": "^5.2.10",
     "@fontsource/space-grotesk": "^5.2.10",
     "@tanstack/react-router": "^1.133.13",
-    "@types/howler": "^2.2.12"
+    "@types/howler": "^2.2.12",
+    "ws": "^8.18.3"
   }
 }
