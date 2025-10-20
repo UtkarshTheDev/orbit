@@ -15,7 +15,9 @@ function detectTabletRole(): boolean {
     return false;
   }
   const params = new URLSearchParams(window.location.search);
-  return params.get("tablet") === "1";
+  const isTablet = params.get("tablet") === "1";
+  console.log("[Frontend] Role:", isTablet ? "tablet" : "phone");
+  return isTablet;
 }
 
 export const useSessionStore = create<SessionState>((set, get) => ({
@@ -29,31 +31,39 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     }
     const wsUrl = import.meta.env.VITE_WS_URL || "ws://localhost:3001";
     const ws = new WebSocket(wsUrl);
+
     ws.onopen = () => {
       set({ wsReady: true });
+      const role = get().isTablet ? "tablet" : "phone";
       ws.send(
         JSON.stringify({
           type: "identify",
-          role: get().isTablet ? "tablet" : "phone",
+          role,
         })
       );
+      console.log("[Frontend] WS connected, identified as:", role);
     };
+
     ws.onclose = () => {
       set({ wsReady: false, ws: null });
     };
-    ws.onerror = (_err) => {
+
+    ws.onerror = () => {
       set({ wsReady: false });
     };
+
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
         if (msg.type === "photo_booth_requested" && get().isTablet) {
           set({ photoBoothActive: true });
+          console.log("[Frontend] Photo booth activated");
         }
-      } catch (_e) {
-        // Ignore non-JSON msg
+      } catch {
+        // ignore non-JSON
       }
     };
+
     set({ ws });
   },
   sendWs: (msg) => {

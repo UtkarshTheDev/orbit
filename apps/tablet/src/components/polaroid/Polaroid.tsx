@@ -7,12 +7,14 @@ import CameraInterface from "./CameraInterface";
 export default function Home() {
   const sendWs = useSessionStore((s) => s.sendWs);
   const isTablet = useSessionStore((s) => s.isTablet);
+  const wsReady = useSessionStore((s) => s.wsReady);
 
   useEffect(() => {
-    if (!isTablet) {
+    if (!isTablet && wsReady) {
+      console.log("[Polaroid] Notifying backend: polaroid_entered");
       sendWs({ type: "polaroid_entered" });
     }
-  }, [isTablet, sendWs]);
+  }, [isTablet, wsReady, sendWs]);
 
   return (
     <div style={{ fontFamily: '"Quicksand", "Outfit", sans-serif' }}>
