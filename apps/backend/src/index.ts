@@ -5,8 +5,24 @@ const app = new Hono();
 
 app.get("/", (c) => c.text("Hello Hono!"));
 
-// --- WebSocket server setup ---
-const wss = new WebSocketServer({ port: 3001 });
+// --- WebSocket server setup with optimizations ---
+const wss = new WebSocketServer({
+  port: 3001,
+  // Performance optimizations
+  maxPayload: 1024 * 1024, // 1MB max message size
+  perMessageDeflate: {
+    threshold: 1024, // Compress messages > 1KB
+    concurrencyLimit: 10,
+    memLevel: 7,
+  },
+});
+
+// Connection tracking with health monitoring
+const clientRoles = new Map();
+const polaroidQueue = new Map();
+const connectionHealth = new Map(); // Track last ping time
+const PING_INTERVAL = 30_000; // 30 seconds
+const PONG_TIMEOUT = 10_000; // 10 seconds
 
 // Helper function to remove phone from queue and check if empty
 function removeFromQueue(ws) {
@@ -20,26 +36,64 @@ function removeFromQueue(ws) {
 
     // If queue becomes empty, notify tablets
     if (polaroidQueue.size === 0) {
-      let broadcastCount = 0;
-      for (const client of Array.from(wss.clients)) {
-        if (client.readyState === 1) {
-          client.send(JSON.stringify({ type: "polaroid_queue_empty" }));
-          broadcastCount++;
-        }
-      }
-      console.log(
-        `[Backend] polaroid_queue_empty broadcast to ${broadcastCount} client(s)`
-      );
+      broadcastToTablets({ type: "polaroid_queue_empty" });
     }
   }
 }
 
-// Track connected clients with their roles
-const clientRoles = new Map();
-const polaroidQueue = new Map(); // Track phones in polaroid queue with their timeout timers
+// Optimized broadcasting - only to tablets
+function broadcastToTablets(message) {
+  let broadcastCount = 0;
+  const messageStr = JSON.stringify(message);
+
+  for (const client of Array.from(wss.clients)) {
+    if (client.readyState === 1 && clientRoles.get(client) === "tablet") {
+      try {
+        client.send(messageStr);
+        broadcastCount++;
+      } catch (error) {
+        console.error("[Backend] Failed to send to tablet:", error);
+        // Remove stale connection
+        client.terminate();
+      }
+    }
+  }
+  console.log(
+    `[Backend] Broadcast to ${broadcastCount} tablet(s):`,
+    message.type
+  );
+}
+
+// Heartbeat system
+function startHeartbeat(ws) {
+  const pingInterval = setInterval(() => {
+    if (ws.readyState === 1) {
+      try {
+        ws.ping();
+        connectionHealth.set(ws, Date.now());
+      } catch (error) {
+        console.error("[Backend] Ping failed:", error);
+        clearInterval(pingInterval);
+        ws.terminate();
+      }
+    } else {
+      clearInterval(pingInterval);
+    }
+  }, PING_INTERVAL);
+
+  return pingInterval;
+}
 
 wss.on("connection", (ws) => {
-  // connection established
+  console.log("[Backend] New WebSocket connection established");
+
+  // Start heartbeat for this connection
+  const pingInterval = startHeartbeat(ws);
+
+  // Handle pong responses
+  ws.on("pong", () => {
+    connectionHealth.set(ws, Date.now());
+  });
 
   ws.on("message", (message) => {
     try {
@@ -69,16 +123,7 @@ wss.on("connection", (ws) => {
 
         // Only broadcast if this is the first phone in queue
         if (polaroidQueue.size === 1) {
-          let broadcastCount = 0;
-          for (const client of Array.from(wss.clients)) {
-            if (client !== ws && client.readyState === 1) {
-              client.send(JSON.stringify({ type: "photo_booth_requested" }));
-              broadcastCount++;
-            }
-          }
-          console.log(
-            `[Backend] photo_booth_requested broadcast to ${broadcastCount} client(s)`
-          );
+          broadcastToTablets({ type: "photo_booth_requested" });
         }
       }
 
@@ -92,16 +137,20 @@ wss.on("connection", (ws) => {
   });
 
   ws.on("close", () => {
-    // Remove from polaroid queue if it was there
+    console.log("[Backend] WebSocket connection closed");
+    clearInterval(pingInterval);
     removeFromQueue(ws);
     clientRoles.delete(ws);
+    connectionHealth.delete(ws);
   });
 
   ws.on("error", (error) => {
     console.error("[Backend] WebSocket error:", error);
+    clearInterval(pingInterval);
   });
 
-  ws.send("Connected to backend WebSocket server");
+  // Send welcome message
+  ws.send(JSON.stringify({ type: "connected", timestamp: Date.now() }));
 });
 
 console.log("[Backend] WebSocket server listening on ws://localhost:3001");
