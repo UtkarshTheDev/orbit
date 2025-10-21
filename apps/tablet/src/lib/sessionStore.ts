@@ -3,11 +3,13 @@ import { create } from "zustand";
 type SessionState = {
   isTablet: boolean;
   photoBoothActive: boolean;
+  showMainApp: boolean;
   ws: WebSocket | null;
   wsReady: boolean;
   connectWs: () => void;
   sendWs: (msg: unknown) => void;
   setPhotoBoothActive: (val: boolean) => void;
+  setShowMainApp: (val: boolean) => void;
 };
 
 function detectTabletRole(): boolean {
@@ -23,6 +25,7 @@ function detectTabletRole(): boolean {
 export const useSessionStore = create<SessionState>((set, get) => ({
   isTablet: detectTabletRole(),
   photoBoothActive: false,
+  showMainApp: false,
   ws: null,
   wsReady: false,
   connectWs: () => {
@@ -59,6 +62,10 @@ export const useSessionStore = create<SessionState>((set, get) => ({
           set({ photoBoothActive: true });
           console.log("[Frontend] Photo booth activated");
         }
+        if (msg.type === "photo_session_complete" && get().isTablet) {
+          set({ photoBoothActive: false, showMainApp: true });
+          console.log("[Frontend] Photo session complete, showing main app");
+        }
       } catch {
         // ignore non-JSON
       }
@@ -74,5 +81,8 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   },
   setPhotoBoothActive: (val) => {
     set({ photoBoothActive: val });
+  },
+  setShowMainApp: (val) => {
+    set({ showMainApp: val });
   },
 }));

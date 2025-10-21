@@ -15,6 +15,7 @@ export default function Home() {
   const connectWs = useSessionStore((s) => s.connectWs);
   const isTablet = useSessionStore((s) => s.isTablet);
   const photoBoothActive = useSessionStore((s) => s.photoBoothActive);
+  const showMainAppFromStore = useSessionStore((s) => s.showMainApp);
 
   useEffect(() => {
     connectWs();
@@ -36,6 +37,17 @@ export default function Home() {
         <Background />
         <div className="relative z-20 h-full w-full">
           <RobotFace isPhotoBooth />
+        </div>
+      </main>
+    );
+  }
+  // Tablet should show OrbitMain after photo session completes
+  if (isTablet && showMainAppFromStore) {
+    return (
+      <main className="relative flex h-screen w-full items-center justify-center overflow-hidden text-foreground">
+        <Background />
+        <div className="relative z-20 h-full w-full">
+          <OrbitMain />
         </div>
       </main>
     );

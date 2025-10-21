@@ -30,9 +30,21 @@ wss.on("connection", (ws) => {
             broadcastCount++;
           }
         }
-        // summary log
         console.log(
           `[Backend] photo_booth_requested broadcast to ${broadcastCount} client(s)`
+        );
+      }
+
+      if (msg.type === "photo_captured") {
+        let broadcastCount = 0;
+        for (const client of Array.from(wss.clients)) {
+          if (client !== ws && client.readyState === 1) {
+            client.send(JSON.stringify({ type: "photo_session_complete" }));
+            broadcastCount++;
+          }
+        }
+        console.log(
+          `[Backend] photo_session_complete broadcast to ${broadcastCount} client(s)`
         );
       }
     } catch {
