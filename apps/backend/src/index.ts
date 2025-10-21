@@ -8,9 +8,35 @@ app.get("/", (c) => c.text("Hello Hono!"));
 // --- WebSocket server setup ---
 const wss = new WebSocketServer({ port: 3001 });
 
+// Helper function to remove phone from queue and check if empty
+function removeFromQueue(ws) {
+  if (polaroidQueue.has(ws)) {
+    const timeoutId = polaroidQueue.get(ws);
+    clearTimeout(timeoutId);
+    polaroidQueue.delete(ws);
+    console.log(
+      `[Backend] Phone removed from polaroid queue. Queue size: ${polaroidQueue.size}`
+    );
+
+    // If queue becomes empty, notify tablets
+    if (polaroidQueue.size === 0) {
+      let broadcastCount = 0;
+      for (const client of Array.from(wss.clients)) {
+        if (client.readyState === 1) {
+          client.send(JSON.stringify({ type: "polaroid_queue_empty" }));
+          broadcastCount++;
+        }
+      }
+      console.log(
+        `[Backend] polaroid_queue_empty broadcast to ${broadcastCount} client(s)`
+      );
+    }
+  }
+}
+
 // Track connected clients with their roles
 const clientRoles = new Map();
-const polaroidQueue = new Set(); // Track phones in polaroid queue
+const polaroidQueue = new Map(); // Track phones in polaroid queue with their timeout timers
 
 wss.on("connection", (ws) => {
   // connection established
@@ -25,8 +51,18 @@ wss.on("connection", (ws) => {
       }
 
       if (msg.type === "polaroid_entered") {
-        // Add phone to polaroid queue
-        polaroidQueue.add(ws);
+        // Add phone to polaroid queue with timeout
+        const timeoutId = setTimeout(
+          () => {
+            console.log(
+              "[Backend] Phone timeout after 3 minutes, removing from queue"
+            );
+            removeFromQueue(ws);
+          },
+          3 * 60 * 1000
+        ); // 3 minutes timeout
+
+        polaroidQueue.set(ws, timeoutId);
         console.log(
           `[Backend] Phone added to polaroid queue. Queue size: ${polaroidQueue.size}`
         );
@@ -48,24 +84,7 @@ wss.on("connection", (ws) => {
 
       if (msg.type === "photo_captured") {
         // Remove phone from polaroid queue
-        polaroidQueue.delete(ws);
-        console.log(
-          `[Backend] Phone removed from polaroid queue. Queue size: ${polaroidQueue.size}`
-        );
-
-        // Only broadcast completion if queue is empty
-        if (polaroidQueue.size === 0) {
-          let broadcastCount = 0;
-          for (const client of Array.from(wss.clients)) {
-            if (client !== ws && client.readyState === 1) {
-              client.send(JSON.stringify({ type: "polaroid_queue_empty" }));
-              broadcastCount++;
-            }
-          }
-          console.log(
-            `[Backend] polaroid_queue_empty broadcast to ${broadcastCount} client(s)`
-          );
-        }
+        removeFromQueue(ws);
       }
     } catch {
       // ignore non-JSON messages
@@ -74,27 +93,7 @@ wss.on("connection", (ws) => {
 
   ws.on("close", () => {
     // Remove from polaroid queue if it was there
-    if (polaroidQueue.has(ws)) {
-      polaroidQueue.delete(ws);
-      console.log(
-        `[Backend] Phone disconnected from polaroid queue. Queue size: ${polaroidQueue.size}`
-      );
-
-      // If queue becomes empty, notify tablets
-      if (polaroidQueue.size === 0) {
-        let broadcastCount = 0;
-        for (const client of Array.from(wss.clients)) {
-          if (client.readyState === 1) {
-            client.send(JSON.stringify({ type: "polaroid_queue_empty" }));
-            broadcastCount++;
-          }
-        }
-        console.log(
-          `[Backend] polaroid_queue_empty broadcast to ${broadcastCount} client(s) (due to disconnect)`
-        );
-      }
-    }
-
+    removeFromQueue(ws);
     clientRoles.delete(ws);
   });
 
