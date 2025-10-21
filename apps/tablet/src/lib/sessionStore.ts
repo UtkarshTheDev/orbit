@@ -62,9 +62,9 @@ export const useSessionStore = create<SessionState>((set, get) => ({
           set({ photoBoothActive: true });
           console.log("[Frontend] Photo booth activated");
         }
-        if (msg.type === "photo_session_complete" && get().isTablet) {
+        if (msg.type === "polaroid_queue_empty" && get().isTablet) {
           set({ photoBoothActive: false, showMainApp: true });
-          console.log("[Frontend] Photo session complete, showing main app");
+          console.log("[Frontend] Polaroid queue empty, showing main app");
         }
       } catch {
         // ignore non-JSON
