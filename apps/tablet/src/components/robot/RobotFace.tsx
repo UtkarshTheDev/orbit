@@ -1,4 +1,4 @@
-import { motion, useAnimation, useSpring } from "framer-motion";
+import { motion, useAnimation, useSpring } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { eventManager } from "@/lib/eventManager";
 import { playSound } from "@/lib/basicAudioPlayer";
@@ -518,7 +518,7 @@ function Eye({
 function motionValueMirror(v: ReturnType<typeof useSpring>) {
   const m = useSpring(0, { stiffness: 120, damping: 12, mass: 0.4 });
   useEffect(() => {
-    const unsub = v.on("change", (val) => m.set(-val));
+    const unsub = v.on("change", (val: number) => m.set(-val));
     return () => unsub();
   }, [v, m]);
   return m;

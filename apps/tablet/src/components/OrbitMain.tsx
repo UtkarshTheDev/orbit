@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { Box, Camera, MapPin, MessageCircle, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { FeatureButton } from "./ui/FeatureButton";

@@ -44,6 +44,7 @@
     "@fontsource/space-grotesk": "^5.2.10",
     "@tanstack/react-router": "^1.133.13",
     "@types/howler": "^2.2.12",
+    "motion": "^12.23.24",
     "ws": "^8.18.3",
     "zustand": "^5.0.8"
   }
