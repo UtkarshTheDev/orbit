@@ -242,12 +242,13 @@ export default function PhotoViewer({
       ctx.fillStyle = "#2c2c2c";
       ctx.font = "600 32px 'Courier New', monospace";
       ctx.textAlign = "center";
-      const captionY = topBorder + imageSize + 70;
+      const captionY = topBorder + imageSize + 60;
       ctx.fillText("Science Exhibition 2025", polaroidWidth / 2, captionY);
 
-      ctx.font = "500 24px 'Courier New', monospace";
-      ctx.fillStyle = "#4a4a4a";
-      ctx.fillText("LPS Eldeco", polaroidWidth / 2, captionY + 35);
+      // Enhanced "LPS Eldeco" text with increased size, weight, and better color
+      ctx.font = "700 28px 'Courier New', monospace";
+      ctx.fillStyle = "#222222";
+      ctx.fillText("LPS Eldeco", polaroidWidth / 2, captionY + 45);
 
       ctx.font = "400 36px 'Pacifico', cursive";
       ctx.textAlign = "right";

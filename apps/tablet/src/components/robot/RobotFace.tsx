@@ -2,7 +2,6 @@ import { motion, useAnimation, useSpring } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { eventManager } from "@/lib/eventManager";
 import { playSound } from "@/lib/basicAudioPlayer";
-// Sound imports removed in favor of basic audio player
 
 // Minimalist, cute robot face with animated eyes, glowing cheeks, and expressive mouth
 // - Eyes follow cursor smoothly with natural constraints + random blinks
