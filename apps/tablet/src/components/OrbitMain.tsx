@@ -19,13 +19,13 @@ export function OrbitMain() {
 		},
 		{
 			title: "Instant Polaroid",
-			subtitle: "Snap a selfie and get your instant Polaroid-style photo!",
+			subtitle: "Snap a selfie, get a Polaroid!",
 			icon: Camera,
 			delay: 100,
 		},
 		{
 			title: "Ask Questions",
-			subtitle: "Ask anything about the school or anything else",
+			subtitle: "Ask anything about school",
 			icon: MessageCircle,
 			delay: 200,
 		},
