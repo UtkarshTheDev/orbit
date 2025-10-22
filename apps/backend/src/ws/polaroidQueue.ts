@@ -5,10 +5,12 @@ import { broadcastToTablets } from "./broadcast";
 const polaroidQueue = new Map<WebSocket, NodeJS.Timeout>();
 
 function removeFromQueue(ws: WebSocket, wss: WebSocketServer) {
+  console.log("[Backend] removeFromQueue called for WebSocket connection");
   if (polaroidQueue.has(ws)) {
     const timeoutId = polaroidQueue.get(ws);
     if (timeoutId) {
       clearTimeout(timeoutId);
+      console.log("[Backend] Cleared timeout for WebSocket connection");
     }
     polaroidQueue.delete(ws);
     console.log(
@@ -16,8 +18,13 @@ function removeFromQueue(ws: WebSocket, wss: WebSocketServer) {
     );
 
     if (polaroidQueue.size === 0) {
+      console.log(
+        "[Backend] Queue is now empty, broadcasting polaroid_queue_empty"
+      );
       broadcastToTablets(wss, { type: "polaroid_queue_empty" });
     }
+  } else {
+    console.log("[Backend] WebSocket not found in polaroid queue");
   }
 }
 

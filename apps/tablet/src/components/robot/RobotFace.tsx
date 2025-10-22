@@ -1,5 +1,6 @@
 import { motion, useAnimation, useSpring } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { eventManager } from "@/lib/eventManager";
 
 // Minimalist, cute robot face with animated eyes, glowing cheeks, and expressive mouth
 // - Eyes follow cursor smoothly with natural constraints + random blinks
@@ -16,6 +17,7 @@ export default function RobotFace({
   isPhotoBooth?: boolean;
 }) {
   const faceRef = useRef<HTMLDivElement>(null);
+  const isMountedRef = useRef(true);
 
   // Cursor tracking for eyes
   const [target, setTarget] = useState({ x: 0, y: 0 });
@@ -44,8 +46,11 @@ export default function RobotFace({
   const qrScannedAudioRef = useRef<HTMLAudioElement | null>(null);
   const downloadPolaroidAudioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Initialize audio elements
+  // Initialize audio elements and track component lifecycle
   useEffect(() => {
+    console.log("[RobotFace] Component mounting");
+    isMountedRef.current = true;
+
     qrScannedAudioRef.current = new Audio("/audio/qr-scanned.mp3");
     downloadPolaroidAudioRef.current = new Audio(
       "/audio/download-polaroid.mp3"
@@ -54,19 +59,57 @@ export default function RobotFace({
     // Preload audio
     qrScannedAudioRef.current.preload = "auto";
     downloadPolaroidAudioRef.current.preload = "auto";
+
+    return () => {
+      console.log("[RobotFace] Component unmounting");
+      isMountedRef.current = false;
+    };
   }, []);
 
-  // Play QR scanned sound when photo booth is activated
+  // Listen for QR scanned sound events using global event manager
   useEffect(() => {
-    if (isPhotoBooth && qrScannedAudioRef.current) {
-      qrScannedAudioRef.current.currentTime = 0;
-      qrScannedAudioRef.current.play().catch(console.error);
-    }
-  }, [isPhotoBooth]);
+    const handleQrScannedSound = () => {
+      // Check if component is still mounted before playing sound
+      if (!isMountedRef.current) {
+        console.log(
+          "[RobotFace] Component unmounted, skipping QR scanned sound"
+        );
+        return;
+      }
 
-  // Listen for photo capture sound events
+      console.log(
+        "[RobotFace] QR scanned sound event received, playing qr-scanned.mp3"
+      );
+      if (qrScannedAudioRef.current) {
+        qrScannedAudioRef.current.currentTime = 0;
+        qrScannedAudioRef.current.play().catch(console.error);
+      } else {
+        console.error("[RobotFace] qrScannedAudioRef.current is null");
+      }
+    };
+
+    console.log(
+      "[RobotFace] Registering QR scanned sound handler with event manager"
+    );
+    eventManager.addHandler("playQrScannedSound", handleQrScannedSound);
+
+    return () => {
+      console.log(
+        "[RobotFace] Unregistering QR scanned sound handler from event manager"
+      );
+      eventManager.removeHandler("playQrScannedSound");
+    };
+  }, []); // Empty dependency array - only run once per component lifecycle
+
+  // Listen for photo capture sound events using global event manager
   useEffect(() => {
     const handlePhotoSound = () => {
+      // Check if component is still mounted before playing sound
+      if (!isMountedRef.current) {
+        console.log("[RobotFace] Component unmounted, skipping photo sound");
+        return;
+      }
+
       console.log(
         "[RobotFace] Photo sound event received, playing download-polaroid.mp3"
       );
@@ -88,13 +131,18 @@ export default function RobotFace({
       }
     };
 
-    console.log("[RobotFace] Setting up photo sound event listener");
-    window.addEventListener("playPhotoSound", handlePhotoSound);
+    console.log(
+      "[RobotFace] Registering photo sound handler with event manager"
+    );
+    eventManager.addHandler("playPhotoSound", handlePhotoSound);
+
     return () => {
-      console.log("[RobotFace] Removing photo sound event listener");
-      window.removeEventListener("playPhotoSound", handlePhotoSound);
+      console.log(
+        "[RobotFace] Unregistering photo sound handler from event manager"
+      );
+      eventManager.removeHandler("playPhotoSound");
     };
-  }, []);
+  }, []); // Empty dependency array - only run once per component lifecycle
 
   // Trigger disappear animation sequence
   useEffect(() => {
