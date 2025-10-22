@@ -135,6 +135,13 @@ export const useSessionStore = create<SessionState>((set, get) => ({
           set({ photoBoothActive: true });
           console.log("[Frontend] Photo booth activated");
         }
+        if (msg.type === "photo_captured_sound" && get().isTablet) {
+          // Trigger sound event without changing state
+          console.log(
+            "[SessionStore] Received photo_captured_sound, dispatching playPhotoSound event"
+          );
+          window.dispatchEvent(new CustomEvent("playPhotoSound"));
+        }
         if (msg.type === "polaroid_queue_empty" && get().isTablet) {
           set({ photoBoothActive: false, showMainApp: true });
           console.log("[Frontend] Polaroid queue empty, showing main app");

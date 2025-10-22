@@ -40,6 +40,62 @@ export default function RobotFace({
   const pupilX = useSpring(0, { stiffness: 120, damping: 12, mass: 0.4 });
   const pupilY = useSpring(0, { stiffness: 120, damping: 12, mass: 0.4 });
 
+  // Sound management
+  const qrScannedAudioRef = useRef<HTMLAudioElement | null>(null);
+  const downloadPolaroidAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Initialize audio elements
+  useEffect(() => {
+    qrScannedAudioRef.current = new Audio("/audio/qr-scanned.mp3");
+    downloadPolaroidAudioRef.current = new Audio(
+      "/audio/download-polaroid.mp3"
+    );
+
+    // Preload audio
+    qrScannedAudioRef.current.preload = "auto";
+    downloadPolaroidAudioRef.current.preload = "auto";
+  }, []);
+
+  // Play QR scanned sound when photo booth is activated
+  useEffect(() => {
+    if (isPhotoBooth && qrScannedAudioRef.current) {
+      qrScannedAudioRef.current.currentTime = 0;
+      qrScannedAudioRef.current.play().catch(console.error);
+    }
+  }, [isPhotoBooth]);
+
+  // Listen for photo capture sound events
+  useEffect(() => {
+    const handlePhotoSound = () => {
+      console.log(
+        "[RobotFace] Photo sound event received, playing download-polaroid.mp3"
+      );
+      if (downloadPolaroidAudioRef.current) {
+        downloadPolaroidAudioRef.current.currentTime = 0;
+        downloadPolaroidAudioRef.current
+          .play()
+          .then(() =>
+            console.log("[RobotFace] download-polaroid.mp3 played successfully")
+          )
+          .catch((error) =>
+            console.error(
+              "[RobotFace] Failed to play download-polaroid.mp3:",
+              error
+            )
+          );
+      } else {
+        console.error("[RobotFace] downloadPolaroidAudioRef.current is null");
+      }
+    };
+
+    console.log("[RobotFace] Setting up photo sound event listener");
+    window.addEventListener("playPhotoSound", handlePhotoSound);
+    return () => {
+      console.log("[RobotFace] Removing photo sound event listener");
+      window.removeEventListener("playPhotoSound", handlePhotoSound);
+    };
+  }, []);
+
   // Trigger disappear animation sequence
   useEffect(() => {
     if (!isDisappearing) return;
