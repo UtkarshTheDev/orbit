@@ -1,45 +1,82 @@
-import { WebSocketServer } from "ws";
+import { Hono } from "hono";
+import { upgradeWebSocket } from "hono/bun";
 import { MAX_PAYLOAD, WS_PORT } from "../config";
 import { cleanupConnection, handlePong, startHeartbeat } from "./connection";
 import { handleMessage } from "./messageHandler";
 import { removeFromQueue } from "./polaroidQueue";
+import { WebSocket } from "ws";
+
+// Store for active WebSocket connections
+const activeConnections = new Set<WebSocket>();
 
 export function createWebSocketServer() {
-  const wss = new WebSocketServer({
+  const app = new Hono();
+  
+  // WebSocket route
+  app.get("/ws", upgradeWebSocket((c) => {
+    return {
+      // Handle WebSocket connection open
+      onOpen(ws) {
+        console.log("[Backend] New WebSocket connection established");
+        activeConnections.add(ws as unknown as WebSocket);
+        
+        // Start heartbeat for connection health monitoring
+        const pingInterval = startHeartbeat(ws as unknown as WebSocket);
+        // Store pingInterval in WebSocket for cleanup
+        (ws as any).pingInterval = pingInterval;
+        
+        // Send connected message
+        (ws as unknown as WebSocket).send(JSON.stringify({ type: "connected", timestamp: Date.now() }));
+      },
+      
+      // Handle WebSocket messages
+      onMessage(event, ws) {
+        const message = event.data;
+        // Handle the message using the existing handler
+        if (message instanceof Buffer || typeof message === "string") {
+          handleMessage(ws as unknown as WebSocket, { clients: activeConnections } as any, 
+            message instanceof Buffer ? message : Buffer.from(message));
+        }
+      },
+      
+      // Handle WebSocket pong messages
+      onPong(ws: WebSocket) {
+        handlePong(ws as unknown as WebSocket);
+      },
+      
+      // Handle WebSocket connection close
+      onClose(event, ws) {
+        console.log("[Backend] WebSocket connection closed");
+        const pingInterval = (ws as any).pingInterval;
+        cleanupConnection(ws as unknown as WebSocket, pingInterval);
+        removeFromQueue(ws as unknown as WebSocket, { clients: activeConnections } as any);
+        activeConnections.delete(ws as unknown as WebSocket);
+      },
+      
+      // Handle WebSocket errors
+      onError(error, ws) {
+        console.error("[Backend] WebSocket error:", error);
+        const pingInterval = (ws as any).pingInterval;
+        cleanupConnection(ws as unknown as WebSocket, pingInterval);
+        activeConnections.delete(ws as unknown as WebSocket);
+      },
+      
+      // Configure WebSocket options
+      maxPayload: MAX_PAYLOAD,
+    };
+  }));
+
+  // Create server
+  const server = {
     port: WS_PORT,
-    maxPayload: MAX_PAYLOAD,
-    perMessageDeflate: {
-      threshold: 1024,
-      concurrencyLimit: 10,
-      memLevel: 7,
-    },
-  });
-
-  wss.on("connection", (ws) => {
-    console.log("[Backend] New WebSocket connection established");
-
-    const pingInterval = startHeartbeat(ws);
-
-    ws.on("pong", () => handlePong(ws));
-    ws.on("message", (message: Buffer) => handleMessage(ws, wss, message));
-
-    ws.on("close", () => {
-      console.log("[Backend] WebSocket connection closed");
-      cleanupConnection(ws, pingInterval);
-      removeFromQueue(ws, wss);
-    });
-
-    ws.on("error", (error) => {
-      console.error("[Backend] WebSocket error:", error);
-      cleanupConnection(ws, pingInterval);
-    });
-
-    ws.send(JSON.stringify({ type: "connected", timestamp: Date.now() }));
-  });
-
-  console.log(
-    `[Backend] WebSocket server listening on ws://localhost:${WS_PORT}`
-  );
-
-  return wss;
+    fetch: app.fetch,
+  };
+  
+  console.log(`[Backend] WebSocket server listening on ws://localhost:${WS_PORT}`);
+  
+  // Return a compatible interface for existing code
+  return {
+    clients: activeConnections,
+    // Add any other properties/methods needed for compatibility
+  } as any;
 }
