@@ -1,4 +1,9 @@
 import { create } from "zustand";
+import { playSound } from "./basicAudioPlayer";
+
+// Define sound file paths
+const QR_SCANNED_SOUND = "/audio/qr-scanned.mp3";
+const DOWNLOAD_POLAROID_SOUND = "/audio/download-polaroid.mp3";
 
 type SessionState = {
   isTablet: boolean;
@@ -170,30 +175,41 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 
             // Handle business logic
             if (msg.type === "photo_booth_requested" && get().isTablet) {
-              set({ photoBoothActive: true });
-              console.log("[Frontend] Photo booth activated");
-              // Dispatch QR scanned sound event after a short delay
-              setTimeout(() => {
-                console.log(
-                  "[SessionStore] Dispatching playQrScannedSound event"
-                );
-                window.dispatchEvent(new CustomEvent("playQrScannedSound"));
-              }, 50); // 50ms delay
+              // Only activate photo booth if not already active
+              if (!get().photoBoothActive) {
+                set({ photoBoothActive: true });
+                console.log("[Frontend] Photo booth activated");
+                
+                // Play QR scanned sound with a small delay to ensure component is ready
+                setTimeout(() => {
+                  console.log("[SessionStore] Playing QR scanned sound");
+                  // Only play if still in photo booth mode
+                  if (get().photoBoothActive) {
+                    playSound(QR_SCANNED_SOUND);
+                  }
+                }, 300);
+              } else {
+                console.log("[Frontend] Photo booth already active, ignoring duplicate request");
+              }
             }
             if (msg.type === "photo_captured_sound" && get().isTablet) {
-              console.log(
-                "[SessionStore] Received photo_captured_sound, dispatching playPhotoSound event"
-              );
-              window.dispatchEvent(new CustomEvent("playPhotoSound"));
+              console.log("[SessionStore] Received photo_captured_sound, playing photo sound");
+              // Play photo sound directly
+              playSound(DOWNLOAD_POLAROID_SOUND);
             }
             if (msg.type === "polaroid_queue_empty" && get().isTablet) {
               console.log(
                 "[Frontend] Polaroid queue empty, scheduling OrbitMain display"
               );
-              setTimeout(() => {
-                set({ photoBoothActive: false, showMainApp: true });
-                console.log("[Frontend] Showing OrbitMain after delay");
-              }, 4000);
+              // Only transition if currently in photo booth mode
+              if (get().photoBoothActive) {
+                setTimeout(() => {
+                  set({ photoBoothActive: false, showMainApp: true });
+                  console.log("[Frontend] Showing OrbitMain after delay");
+                }, 4000);
+              } else {
+                console.log("[Frontend] Not in photo booth mode, ignoring polaroid_queue_empty");
+              }
             }
           } catch {
             // ignore non-JSON

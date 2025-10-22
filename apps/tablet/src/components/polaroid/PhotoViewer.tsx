@@ -2,343 +2,376 @@
 
 import { Camera, Download, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useSessionStore } from "@/lib/sessionStore";
 import { Button } from "../ui/button";
 
 interface PhotoViewerProps {
-	capturedImage: string;
-	onRetake: () => void;
+  capturedImage: string;
+  onRetake: () => void;
 }
 
 export default function PhotoViewer({
-	capturedImage,
-	onRetake,
+  capturedImage,
+  onRetake,
 }: PhotoViewerProps) {
-	const canvasRef = useRef<HTMLCanvasElement>(null);
-	const [polaroidImage, setPolaroidImage] = useState<string | null>(null);
-	const [rotation] = useState(() => (Math.random() > 0.5 ? -2 : 3));
-	const [isLoaded, setIsLoaded] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [polaroidImage, setPolaroidImage] = useState<string | null>(null);
+  const [rotation] = useState(() => (Math.random() > 0.5 ? -2 : 3));
+  const [isLoaded, setIsLoaded] = useState(false);
 
-	useEffect(() => {
-		generatePolaroidImage();
-	}, [capturedImage]);
+  // Get WebSocket functions from session store
+  const connectWs = useSessionStore((s) => s.connectWs);
+  const sendWs = useSessionStore((s) => s.sendWs);
+  const wsReady = useSessionStore((s) => s.wsReady);
+  const isTablet = useSessionStore((s) => s.isTablet);
 
-	const generatePolaroidImage = () => {
-		const canvas = canvasRef.current;
-		if (!canvas) return;
+  useEffect(() => {
+    generatePolaroidImage();
+  }, [capturedImage]);
 
-		const ctx = canvas.getContext("2d");
-		if (!ctx) return;
+  // Handle retake photo with WebSocket reconnection
+  const handleRetakePhoto = () => {
+    // First, re-establish the WebSocket connection
+    connectWs();
 
-		const img = new Image();
-		img.crossOrigin = "anonymous";
-		img.onload = () => {
-			const polaroidWidth = 700;
-			const topBorder = 40;
-			const sideBorder = 40;
-			const bottomBorder = 200;
-			const imageSize = polaroidWidth - sideBorder * 2;
-			const polaroidHeight = topBorder + bottomBorder + imageSize;
-			const borderRadius = 8;
+    // When WebSocket is ready, send the "polaroid_entered" message
+    if (wsReady && !isTablet) {
+      console.log("[PhotoViewer] Notifying backend: polaroid_entered");
+      sendWs({ type: "polaroid_entered" });
+    }
 
-			canvas.width = polaroidWidth;
-			canvas.height = polaroidHeight;
+    onRetake();
+  };
 
-			ctx.fillStyle = "#FEFEF8";
-			ctx.fillRect(0, 0, polaroidWidth, polaroidHeight);
+  // Monitor WebSocket readiness to send message when connection is established
+  useEffect(() => {
+    if (wsReady && !isTablet) {
+      console.log(
+        "[PhotoViewer] WebSocket reconnected, sending polaroid_entered"
+      );
+      sendWs({ type: "polaroid_entered" });
+    }
+  }, [wsReady, isTablet, sendWs]);
 
-			for (let i = 0; i < 3000; i++) {
-				const x = Math.random() * polaroidWidth;
-				const y = Math.random() * polaroidHeight;
-				const opacity = Math.random() * 0.05;
-				ctx.fillStyle = `rgba(0, 0, 0, ${opacity})`;
-				ctx.fillRect(x, y, 1, 1);
-			}
+  const generatePolaroidImage = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-			for (let i = 0; i < 15; i++) {
-				const x = Math.random() * polaroidWidth;
-				const y = Math.random() * polaroidHeight;
-				const size = Math.random() * 20 + 10;
-				const gradient = ctx.createRadialGradient(x, y, 0, x, y, size);
-				gradient.addColorStop(0, "rgba(210, 180, 140, 0.03)");
-				gradient.addColorStop(1, "rgba(210, 180, 140, 0)");
-				ctx.fillStyle = gradient;
-				ctx.fillRect(x - size, y - size, size * 2, size * 2);
-			}
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-			ctx.save();
-			ctx.beginPath();
-			const frameRadius = 6;
-			ctx.moveTo(frameRadius, 0);
-			ctx.lineTo(polaroidWidth - frameRadius, 0);
-			ctx.quadraticCurveTo(polaroidWidth, 0, polaroidWidth, frameRadius);
-			ctx.lineTo(polaroidWidth, polaroidHeight - frameRadius);
-			ctx.quadraticCurveTo(
-				polaroidWidth,
-				polaroidHeight,
-				polaroidWidth - frameRadius,
-				polaroidHeight,
-			);
-			ctx.lineTo(frameRadius, polaroidHeight);
-			ctx.quadraticCurveTo(0, polaroidHeight, 0, polaroidHeight - frameRadius);
-			ctx.lineTo(0, frameRadius);
-			ctx.quadraticCurveTo(0, 0, frameRadius, 0);
-			ctx.closePath();
-			ctx.clip();
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      const polaroidWidth = 700;
+      const topBorder = 40;
+      const sideBorder = 40;
+      const bottomBorder = 200;
+      const imageSize = polaroidWidth - sideBorder * 2;
+      const polaroidHeight = topBorder + bottomBorder + imageSize;
+      const borderRadius = 8;
 
-			ctx.save();
-			ctx.beginPath();
-			ctx.moveTo(sideBorder + borderRadius, topBorder);
-			ctx.lineTo(sideBorder + imageSize - borderRadius, topBorder);
-			ctx.quadraticCurveTo(
-				sideBorder + imageSize,
-				topBorder,
-				sideBorder + imageSize,
-				topBorder + borderRadius,
-			);
-			ctx.lineTo(sideBorder + imageSize, topBorder + imageSize - borderRadius);
-			ctx.quadraticCurveTo(
-				sideBorder + imageSize,
-				topBorder + imageSize,
-				sideBorder + imageSize - borderRadius,
-				topBorder + imageSize,
-			);
-			ctx.lineTo(sideBorder + borderRadius, topBorder + imageSize);
-			ctx.quadraticCurveTo(
-				sideBorder,
-				topBorder + imageSize,
-				sideBorder,
-				topBorder + imageSize - borderRadius,
-			);
-			ctx.lineTo(sideBorder, topBorder + borderRadius);
-			ctx.quadraticCurveTo(
-				sideBorder,
-				topBorder,
-				sideBorder + borderRadius,
-				topBorder,
-			);
-			ctx.closePath();
-			ctx.clip();
+      canvas.width = polaroidWidth;
+      canvas.height = polaroidHeight;
 
-			const minDimension = Math.min(img.width, img.height);
-			const cropX = (img.width - minDimension) / 2;
-			const cropY = (img.height - minDimension) / 2;
+      ctx.fillStyle = "#FEFEF8";
+      ctx.fillRect(0, 0, polaroidWidth, polaroidHeight);
 
-			ctx.drawImage(
-				img,
-				cropX,
-				cropY,
-				minDimension,
-				minDimension, // Source: square crop from center
-				sideBorder,
-				topBorder,
-				imageSize,
-				imageSize, // Destination: square area
-			);
+      for (let i = 0; i < 3000; i++) {
+        const x = Math.random() * polaroidWidth;
+        const y = Math.random() * polaroidHeight;
+        const opacity = Math.random() * 0.05;
+        ctx.fillStyle = `rgba(0, 0, 0, ${opacity})`;
+        ctx.fillRect(x, y, 1, 1);
+      }
 
-			ctx.globalCompositeOperation = "multiply";
-			ctx.fillStyle = "rgba(255, 240, 200, 0.25)";
-			ctx.fillRect(sideBorder, topBorder, imageSize, imageSize);
-			ctx.globalCompositeOperation = "source-over";
+      for (let i = 0; i < 15; i++) {
+        const x = Math.random() * polaroidWidth;
+        const y = Math.random() * polaroidHeight;
+        const size = Math.random() * 20 + 10;
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, size);
+        gradient.addColorStop(0, "rgba(210, 180, 140, 0.03)");
+        gradient.addColorStop(1, "rgba(210, 180, 140, 0)");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x - size, y - size, size * 2, size * 2);
+      }
 
-			ctx.globalCompositeOperation = "saturation";
-			ctx.fillStyle = "rgba(128, 128, 128, 0.3)";
-			ctx.fillRect(sideBorder, topBorder, imageSize, imageSize);
-			ctx.globalCompositeOperation = "source-over";
+      ctx.save();
+      ctx.beginPath();
+      const frameRadius = 6;
+      ctx.moveTo(frameRadius, 0);
+      ctx.lineTo(polaroidWidth - frameRadius, 0);
+      ctx.quadraticCurveTo(polaroidWidth, 0, polaroidWidth, frameRadius);
+      ctx.lineTo(polaroidWidth, polaroidHeight - frameRadius);
+      ctx.quadraticCurveTo(
+        polaroidWidth,
+        polaroidHeight,
+        polaroidWidth - frameRadius,
+        polaroidHeight
+      );
+      ctx.lineTo(frameRadius, polaroidHeight);
+      ctx.quadraticCurveTo(0, polaroidHeight, 0, polaroidHeight - frameRadius);
+      ctx.lineTo(0, frameRadius);
+      ctx.quadraticCurveTo(0, 0, frameRadius, 0);
+      ctx.closePath();
+      ctx.clip();
 
-			ctx.fillStyle = "rgba(0, 0, 0, 0.08)";
-			ctx.fillRect(sideBorder, topBorder, imageSize, imageSize);
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(sideBorder + borderRadius, topBorder);
+      ctx.lineTo(sideBorder + imageSize - borderRadius, topBorder);
+      ctx.quadraticCurveTo(
+        sideBorder + imageSize,
+        topBorder,
+        sideBorder + imageSize,
+        topBorder + borderRadius
+      );
+      ctx.lineTo(sideBorder + imageSize, topBorder + imageSize - borderRadius);
+      ctx.quadraticCurveTo(
+        sideBorder + imageSize,
+        topBorder + imageSize,
+        sideBorder + imageSize - borderRadius,
+        topBorder + imageSize
+      );
+      ctx.lineTo(sideBorder + borderRadius, topBorder + imageSize);
+      ctx.quadraticCurveTo(
+        sideBorder,
+        topBorder + imageSize,
+        sideBorder,
+        topBorder + imageSize - borderRadius
+      );
+      ctx.lineTo(sideBorder, topBorder + borderRadius);
+      ctx.quadraticCurveTo(
+        sideBorder,
+        topBorder,
+        sideBorder + borderRadius,
+        topBorder
+      );
+      ctx.closePath();
+      ctx.clip();
 
-			for (let i = 0; i < 2500; i++) {
-				const grainX = sideBorder + Math.random() * imageSize;
-				const grainY = topBorder + Math.random() * imageSize;
-				const opacity = Math.random() * 0.12;
-				ctx.fillStyle = `rgba(0, 0, 0, ${opacity})`;
-				ctx.fillRect(grainX, grainY, 1, 1);
-			}
+      const minDimension = Math.min(img.width, img.height);
+      const cropX = (img.width - minDimension) / 2;
+      const cropY = (img.height - minDimension) / 2;
 
-			ctx.restore();
+      ctx.drawImage(
+        img,
+        cropX,
+        cropY,
+        minDimension,
+        minDimension, // Source: square crop from center
+        sideBorder,
+        topBorder,
+        imageSize,
+        imageSize // Destination: square area
+      );
 
-			const gradient = ctx.createRadialGradient(
-				polaroidWidth / 2,
-				topBorder + imageSize / 2,
-				imageSize / 4,
-				polaroidWidth / 2,
-				topBorder + imageSize / 2,
-				imageSize / 1.1,
-			);
-			gradient.addColorStop(0, "rgba(0, 0, 0, 0)");
-			gradient.addColorStop(1, "rgba(0, 0, 0, 0.25)");
-			ctx.fillStyle = gradient;
-			ctx.fillRect(sideBorder, topBorder, imageSize, imageSize);
+      ctx.globalCompositeOperation = "multiply";
+      ctx.fillStyle = "rgba(255, 240, 200, 0.25)";
+      ctx.fillRect(sideBorder, topBorder, imageSize, imageSize);
+      ctx.globalCompositeOperation = "source-over";
 
-			ctx.strokeStyle = "rgba(0, 0, 0, 0.1)";
-			ctx.lineWidth = 1;
-			ctx.beginPath();
-			ctx.moveTo(sideBorder + borderRadius, topBorder);
-			ctx.lineTo(sideBorder + imageSize - borderRadius, topBorder);
-			ctx.quadraticCurveTo(
-				sideBorder + imageSize,
-				topBorder,
-				sideBorder + imageSize,
-				topBorder + borderRadius,
-			);
-			ctx.lineTo(sideBorder + imageSize, topBorder + imageSize - borderRadius);
-			ctx.quadraticCurveTo(
-				sideBorder + imageSize,
-				topBorder + imageSize,
-				sideBorder + imageSize - borderRadius,
-				topBorder + imageSize,
-			);
-			ctx.lineTo(sideBorder + borderRadius, topBorder + imageSize);
-			ctx.quadraticCurveTo(
-				sideBorder,
-				topBorder + imageSize,
-				sideBorder,
-				topBorder + imageSize - borderRadius,
-			);
-			ctx.lineTo(sideBorder, topBorder + borderRadius);
-			ctx.quadraticCurveTo(
-				sideBorder,
-				topBorder,
-				sideBorder + borderRadius,
-				topBorder,
-			);
-			ctx.closePath();
-			ctx.stroke();
+      ctx.globalCompositeOperation = "saturation";
+      ctx.fillStyle = "rgba(128, 128, 128, 0.3)";
+      ctx.fillRect(sideBorder, topBorder, imageSize, imageSize);
+      ctx.globalCompositeOperation = "source-over";
 
-			ctx.restore();
+      ctx.fillStyle = "rgba(0, 0, 0, 0.08)";
+      ctx.fillRect(sideBorder, topBorder, imageSize, imageSize);
 
-			ctx.fillStyle = "#2c2c2c";
-			ctx.font = "600 32px 'Courier New', monospace";
-			ctx.textAlign = "center";
-			const captionY = topBorder + imageSize + 70;
-			ctx.fillText("Science Exhibition 2025", polaroidWidth / 2, captionY);
+      for (let i = 0; i < 2500; i++) {
+        const grainX = sideBorder + Math.random() * imageSize;
+        const grainY = topBorder + Math.random() * imageSize;
+        const opacity = Math.random() * 0.12;
+        ctx.fillStyle = `rgba(0, 0, 0, ${opacity})`;
+        ctx.fillRect(grainX, grainY, 1, 1);
+      }
 
-			ctx.font = "500 24px 'Courier New', monospace";
-			ctx.fillStyle = "#4a4a4a";
-			ctx.fillText("LPS Eldeco", polaroidWidth / 2, captionY + 35);
+      ctx.restore();
 
-			ctx.font = "400 36px 'Pacifico', cursive";
-			ctx.textAlign = "right";
-			ctx.fillStyle = "#1a1a1a";
-			const signatureX = polaroidWidth - sideBorder - 40;
-			const signatureY = captionY + 85;
-			ctx.fillText("– Orbit", signatureX, signatureY);
+      const gradient = ctx.createRadialGradient(
+        polaroidWidth / 2,
+        topBorder + imageSize / 2,
+        imageSize / 4,
+        polaroidWidth / 2,
+        topBorder + imageSize / 2,
+        imageSize / 1.1
+      );
+      gradient.addColorStop(0, "rgba(0, 0, 0, 0)");
+      gradient.addColorStop(1, "rgba(0, 0, 0, 0.25)");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(sideBorder, topBorder, imageSize, imageSize);
 
-			const polaroidDataUrl = canvas.toDataURL("image/png");
-			setPolaroidImage(polaroidDataUrl);
-			setTimeout(() => setIsLoaded(true), 50);
-		};
+      ctx.strokeStyle = "rgba(0, 0, 0, 0.1)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(sideBorder + borderRadius, topBorder);
+      ctx.lineTo(sideBorder + imageSize - borderRadius, topBorder);
+      ctx.quadraticCurveTo(
+        sideBorder + imageSize,
+        topBorder,
+        sideBorder + imageSize,
+        topBorder + borderRadius
+      );
+      ctx.lineTo(sideBorder + imageSize, topBorder + imageSize - borderRadius);
+      ctx.quadraticCurveTo(
+        sideBorder + imageSize,
+        topBorder + imageSize,
+        sideBorder + imageSize - borderRadius,
+        topBorder + imageSize
+      );
+      ctx.lineTo(sideBorder + borderRadius, topBorder + imageSize);
+      ctx.quadraticCurveTo(
+        sideBorder,
+        topBorder + imageSize,
+        sideBorder,
+        topBorder + imageSize - borderRadius
+      );
+      ctx.lineTo(sideBorder, topBorder + borderRadius);
+      ctx.quadraticCurveTo(
+        sideBorder,
+        topBorder,
+        sideBorder + borderRadius,
+        topBorder
+      );
+      ctx.closePath();
+      ctx.stroke();
 
-		img.src = capturedImage;
-	};
+      ctx.restore();
 
-	const downloadPolaroid = () => {
-		if (!polaroidImage) return;
+      ctx.fillStyle = "#2c2c2c";
+      ctx.font = "600 32px 'Courier New', monospace";
+      ctx.textAlign = "center";
+      const captionY = topBorder + imageSize + 70;
+      ctx.fillText("Science Exhibition 2025", polaroidWidth / 2, captionY);
 
-		const link = document.createElement("a");
-		link.href = polaroidImage;
-		link.download = `orbit-polaroid-${Date.now()}.png`;
-		link.click();
-	};
+      ctx.font = "500 24px 'Courier New', monospace";
+      ctx.fillStyle = "#4a4a4a";
+      ctx.fillText("LPS Eldeco", polaroidWidth / 2, captionY + 35);
 
-	return (
-		<div className="fixed inset-0 w-full h-full bg-gradient-to-br from-stone-100 via-amber-50/40 to-orange-50/30 overflow-hidden">
-			<div
-				className="absolute inset-0 opacity-30"
-				style={{
-					backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.05' /%3E%3C/svg%3E")`,
-				}}
-			/>
+      ctx.font = "400 36px 'Pacifico', cursive";
+      ctx.textAlign = "right";
+      ctx.fillStyle = "#1a1a1a";
+      const signatureX = polaroidWidth - sideBorder - 40;
+      const signatureY = captionY + 85;
+      ctx.fillText("– Orbit", signatureX, signatureY);
 
-			<canvas ref={canvasRef} className="hidden" />
+      const polaroidDataUrl = canvas.toDataURL("image/png");
+      setPolaroidImage(polaroidDataUrl);
+      setTimeout(() => setIsLoaded(true), 50);
+    };
 
-			<div className="relative w-full h-full flex flex-col items-center justify-center p-4 md:p-6">
-				<div
-					className={`relative transition-all duration-700 ease-out ${
-						isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-					}`}
-					style={{
-						willChange: "transform, opacity",
-					}}
-				>
-					<div
-						className="relative bg-white rounded-md"
-						style={{
-							padding: "0",
-							transform: `rotate(${rotation}deg)`,
-							maxWidth: "min(85vw, 420px)",
-							maxHeight: "min(75vh, 504px)",
-							boxShadow:
-								"0 20px 40px rgba(0, 0, 0, 0.15), 0 10px 20px rgba(0, 0, 0, 0.1), 0 5px 10px rgba(0, 0, 0, 0.08)",
-							filter: "brightness(0.98) contrast(1.02)",
-						}}
-					>
-						{polaroidImage && (
-							<div className="relative">
-								<img
-									src={polaroidImage || "/placeholder.svg"}
-									alt="Polaroid Img"
-									className="w-full h-auto rounded-md"
-									style={{
-										aspectRatio: "700/840",
-										objectFit: "cover",
-									}}
-								/>
-								<div
-									className="absolute inset-0 rounded-md pointer-events-none opacity-20"
-									style={{
-										backgroundImage: `url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='paper'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='5' /%3E%3CfeColorMatrix type='saturate' values='0' /%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23paper)' /%3E%3C/svg%3E")`,
-										mixBlendMode: "multiply",
-									}}
-								/>
-							</div>
-						)}
-					</div>
+    img.src = capturedImage;
+  };
 
-					<div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-orange-500/5 rounded-md blur-2xl -z-10" />
-				</div>
+  const downloadPolaroid = () => {
+    if (!polaroidImage) return;
 
-				<div
-					className={`mt-6 md:mt-8 flex flex-col items-center gap-4 w-full max-w-md px-4 transition-all duration-700 ease-out delay-200 ${
-						isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-					}`}
-					style={{
-						willChange: "transform, opacity",
-					}}
-				>
-					<Button
-						onClick={() => {
-							/* TODO: Implement AI editing */
-						}}
-						size="lg"
-						className="relative w-full h-14 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md active:scale-95 transition-all duration-150 font-semibold text-base font-sans"
-					>
-						<Sparkles className="mr-2 h-5 w-5" />
-						<span className="tracking-wide">
-							Edit with <span className="font-orbitron">Orbit AI</span>
-						</span>
-					</Button>
+    const link = document.createElement("a");
+    link.href = polaroidImage;
+    link.download = `orbit-polaroid-${Date.now()}.png`;
+    link.click();
+  };
 
-					<Button
-						onClick={downloadPolaroid}
-						size="lg"
-						className="relative w-full h-14 rounded-2xl bg-amber-100 border-2 border-amber-200 text-amber-900 hover:bg-amber-150 active:scale-95 transition-all duration-150 font-semibold text-base shadow-sm font-sans"
-					>
-						<Download className="mr-2 h-5 w-5 flex-shrink-0" />
-						<span className="text-amber-900">Download Image</span>
-					</Button>
+  return (
+    <div className="fixed inset-0 h-full w-full overflow-hidden bg-gradient-to-br from-stone-100 via-amber-50/40 to-orange-50/30">
+      <div
+        className="absolute inset-0 opacity-30"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.05' /%3E%3C/svg%3E")`,
+        }}
+      />
 
-					<button
-						onClick={onRetake}
-						className="mt-2 flex items-center gap-2 px-6 py-3 text-base font-medium text-amber-800 active:text-amber-900 transition-colors duration-150 underline underline-offset-4 decoration-2 font-sans"
-						type="button"
-					>
-						<Camera className="h-4 w-4" />
-						Retake Photo
-					</button>
-				</div>
-			</div>
-		</div>
-	);
+      <canvas className="hidden" ref={canvasRef} />
+
+      <div className="relative flex h-full w-full flex-col items-center justify-center p-4 md:p-6">
+        <div
+          className={`relative transition-all duration-700 ease-out ${
+            isLoaded ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+          }`}
+          style={{
+            willChange: "transform, opacity",
+          }}
+        >
+          <div
+            className="relative rounded-md bg-white"
+            style={{
+              padding: "0",
+              transform: `rotate(${rotation}deg)`,
+              maxWidth: "min(85vw, 420px)",
+              maxHeight: "min(75vh, 504px)",
+              boxShadow:
+                "0 20px 40px rgba(0, 0, 0, 0.15), 0 10px 20px rgba(0, 0, 0, 0.1), 0 5px 10px rgba(0, 0, 0, 0.08)",
+              filter: "brightness(0.98) contrast(1.02)",
+            }}
+          >
+            {polaroidImage && (
+              <div className="relative">
+                <img
+                  alt="Polaroid Img"
+                  className="h-auto w-full rounded-md"
+                  src={polaroidImage || "/placeholder.svg"}
+                  style={{
+                    aspectRatio: "700/840",
+                    objectFit: "cover",
+                  }}
+                />
+                <div
+                  className="pointer-events-none absolute inset-0 rounded-md opacity-20"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='paper'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='5' /%3E%3CfeColorMatrix type='saturate' values='0' /%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23paper)' /%3E%3C/svg%3E")`,
+                    mixBlendMode: "multiply",
+                  }}
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="-z-10 absolute inset-0 rounded-md bg-gradient-to-br from-amber-500/10 via-transparent to-orange-500/5 blur-2xl" />
+        </div>
+
+        <div
+          className={`mt-6 flex w-full max-w-md flex-col items-center gap-4 px-4 transition-all delay-200 duration-700 ease-out md:mt-8 ${
+            isLoaded ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+          }`}
+          style={{
+            willChange: "transform, opacity",
+          }}
+        >
+          <Button
+            className="relative h-14 w-full rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 font-semibold text-base text-white shadow-md transition-all duration-150 active:scale-95"
+            onClick={() => {
+              /* TODO: Implement AI editing */
+            }}
+            size="lg"
+            style={{ fontFamily: '"Quicksand", sans-serif' }}
+          >
+            <Sparkles className="mr-2 h-5 w-5" />
+            <span className="tracking-wide">
+              Edit with <span className="font-orbitron">Orbit AI</span>
+            </span>
+          </Button>
+
+          <Button
+            className="relative h-14 w-full rounded-2xl border-2 border-amber-200 bg-amber-100 font-semibold text-amber-900 text-base shadow-sm transition-all duration-150 hover:bg-amber-150 active:scale-95"
+            onClick={downloadPolaroid}
+            size="lg"
+            style={{ fontFamily: '"Quicksand", sans-serif' }}
+          >
+            <Download className="mr-2 h-5 w-5 flex-shrink-0" />
+            <span className="text-amber-900">Download Polaroid</span>
+          </Button>
+
+          <button
+            className="mt-2 flex items-center gap-2 px-6 py-3 font-medium font-sans text-amber-800 text-base underline decoration-2 underline-offset-4 transition-colors duration-150 active:text-amber-900"
+            onClick={handleRetakePhoto}
+            type="button"
+          >
+            <Camera className="h-4 w-4" />
+            Retake Photo
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }

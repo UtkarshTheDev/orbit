@@ -1,6 +1,8 @@
 import { motion, useAnimation, useSpring } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { eventManager } from "@/lib/eventManager";
+import { playSound } from "@/lib/basicAudioPlayer";
+// Sound imports removed in favor of basic audio player
 
 // Minimalist, cute robot face with animated eyes, glowing cheeks, and expressive mouth
 // - Eyes follow cursor smoothly with natural constraints + random blinks
@@ -42,23 +44,20 @@ export default function RobotFace({
   const pupilX = useSpring(0, { stiffness: 120, damping: 12, mass: 0.4 });
   const pupilY = useSpring(0, { stiffness: 120, damping: 12, mass: 0.4 });
 
-  // Sound management
-  const qrScannedAudioRef = useRef<HTMLAudioElement | null>(null);
-  const downloadPolaroidAudioRef = useRef<HTMLAudioElement | null>(null);
+  // Sound management using the new SoundManager
+  // Sound hooks removed in favor of basic audio player
+  
+  // Sound file paths
+  const QR_SCANNED_SOUND = "/audio/qr-scanned.mp3";
+  const DOWNLOAD_POLAROID_SOUND = "/audio/download-polaroid.mp3";
+  
+  // Import playSound from basicAudioPlayer
+  // import { playSound } from "@/lib/basicAudioPlayer";
 
-  // Initialize audio elements and track component lifecycle
+  // Initialize component lifecycle tracking
   useEffect(() => {
     console.log("[RobotFace] Component mounting");
     isMountedRef.current = true;
-
-    qrScannedAudioRef.current = new Audio("/audio/qr-scanned.mp3");
-    downloadPolaroidAudioRef.current = new Audio(
-      "/audio/download-polaroid.mp3"
-    );
-
-    // Preload audio
-    qrScannedAudioRef.current.preload = "auto";
-    downloadPolaroidAudioRef.current.preload = "auto";
 
     return () => {
       console.log("[RobotFace] Component unmounting");
@@ -80,12 +79,9 @@ export default function RobotFace({
       console.log(
         "[RobotFace] QR scanned sound event received, playing qr-scanned.mp3"
       );
-      if (qrScannedAudioRef.current) {
-        qrScannedAudioRef.current.currentTime = 0;
-        qrScannedAudioRef.current.play().catch(console.error);
-      } else {
-        console.error("[RobotFace] qrScannedAudioRef.current is null");
-      }
+      
+      // Play sound using basic audio player
+      playSound(QR_SCANNED_SOUND);
     };
 
     console.log(
@@ -99,7 +95,7 @@ export default function RobotFace({
       );
       eventManager.removeHandler("playQrScannedSound");
     };
-  }, []); // Empty dependency array - only run once per component lifecycle
+  }, [playSound, isPhotoBooth]); // Add dependencies to re-register when they change
 
   // Listen for photo capture sound events using global event manager
   useEffect(() => {
@@ -113,22 +109,9 @@ export default function RobotFace({
       console.log(
         "[RobotFace] Photo sound event received, playing download-polaroid.mp3"
       );
-      if (downloadPolaroidAudioRef.current) {
-        downloadPolaroidAudioRef.current.currentTime = 0;
-        downloadPolaroidAudioRef.current
-          .play()
-          .then(() =>
-            console.log("[RobotFace] download-polaroid.mp3 played successfully")
-          )
-          .catch((error) =>
-            console.error(
-              "[RobotFace] Failed to play download-polaroid.mp3:",
-              error
-            )
-          );
-      } else {
-        console.error("[RobotFace] downloadPolaroidAudioRef.current is null");
-      }
+      
+      // Play sound using basic audio player
+      playSound(DOWNLOAD_POLAROID_SOUND);
     };
 
     console.log(
@@ -142,7 +125,7 @@ export default function RobotFace({
       );
       eventManager.removeHandler("playPhotoSound");
     };
-  }, []); // Empty dependency array - only run once per component lifecycle
+  }, [playSound, isPhotoBooth]); // Add dependencies to re-register when they change
 
   // Trigger disappear animation sequence
   useEffect(() => {
