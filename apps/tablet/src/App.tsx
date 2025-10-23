@@ -47,7 +47,7 @@ export default function Home() {
       <main className="relative flex h-screen w-full items-center justify-center overflow-hidden text-foreground">
         <Background />
         <div className="relative z-20 h-full w-full">
-          <OrbitMain />
+          <OrbitMain skipWelcomeAudio />
         </div>
       </main>
     );
