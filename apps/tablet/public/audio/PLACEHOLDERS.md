@@ -4,7 +4,7 @@ This folder contains placeholder audio files for the Orbit greeting animation.
 
 ## Files Created
 
-### 1. welcome.wav.placeholder
+### 1. welcome.mp3.placeholder
 - **Status**: Placeholder file
 - **Purpose**: Main welcome voice greeting
 - **Replace with**: Actual welcome voice audio file
@@ -16,7 +16,7 @@ This folder contains placeholder audio files for the Orbit greeting animation.
    - Ensure audio file is in MP3 format
 
 2. **Audio Requirements**:
-   - **welcome.wav**: 2-3 seconds, clear voice, professional tone
+   - **welcome.mp3**: 2-3 seconds, clear voice, professional tone
    - Sample rate: 44.1 kHz
    - Bitrate: 128-192 kbps
 

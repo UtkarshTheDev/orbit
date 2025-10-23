@@ -4,7 +4,7 @@ This folder contains audio files for the Orbit greeting animation.
 
 ## Required Audio Files
 
-### 1. welcome.wav
+### 1. welcome.mp3
 - **Description**: Main welcome voice greeting
 - **Timing**: Plays when the greeting text starts appearing (lineIndex === 0, charIndex === 0)
 - **Duration**: 2-3 seconds

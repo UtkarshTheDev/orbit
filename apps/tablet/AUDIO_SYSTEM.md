@@ -18,7 +18,7 @@ This audio system provides synchronized sound effects for the Orbit greeting ani
    - Maintains existing animation functionality
 
 3. **Audio Files Structure** - `/public/audio/`
-   - `welcome.wav` - Main welcome voice greeting
+   - `welcome.mp3` - Main welcome voice greeting
    - `typing.mp3` - Character typing sound effects
    - Documentation and placeholder files
 
@@ -33,7 +33,7 @@ This audio system provides synchronized sound effects for the Orbit greeting ani
    - `complete`: Final display
 
 ### Audio Events
-- **Stage Change to "greeting"**: Plays `welcome.wav`
+- **Stage Change to "greeting"**: Plays `welcome.mp3`
 - **Each Character Typed**: Plays `typing.mp3` 
 - **Stage Change to "complete"**: Ready for completion sound (optional)
 
@@ -43,7 +43,7 @@ This audio system provides synchronized sound effects for the Orbit greeting ani
 ```typescript
 // Audio initialization with preloading
 welcomeSoundRef.current = new Howl({
-  src: ["/audio/welcome.wav"],
+  src: ["/audio/welcome.mp3"],
   volume: 0.8,
   preload: true,
 });
@@ -67,7 +67,7 @@ useEffect(() => {
 - **File Size**: Keep under 2MB each
 
 ### Audio Content Guidelines
-1. **welcome.wav** (2-3 seconds):
+1. **welcome.mp3** (2-3 seconds):
    - Voice: "Welcome to LPS Eldeco"
    - Tone: Friendly, professional, welcoming
    - Style: Clear enunciation, moderate pace
@@ -131,11 +131,11 @@ useEffect(() => {
 │   └── App.tsx                     # Main app (unchanged)
 └── public/
     └── audio/
-        ├── welcome.wav              # Welcome voice
+        ├── welcome.mp3              # Welcome voice
         ├── typing.mp3               # Typing sounds
         ├── README.md                # Audio documentation
         ├── PLACEHOLDERS.md          # Implementation guide
-        ├── welcome.wav.placeholder  # Replace with actual file
+        ├── welcome.mp3.placeholder  # Replace with actual file
         └── typing.mp3.placeholder   # Replace with actual file
 ```
 
