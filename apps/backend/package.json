@@ -3,7 +3,8 @@
   "scripts": {
     "dev": "bun run --hot src/index.ts",
     "build": "bun build src/index.ts --outdir dist --target bun",
-    "start": "bun run dist/index.js",
+    "start": "bun run src/index.ts",
+    "start:prod": "NODE_ENV=production bun run src/index.ts",
     "type-check": "tsc --noEmit",
     "lint": "eslint src --ext .ts,.tsx",
     "clean": "rm -rf dist"

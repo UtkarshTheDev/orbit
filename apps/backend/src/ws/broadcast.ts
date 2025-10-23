@@ -1,24 +1,10 @@
-import type { WebSocket, WebSocketServer } from "ws";
+import type { WSConnection } from "./connection";
 import { clientRoles } from "./connection";
+import type { Server } from "bun";
 
-export function broadcastToTablets(wss: WebSocketServer, message: object) {
-  let broadcastCount = 0;
+export function broadcastToTablets(server: Server, message: object) {
   const messageStr = JSON.stringify(message);
-
-  for (const client of Array.from(wss.clients)) {
-    if (
-      client.readyState === WebSocket.OPEN &&
-      clientRoles.get(client) === "tablet"
-    ) {
-      try {
-        client.send(messageStr);
-        broadcastCount++;
-      } catch (error) {
-        console.error("[Backend] Failed to send to tablet:", error);
-        client.terminate();
-      }
-    }
-  }
+  const broadcastCount = server.publish("tablets", messageStr);
   console.log(
     `[Backend] Broadcast to ${broadcastCount} tablet(s):`,
     (message as { type: string }).type

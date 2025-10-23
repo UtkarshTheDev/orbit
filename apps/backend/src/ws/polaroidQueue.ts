@@ -1,47 +1,56 @@
-import type { WebSocket, WebSocketServer } from "ws";
+import type { WSConnection } from "./connection";
 import { POLAROID_QUEUE_TIMEOUT } from "../config";
 import { broadcastToTablets } from "./broadcast";
+import type { Server } from "bun";
 
-const polaroidQueue = new Map<WebSocket, NodeJS.Timeout>();
+// Use the client's unique ID (string) as the key
+export const polaroidQueue = new Map<string, NodeJS.Timeout>();
 
-function removeFromQueue(ws: WebSocket, wss: WebSocketServer) {
-  console.log("[Backend] removeFromQueue called for WebSocket connection");
-  if (polaroidQueue.has(ws)) {
-    const timeoutId = polaroidQueue.get(ws);
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-      console.log("[Backend] Cleared timeout for WebSocket connection");
-    }
-    polaroidQueue.delete(ws);
-    console.log(
-      `[Backend] Phone removed from polaroid queue. Queue size: ${polaroidQueue.size}`
-    );
+export function removeFromQueue(clientId: string, server: Server) {
+	console.log(`[Backend] removeFromQueue called for client ID: ${clientId}`);
+	if (polaroidQueue.has(clientId)) {
+		const timeoutId = polaroidQueue.get(clientId);
+		if (timeoutId) {
+			clearTimeout(timeoutId);
+			console.log(`[Backend] Cleared timeout for client ID: ${clientId}`);
+		}
+		polaroidQueue.delete(clientId);
+		console.log(
+			`[Backend] Client removed from polaroid queue. Queue size: ${polaroidQueue.size}`,
+		);
 
-    if (polaroidQueue.size === 0) {
-      console.log(
-        "[Backend] Queue is now empty, broadcasting polaroid_queue_empty"
-      );
-      broadcastToTablets(wss, { type: "polaroid_queue_empty" });
-    }
-  } else {
-    console.log("[Backend] WebSocket not found in polaroid queue");
-  }
+		if (polaroidQueue.size === 0) {
+			console.log(
+				"[Backend] Queue is now empty, broadcasting polaroid_queue_empty",
+			);
+			broadcastToTablets(server, { type: "polaroid_queue_empty" });
+		}
+	} else {
+		console.log(
+			`[Backend] Client ID ${clientId} not found in polaroid queue`,
+		);
+	}
 }
 
-function addToQueue(ws: WebSocket, wss: WebSocketServer) {
-  const timeoutId = setTimeout(() => {
-    console.log("[Backend] Phone timeout after 3 minutes, removing from queue");
-    removeFromQueue(ws, wss);
-  }, POLAROID_QUEUE_TIMEOUT);
+export function addToQueue(ws: WSConnection, server: Server) {
+	// If the client is already in the queue, clear the old timeout
+	if (polaroidQueue.has(ws.id)) {
+		clearTimeout(polaroidQueue.get(ws.id));
+	}
 
-  polaroidQueue.set(ws, timeoutId);
-  console.log(
-    `[Backend] Phone added to polaroid queue. Queue size: ${polaroidQueue.size}`
-  );
+	const timeoutId = setTimeout(() => {
+		console.log(
+			`[Backend] Phone timeout for ${ws.id} after 3 minutes, removing from queue`,
+		);
+		removeFromQueue(ws.id, server);
+	}, POLAROID_QUEUE_TIMEOUT);
 
-  if (polaroidQueue.size === 1) {
-    broadcastToTablets(wss, { type: "photo_booth_requested" });
-  }
+	polaroidQueue.set(ws.id, timeoutId);
+	console.log(
+		`[Backend] Client ${ws.id} added to polaroid queue. Queue size: ${polaroidQueue.size}`,
+	);
+
+	if (polaroidQueue.size === 1) {
+		broadcastToTablets(server, { type: "photo_booth_requested" });
+	}
 }
-
-export { addToQueue, removeFromQueue, polaroidQueue };

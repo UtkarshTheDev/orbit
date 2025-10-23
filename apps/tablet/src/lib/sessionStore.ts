@@ -22,8 +22,26 @@ type SessionState = {
 };
 
 // Connection configuration
+const getWebSocketUrl = () => {
+  // Use environment variable if set
+  if (import.meta.env.VITE_WS_URL) {
+    return import.meta.env.VITE_WS_URL;
+  }
+  
+  // Auto-detect protocol based on current page protocol
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  const isDev = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+  
+  if (isDev) {
+    return "ws://localhost:3001/ws";
+  }
+  
+  // Production: use wss with backend domain
+  return "wss://orbit-194b.onrender.com/ws";
+};
+
 const WS_CONFIG = {
-  url: import.meta.env.VITE_WS_URL || "ws://localhost:3001",
+  url: getWebSocketUrl(),
   maxReconnectAttempts: 10,
   reconnectDelay: 1000, // Start with 1 second
   maxReconnectDelay: 30_000, // Max 30 seconds
@@ -284,10 +302,12 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   sendWs: (msg) => {
     const state = get();
     if (state.ws && state.ws.readyState === WebSocket.OPEN) {
-      state.ws.send(JSON.stringify(msg));
+      const messageStr = JSON.stringify(msg);
+      console.log("[Frontend] Sending WebSocket message:", messageStr);
+      state.ws.send(messageStr);
     } else {
       // Queue message for when connection is restored
-      console.log("[Frontend] WebSocket not ready, queuing message");
+      console.log("[Frontend] WebSocket not ready, queuing message:", msg);
       set({ messageQueue: [...state.messageQueue, msg] });
 
       // Try to reconnect if not already reconnecting

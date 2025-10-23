@@ -2,7 +2,6 @@
 
 import { Camera, Download, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useSessionStore } from "@/lib/sessionStore";
 import { Button } from "../ui/button";
 
 interface PhotoViewerProps {
@@ -19,39 +18,14 @@ export default function PhotoViewer({
   const [rotation] = useState(() => (Math.random() > 0.5 ? -2 : 3));
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Get WebSocket functions from session store
-  const connectWs = useSessionStore((s) => s.connectWs);
-  const sendWs = useSessionStore((s) => s.sendWs);
-  const wsReady = useSessionStore((s) => s.wsReady);
-  const isTablet = useSessionStore((s) => s.isTablet);
-
   useEffect(() => {
     generatePolaroidImage();
   }, [capturedImage]);
 
-  // Handle retake photo with WebSocket reconnection
+  // Handle retake photo
   const handleRetakePhoto = () => {
-    // First, re-establish the WebSocket connection
-    connectWs();
-
-    // When WebSocket is ready, send the "polaroid_entered" message
-    if (wsReady && !isTablet) {
-      console.log("[PhotoViewer] Notifying backend: polaroid_entered");
-      sendWs({ type: "polaroid_entered" });
-    }
-
     onRetake();
   };
-
-  // Monitor WebSocket readiness to send message when connection is established
-  useEffect(() => {
-    if (wsReady && !isTablet) {
-      console.log(
-        "[PhotoViewer] WebSocket reconnected, sending polaroid_entered"
-      );
-      sendWs({ type: "polaroid_entered" });
-    }
-  }, [wsReady, isTablet, sendWs]);
 
   const generatePolaroidImage = () => {
     const canvas = canvasRef.current;
