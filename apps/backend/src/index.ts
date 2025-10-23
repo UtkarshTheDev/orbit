@@ -13,39 +13,6 @@ import { handleMessage } from "./ws/messageHandler";
 import { polaroidQueue, removeFromQueue } from "./ws/polaroidQueue";
 import type { WSConnection } from "./ws/connection";
 
-// Graceful shutdown for hot reloading
-declare global {
-	// biome-ignore lint/style/noVar: Allow var for global declaration
-	var serverInstance: ReturnType<typeof Bun.serve> | null;
-}
-
-// --- Aggressive Hot Reload Cleanup ---
-if (globalThis.serverInstance) {
-	console.log("[Backend] Hot reload detected. Cleaning up old server state...");
-
-	// Close all known connections
-	if (connectionsById && connectionsById.size > 0) {
-		console.log(
-			`[Backend] Closing ${connectionsById.size} old connections...`,
-		);
-		for (const ws of connectionsById.values()) {
-			ws.close(1012, "Server restarting");
-		}
-	}
-
-	// Clear all state maps
-	connectionsById.clear();
-	clientRoles.clear();
-	polaroidQueue.clear();
-	console.log("[Backend] Cleared all old connection state.");
-
-	// Stop the server
-	globalThis.serverInstance.stop(true);
-	globalThis.serverInstance = null;
-	console.log("[Backend] Old server stopped.");
-}
-// --- End Cleanup ---
-
 console.log(`[Backend] Starting Orbit Backend Server`);
 console.log(`[Backend] Environment: ${NODE_ENV}`);
 console.log(`[Backend] Port: ${PORT}`);
@@ -53,17 +20,15 @@ console.log(`[Backend] Port: ${PORT}`);
 const { upgradeWebSocket, websocket } = createBunWebSocket();
 
 const wsHandler = upgradeWebSocket((c) => {
+	// The server instance is passed in the context by Bun
 	const server = c.env.server as ReturnType<typeof Bun.serve>;
 	return {
 		onOpen: (_event: Event, ws: WSConnection) => {
-			// Assign a unique ID to the connection
 			ws.id = crypto.randomUUID();
 			connectionsById.set(ws.id, ws);
-
 			console.log(`[Backend] New connection ${ws.id} established`, {
 				totalConnections: connectionsById.size,
 			});
-
 			(ws as any).pingInterval = startHeartbeat(ws);
 			ws.send(JSON.stringify({ type: "connected", clientId: ws.id }));
 		},
@@ -82,25 +47,16 @@ const wsHandler = upgradeWebSocket((c) => {
 			console.log(`[Backend] Connection ${ws.id} closed`, {
 				remainingConnections: connectionsById.size - 1,
 			});
-			// The main cleanup logic
 			if (clientRoles.get(ws.id) === "tablet") {
 				(ws as any).raw.unsubscribe("tablets");
-				console.log(
-					`[Backend] Tablet ${ws.id} unsubscribed from "tablets" channel`,
-				);
 			}
-			// Ensure removal from queue on close
 			removeFromQueue(ws.id, server);
 			cleanupConnection(ws, (ws as any).pingInterval);
 		},
 		onError: (error: Error, ws: WSConnection) => {
 			console.error(`[Backend] WebSocket error on client ${ws.id}:`, error);
-			// Also ensure cleanup on error
 			if (clientRoles.get(ws.id) === "tablet") {
 				(ws as any).raw.unsubscribe("tablets");
-				console.log(
-					`[Backend] Tablet ${ws.id} unsubscribed due to error`,
-				);
 			}
 			removeFromQueue(ws.id, server);
 			cleanupConnection(ws, (ws as any).pingInterval);
@@ -108,17 +64,18 @@ const wsHandler = upgradeWebSocket((c) => {
 	};
 });
 
+// Register the WebSocket route on the Hono app
 createWebSocketServer(httpServer, wsHandler);
 
-const server = Bun.serve({
+// Export the server configuration for Bun to run
+export default {
 	port: PORT,
-	fetch: (req, server) => httpServer.fetch(req, { server }),
+	// Pass the server instance to Hono's fetch handler
+	fetch: (req: Request, server: Server) =>
+		httpServer.fetch(req, { server }),
 	websocket,
-});
+};
 
-globalThis.serverInstance = server;
-
-console.log(`[Backend] Server running at http://localhost:${PORT}`);
-console.log(`[Backend] WebSocket endpoint: ws://localhost:${PORT}/ws`);
-
-export default httpServer;
+console.log(
+	`[Backend] Server configured for port ${PORT}. Bun will start the server.`,
+);
