@@ -74,6 +74,20 @@ export default function GreetingAnimation({
 		return () => clearTimeout(completeTimer);
 	}, [stage, lineIndex, charIndex, greetingLines.length]);
 
+	useEffect(() => {
+		if (stage === "complete") {
+			const audio = new Audio("/audio/iam.mp3");
+			audio.play().catch((error) => {
+				console.error("Failed to play audio:", error);
+			});
+
+			return () => {
+				audio.pause();
+				audio.currentTime = 0;
+			};
+		}
+	}, [stage]);
+
 	return (
 		<motion.div
 			className="fixed inset-0 z-50 flex items-center justify-center"
