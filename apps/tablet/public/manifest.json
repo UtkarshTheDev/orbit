@@ -2,7 +2,7 @@
   "short_name": "Orbit",
   "name": "Orbit Robo",
   "description": "Orbit Robo for School Science Exhibition",
-  "start_url": "/?utm_source=pwa",
+  "start_url": "/?tablet=1",
   "display": "fullscreen",
   "orientation": "landscape",
   "background_color": "#ffffff",
