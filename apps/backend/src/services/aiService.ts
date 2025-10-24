@@ -44,7 +44,9 @@ export async function generateAIResponseStream(
     const response = await client.models.generateContentStream({
       model: "gemini-2.5-flash-lite",
       contents: userQuery,
-      systemInstruction: systemPrompt,
+      config: {
+        systemInstruction: systemPrompt,
+      },
     });
 
     let fullText = "";
@@ -82,7 +84,9 @@ export async function generateAIResponse(userQuery: string): Promise<string> {
     const response = await client.models.generateContent({
       model: "gemini-2.5-flash-lite",
       contents: userQuery,
-      systemInstruction: systemPrompt,
+      config: {
+        systemInstruction: systemPrompt,
+      },
     });
 
     const text = response.text;

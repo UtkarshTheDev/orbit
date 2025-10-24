@@ -2,8 +2,14 @@
  * File utility functions for managing temporary audio files
  */
 
-import { existsSync, mkdirSync, unlinkSync, readdirSync, statSync } from "fs";
-import { join } from "path";
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  statSync,
+  unlinkSync,
+} from "node:fs";
+import { join } from "node:path";
 import { TEMP_UPLOAD_DIR } from "../config";
 
 /**
@@ -16,7 +22,7 @@ export function ensureTempDir(): void {
       console.log(`[FileUtils] Created temp directory: ${TEMP_UPLOAD_DIR}`);
     }
   } catch (error) {
-    console.error(`[FileUtils] Failed to create temp directory:`, error);
+    console.error("[FileUtils] Failed to create temp directory:", error);
     throw new Error(`Failed to create temp directory: ${error}`);
   }
 }
@@ -48,10 +54,12 @@ export async function writeTempFile(
     ensureTempDir();
     const filepath = getFilePath(filename);
     await Bun.write(filepath, buffer);
-    console.log(`[FileUtils] Wrote temp file: ${filepath} (${buffer.length} bytes)`);
+    console.log(
+      `[FileUtils] Wrote temp file: ${filepath} (${buffer.length} bytes)`
+    );
     return filepath;
   } catch (error) {
-    console.error(`[FileUtils] Failed to write temp file:`, error);
+    console.error("[FileUtils] Failed to write temp file:", error);
     throw new Error(`Failed to write temp file: ${error}`);
   }
 }
@@ -66,7 +74,7 @@ export function deleteTempFile(filepath: string): void {
       console.log(`[FileUtils] Deleted temp file: ${filepath}`);
     }
   } catch (error) {
-    console.error(`[FileUtils] Failed to delete temp file:`, error);
+    console.error("[FileUtils] Failed to delete temp file:", error);
   }
 }
 
@@ -75,7 +83,7 @@ export function deleteTempFile(filepath: string): void {
  */
 export function scheduleTempFileCleanup(
   filepath: string,
-  delayMs: number = 3600000 // 1 hour default
+  delayMs = 3_600_000 // 1 hour default
 ): void {
   setTimeout(() => {
     deleteTempFile(filepath);
@@ -85,7 +93,7 @@ export function scheduleTempFileCleanup(
 /**
  * Clean up old temp files (older than TTL)
  */
-export function cleanupOldTempFiles(ttlMs: number = 3600000): void {
+export function cleanupOldTempFiles(ttlMs = 3_600_000): void {
   try {
     if (!existsSync(TEMP_UPLOAD_DIR)) {
       return;
@@ -110,7 +118,7 @@ export function cleanupOldTempFiles(ttlMs: number = 3600000): void {
       console.log(`[FileUtils] Cleaned up ${deletedCount} old temp files`);
     }
   } catch (error) {
-    console.error(`[FileUtils] Failed to cleanup old temp files:`, error);
+    console.error("[FileUtils] Failed to cleanup old temp files:", error);
   }
 }
 

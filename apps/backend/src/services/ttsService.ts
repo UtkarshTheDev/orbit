@@ -3,7 +3,11 @@
  */
 
 import { ElevenLabsClient } from "elevenlabs";
-import { ELEVENLABS_API_KEY, ELEVENLABS_VOICE_ID, TTS_TIMEOUT } from "../config";
+import {
+  ELEVENLABS_API_KEY,
+  ELEVENLABS_VOICE_ID,
+  TTS_TIMEOUT,
+} from "../config";
 import { encodeBase64 } from "../utils/base64Utils";
 
 // Initialize ElevenLabs client
@@ -32,7 +36,9 @@ export async function textToSpeech(
   text: string
 ): Promise<{ audio: string; duration: number }> {
   try {
-    console.log(`[TTS] Converting text to speech: ${text.substring(0, 100)}...`);
+    console.log(
+      `[TTS] Converting text to speech: ${text.substring(0, 100)}...`
+    );
     const client = getElevenLabsClient();
 
     // Generate speech audio using convert method (returns async iterable)
@@ -50,22 +56,24 @@ export async function textToSpeech(
 
     // Combine chunks into single buffer
     const audioBuffer = Buffer.concat(chunks);
-    
+
     // Encode to base64
     const base64Audio = encodeBase64(audioBuffer);
 
     // Estimate duration (rough calculation based on MP3 bitrate)
     // 128kbps = 16KB/s, so duration ≈ size / 16000
-    const durationSeconds = audioBuffer.length / 16000;
+    const durationSeconds = audioBuffer.length / 16_000;
 
-    console.log(`[TTS] Speech generated: ${audioBuffer.length} bytes, ~${durationSeconds.toFixed(2)}s`);
+    console.log(
+      `[TTS] Speech generated: ${audioBuffer.length} bytes, ~${durationSeconds.toFixed(2)}s`
+    );
 
     return {
       audio: base64Audio,
-      duration: parseFloat(durationSeconds.toFixed(2)),
+      duration: Number.parseFloat(durationSeconds.toFixed(2)),
     };
   } catch (error) {
-    console.error(`[TTS] Text-to-speech error:`, error);
+    console.error("[TTS] Text-to-speech error:", error);
     throw new Error(`Failed to convert text to speech: ${error}`);
   }
 }
@@ -83,10 +91,7 @@ export async function textToSpeechWithTimeout(
   return Promise.race([
     textToSpeech(text),
     new Promise<{ audio: string; duration: number }>((_, reject) =>
-      setTimeout(
-        () => reject(new Error("Text-to-speech timeout")),
-        timeoutMs
-      )
+      setTimeout(() => reject(new Error("Text-to-speech timeout")), timeoutMs)
     ),
   ]);
 }

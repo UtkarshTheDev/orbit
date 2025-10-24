@@ -2,43 +2,43 @@
  * Voice Query Handler - Orchestrates STT → AI → TTS pipeline
  */
 
-import type { WSConnection } from "../connection";
 import { MAX_AUDIO_SIZE_BYTES } from "../../config";
-import { decodeBase64, isValidBase64, getBufferSizeMB } from "../../utils/base64Utils";
-import {
-  writeTempFile,
-  deleteTempFile,
-  generateFilename,
-  isValidAudioFormat,
-} from "../../utils/fileUtils";
-import {
-  transcribeAudioWithTimeout,
-  isSTTConfigured,
-} from "../../services/sttService";
 import {
   generateAIResponseWithTimeout,
   isAIConfigured,
 } from "../../services/aiService";
 import {
-  textToSpeechWithTimeout,
+  isSTTConfigured,
+  transcribeAudioWithTimeout,
+} from "../../services/sttService";
+import {
   isTTSConfigured,
+  textToSpeechWithTimeout,
 } from "../../services/ttsService";
+import {
+  decodeBase64,
+  getBufferSizeMB,
+  isValidBase64,
+} from "../../utils/base64Utils";
+import {
+  deleteTempFile,
+  generateFilename,
+  isValidAudioFormat,
+  writeTempFile,
+} from "../../utils/fileUtils";
+import type { WSConnection } from "../connection";
 
-interface VoiceQueryMessage {
+type VoiceQueryMessage = {
   type: "voice_query";
   id: string;
   format: string;
   data: string;
-}
+};
 
 /**
  * Send status message to client
  */
-function sendStatus(
-  ws: WSConnection,
-  stage: string,
-  message: string
-): void {
+function sendStatus(ws: WSConnection, stage: string, message: string): void {
   ws.send(
     JSON.stringify({
       type: "status",
@@ -70,14 +70,18 @@ function sendError(
 /**
  * Validate voice query message
  */
-function validateVoiceQuery(msg: any): msg is VoiceQueryMessage {
-  if (!msg.id || typeof msg.id !== "string") {
+function validateVoiceQuery(msg: unknown): msg is VoiceQueryMessage {
+  if (typeof msg !== "object" || msg === null) {
     return false;
   }
-  if (!msg.format || typeof msg.format !== "string") {
+  const message = msg as Record<string, unknown>;
+  if (!message.id || typeof message.id !== "string") {
     return false;
   }
-  if (!msg.data || typeof msg.data !== "string") {
+  if (!message.format || typeof message.format !== "string") {
+    return false;
+  }
+  if (!message.data || typeof message.data !== "string") {
     return false;
   }
   return true;
@@ -88,7 +92,7 @@ function validateVoiceQuery(msg: any): msg is VoiceQueryMessage {
  */
 export async function handleVoiceQuery(
   ws: WSConnection,
-  msg: any
+  msg: unknown
 ): Promise<void> {
   let tempFilePath: string | null = null;
 
@@ -136,17 +140,17 @@ export async function handleVoiceQuery(
     const audioBuffer = decodeBase64(data);
 
     // Check file size
-    const sizeMB = getBufferSizeMB(audioBuffer);
+    const sizeMb = getBufferSizeMB(audioBuffer);
     if (audioBuffer.length > MAX_AUDIO_SIZE_BYTES) {
       sendError(
         ws,
         "validation",
-        `Audio file too large: ${sizeMB.toFixed(2)}MB (max: ${MAX_AUDIO_SIZE_BYTES / (1024 * 1024)}MB)`
+        `Audio file too large: ${sizeMb.toFixed(2)}MB (max: ${MAX_AUDIO_SIZE_BYTES / (1024 * 1024)}MB)`
       );
       return;
     }
 
-    console.log(`[VoiceQuery] Audio decoded: ${sizeMB.toFixed(2)}MB`);
+    console.log(`[VoiceQuery] Audio decoded: ${sizeMb.toFixed(2)}MB`);
 
     // Stage 2: Write temp file
     const filename = generateFilename(id, format);
@@ -175,7 +179,7 @@ export async function handleVoiceQuery(
     sendStatus(ws, "thinking", "Thinking about your query...");
 
     // Generate AI response with streaming
-    let fullAIResponse = "";
+    let fullAiResponse = "";
     const aiResponse = await generateAIResponseWithTimeout(
       transcribedText,
       (chunk) => {
@@ -190,23 +194,25 @@ export async function handleVoiceQuery(
       }
     );
 
-    fullAIResponse = aiResponse;
+    fullAiResponse = aiResponse;
 
     // Stage 7: AI done
     ws.send(
       JSON.stringify({
         type: "ai_done",
-        text: fullAIResponse,
+        text: fullAiResponse,
       })
     );
 
-    console.log(`[VoiceQuery] AI response: ${fullAIResponse.substring(0, 100)}...`);
+    console.log(
+      `[VoiceQuery] AI response: ${fullAiResponse.substring(0, 100)}...`
+    );
 
     // Stage 8: Converting to speech
     sendStatus(ws, "tts", "Converting to speech...");
 
     // Convert to speech
-    const { audio, duration } = await textToSpeechWithTimeout(fullAIResponse);
+    const { audio, duration } = await textToSpeechWithTimeout(fullAiResponse);
 
     // Stage 9: TTS ready
     ws.send(
@@ -225,12 +231,12 @@ export async function handleVoiceQuery(
         if (tempFilePath) {
           deleteTempFile(tempFilePath);
         }
-      }, 60000); // Delete after 1 minute
+      }, 60_000); // Delete after 1 minute
     }
 
     console.log(`[VoiceQuery] Query ${id} completed successfully`);
   } catch (error) {
-    console.error(`[VoiceQuery] Error processing voice query:`, error);
+    console.error("[VoiceQuery] Error processing voice query:", error);
 
     // Determine error stage
     let errorStage = "unknown";
@@ -241,9 +247,15 @@ export async function handleVoiceQuery(
 
       if (errorMessage.includes("transcribe") || errorMessage.includes("STT")) {
         errorStage = "analyzing";
-      } else if (errorMessage.includes("AI") || errorMessage.includes("generate")) {
+      } else if (
+        errorMessage.includes("AI") ||
+        errorMessage.includes("generate")
+      ) {
         errorStage = "thinking";
-      } else if (errorMessage.includes("speech") || errorMessage.includes("TTS")) {
+      } else if (
+        errorMessage.includes("speech") ||
+        errorMessage.includes("TTS")
+      ) {
         errorStage = "tts";
       }
     }
