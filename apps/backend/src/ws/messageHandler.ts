@@ -38,6 +38,12 @@ export function handleMessage(
 				// Remove from queue using the stable ID
 				removeFromQueue(ws.id, server);
 				break;
+			case "retake_needed":
+				console.log(
+					`[Backend] Client ${ws.id} requested retake, broadcasting to tablets`,
+				);
+				broadcastToTablets(server, { type: "retake_photo" });
+				break;
 			default:
 				console.log(
 					`[Backend] Unknown message type from ${ws.id}: ${msg.type}`,

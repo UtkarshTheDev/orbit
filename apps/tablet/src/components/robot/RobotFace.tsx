@@ -12,10 +12,12 @@ export default function RobotFace({
   isDisappearing = false,
   onAnimationComplete,
   isPhotoBooth = false,
+  isRetake = false,
 }: {
   isDisappearing?: boolean;
   onAnimationComplete?: () => void;
   isPhotoBooth?: boolean;
+  isRetake?: boolean;
 }) {
   const faceRef = useRef<HTMLDivElement>(null);
   const isMountedRef = useRef(true);
@@ -49,6 +51,7 @@ export default function RobotFace({
   // Sound file paths
   const QR_SCANNED_SOUND = "/audio/qr-scanned.mp3";
   const DOWNLOAD_POLAROID_SOUND = "/audio/download-polaroid.mp3";
+  const RETAKE_SOUND = "/audio/retake.mp3";
   
   // Import playSound from basicAudioPlayer
   // import { playSound } from "@/lib/basicAudioPlayer";
@@ -125,6 +128,14 @@ export default function RobotFace({
       eventManager.removeHandler("playPhotoSound");
     };
   }, [playSound, isPhotoBooth]); // Add dependencies to re-register when they change
+
+  // Play retake sound when isRetake prop is true
+  useEffect(() => {
+    if (isRetake && isMountedRef.current) {
+      console.log("[RobotFace] Retake requested, playing retake sound");
+      playSound(RETAKE_SOUND);
+    }
+  }, [isRetake]);
 
   // Trigger disappear animation sequence
   useEffect(() => {

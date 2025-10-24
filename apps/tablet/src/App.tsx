@@ -16,6 +16,7 @@ export default function Home() {
   const isTablet = useSessionStore((s) => s.isTablet);
   const photoBoothActive = useSessionStore((s) => s.photoBoothActive);
   const showMainAppFromStore = useSessionStore((s) => s.showMainApp);
+  const isRetakeRequested = useSessionStore((s) => s.isRetakeRequested);
 
   useEffect(() => {
     connectWs();
@@ -30,19 +31,19 @@ export default function Home() {
     }
   };
 
-  // Tablet should always display specialized robotface in booth mode
-  if (isTablet && photoBoothActive) {
+  // Tablet should always display specialized robotface in booth mode OR when retake is requested
+  if (isTablet && (photoBoothActive || isRetakeRequested)) {
     return (
       <main className="relative flex h-screen w-full items-center justify-center overflow-hidden text-foreground">
         <Background />
         <div className="relative z-20 h-full w-full">
-          <RobotFace isPhotoBooth />
+          <RobotFace isPhotoBooth isRetake={isRetakeRequested} />
         </div>
       </main>
     );
   }
-  // Tablet should show OrbitMain after photo session completes
-  if (isTablet && showMainAppFromStore) {
+  // Tablet should show OrbitMain after photo session completes (and no retake requested)
+  if (isTablet && showMainAppFromStore && !isRetakeRequested) {
     return (
       <main className="relative flex h-screen w-full items-center justify-center overflow-hidden text-foreground">
         <Background />

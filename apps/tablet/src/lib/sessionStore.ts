@@ -9,6 +9,7 @@ type SessionState = {
 	isTablet: boolean;
 	photoBoothActive: boolean;
 	showMainApp: boolean;
+	isRetakeRequested: boolean;
 	ws: WebSocket | null;
 	wsReady: boolean;
 	wsReconnecting: boolean;
@@ -19,6 +20,7 @@ type SessionState = {
 	sendWs: (msg: unknown) => void;
 	setPhotoBoothActive: (val: boolean) => void;
 	setShowMainApp: (val: boolean) => void;
+	setIsRetakeRequested: (val: boolean) => void;
 };
 
 // Connection configuration
@@ -113,6 +115,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 	isTablet: detectTabletRole(),
 	photoBoothActive: false,
 	showMainApp: false,
+	isRetakeRequested: false,
 	ws: null,
 	wsReady: false,
 	wsReconnecting: false,
@@ -236,6 +239,21 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 								);
 							}
 						}
+						if (msg.type === "retake_photo" && get().isTablet) {
+							console.log(
+								"[Frontend] Retake photo requested, resetting to photo booth mode",
+							);
+							// Reset to photo booth mode and trigger retake
+							set({
+								isRetakeRequested: true,
+								photoBoothActive: true,
+								showMainApp: false,
+							});
+							// Reset retake flag after a delay to allow the animation to complete
+							setTimeout(() => {
+								set({ isRetakeRequested: false });
+							}, 3000);
+						}
 					} catch {
 						// ignore non-JSON
 					}
@@ -328,5 +346,8 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 	},
 	setShowMainApp: (val) => {
 		set({ showMainApp: val });
+	},
+	setIsRetakeRequested: (val) => {
+		set({ isRetakeRequested: val });
 	},
 }));

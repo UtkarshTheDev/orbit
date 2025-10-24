@@ -2,6 +2,7 @@
 
 import { Camera, Download, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useSessionStore } from "@/lib/sessionStore";
 import { Button } from "../ui/button";
 
 interface PhotoViewerProps {
@@ -13,6 +14,8 @@ export default function PhotoViewer({
   capturedImage,
   onRetake,
 }: PhotoViewerProps) {
+  const sendWs = useSessionStore((s) => s.sendWs);
+  const isTablet = useSessionStore((s) => s.isTablet);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [polaroidImage, setPolaroidImage] = useState<string | null>(null);
   const [rotation] = useState(() => (Math.random() > 0.5 ? -2 : 3));
@@ -24,6 +27,11 @@ export default function PhotoViewer({
 
   // Handle retake photo
   const handleRetakePhoto = () => {
+    // Send retake_needed message to backend (only from phone)
+    if (!isTablet) {
+      console.log("[PhotoViewer] Sending retake_needed message to backend");
+      sendWs({ type: "retake_needed" });
+    }
     onRetake();
   };
 
