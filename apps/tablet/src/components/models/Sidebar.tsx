@@ -27,7 +27,7 @@ export function ModelSidebar({
     >
       {/* Header */}
       <div className="flex items-center justify-between border-border border-b p-6">
-        <h2 className="font-[family-name:var(--font-orbitron)] text-card-foreground text-xl tracking-wide">
+        <h2 className="font-[family-name:var(--font-display)] text-card-foreground text-xl tracking-wide">
           Models
         </h2>
         <Button
@@ -40,40 +40,38 @@ export function ModelSidebar({
         </Button>
       </div>
 
-      {/* Model List */}
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-3">
+      <div className="scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800 flex-1 overflow-y-auto p-4">
+        <div className="space-y-6">
           {models.map((model) => (
             <motion.button
-              className={`flex w-full items-center gap-4 rounded-xl p-4 transition-all ${
+              className={`w-full overflow-hidden rounded-xl transition-all ${
                 currentModelId === model.id
-                  ? "bg-primary text-primary-foreground shadow-lg"
-                  : "bg-secondary/50 text-card-foreground hover:bg-secondary"
+                  ? "shadow-lg shadow-primary/20 ring-2 ring-primary"
+                  : "hover:ring-2 hover:ring-slate-600"
               }`}
               key={model.id}
               onClick={() => onModelSelect(model.id)}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
-              {/* Thumbnail */}
-              <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-background/50">
+              <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-white shadow-sm">
                 <img
                   alt={model.name}
-                  className="object-contain p-2"
-                  height="100%"
+                  className="object-contain"
                   src={model.preview || "/placeholder.svg"}
-                  width="100%"
                 />
-              </div>
 
-              {/* Name */}
-              <span className="text-left font-medium font-sans text-sm md:text-base">
-                {model.name}
-              </span>
+                {/* Embedded title with blur background */}
+                <div className="absolute right-0 bottom-0 left-0 bg-gradient-to-t from-slate-900/90 via-slate-900/70 to-transparent px-3 py-2 backdrop-blur-sm">
+                  <p className="truncate text-center font-medium font-sans text-white text-xs">
+                    {model.name}
+                  </p>
+                </div>
+              </div>
             </motion.button>
           ))}
         </div>
-      </ScrollArea>
+      </div>
     </motion.div>
   );
 }
