@@ -283,3 +283,34 @@
 .animate-flash {
 	animation: flash 0.5s ease-out;
 }
+
+/* Added custom gradient background for futuristic feel */
+.gradient-bg {
+  background: linear-gradient(135deg, oklch(0.98 0.005 240) 0%, oklch(0.95 0.01 240) 50%, oklch(0.92 0.015 240) 100%);
+}
+
+/* Added glow effect for interactive cards */
+.card-glow {
+  box-shadow: 0 0 20px rgba(100, 120, 255, 0.15), 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.card-glow:hover {
+  box-shadow: 0 0 30px rgba(100, 120, 255, 0.25), 0 8px 20px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+/* Added pulse animation for interactive elements */
+@keyframes pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(100, 120, 255, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(100, 120, 255, 0.3);
+  }
+}
+
+.pulse-border {
+  animation: pulse-glow 2s ease-in-out infinite;
+}

@@ -1,10 +1,11 @@
 ﻿import { motion, AnimatePresence } from "motion/react";
 import { Box, Camera, MapPin, MessageCircle, ArrowLeft } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect} from "react";
 import { FeatureButton } from "./ui/FeatureButton";
 import { InteractionBar } from "./interaction/InteractionBar";
 import RobotHead from "./robot/RobotHead";
 import PhotoBooth from "./photobooth/PhotoBooth";
+import Models from "./models/Models";
 
 type OrbitMainProps = {
 	skipWelcomeAudio?: boolean;
@@ -12,7 +13,7 @@ type OrbitMainProps = {
 
 export function OrbitMain({ skipWelcomeAudio = false }: OrbitMainProps) {
 	const [inputMode, setInputMode] = useState<"voice" | "text">("voice");
-	const [activeView, setActiveView] = useState<"main" | "photobooth">("main");
+	const [activeView, setActiveView] = useState<"main" | "photobooth" | "models">("main");
 
 	const features = [
 		{
@@ -44,6 +45,9 @@ export function OrbitMain({ skipWelcomeAudio = false }: OrbitMainProps) {
 	const handleFeatureClick = (feature: string) => {
 		if (feature === "Instant Polaroid") {
 			setActiveView("photobooth");
+		}
+		if (feature === "View 3D Models") {
+			setActiveView("models");
 		}
 	};
 
@@ -160,6 +164,26 @@ export function OrbitMain({ skipWelcomeAudio = false }: OrbitMainProps) {
 							<span className="font-medium">Back</span>
 						</button>
 						<PhotoBooth />
+					</motion.div>
+				)}
+				{activeView === "models" && (
+					<motion.div
+						animate={{ opacity: 1 }}
+						className="min-h-screen"
+						exit={{ opacity: 0 }}
+						initial={{ opacity: 0 }}
+						key="models"
+						transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+					>
+						<button
+							className="absolute top-6 left-6 z-20 flex items-center gap-2 rounded-xl bg-white/90 px-4 py-2.5 font-sans text-gray-700 text-sm shadow-lg backdrop-blur-sm transition-all duration-200 hover:bg-white hover:shadow-xl active:scale-95"
+							onClick={handleBackToMain}
+							type="button"
+						>
+							<ArrowLeft className="h-4 w-4" />
+							<span className="font-medium">Back</span>
+						</button>
+						<Models />
 					</motion.div>
 				)}
 			</AnimatePresence>
