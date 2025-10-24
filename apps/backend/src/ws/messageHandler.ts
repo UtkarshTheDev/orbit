@@ -3,6 +3,7 @@ import { broadcastToTablets } from "./broadcast";
 import { clientRoles } from "./connection";
 import { addToQueue, removeFromQueue } from "./polaroidQueue";
 import type { Server } from "bun";
+import { handleVoiceQuery } from "./handlers/voiceQueryHandler";
 
 export function handleMessage(
 	ws: WSConnection,
@@ -43,6 +44,18 @@ export function handleMessage(
 					`[Backend] Client ${ws.id} requested retake, broadcasting to tablets`,
 				);
 				broadcastToTablets(server, { type: "retake_photo" });
+				break;
+			case "voice_query":
+				console.log(
+					`[Backend] Client ${ws.id} sent voice query, processing...`,
+				);
+				// Handle voice query asynchronously
+				handleVoiceQuery(ws, msg).catch((error) => {
+					console.error(
+						`[Backend] Error handling voice query from ${ws.id}:`,
+						error,
+					);
+				});
 				break;
 			default:
 				console.log(
