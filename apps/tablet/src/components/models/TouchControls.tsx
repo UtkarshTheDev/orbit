@@ -1,4 +1,4 @@
-import { motion } from "framer-motion"
+import { motion } from "motion/react"
 import { ZoomIn, ZoomOut, RotateCcw, Play, Pause } from "lucide-react"
 import { Button } from "@/components/ui/button"
 

@@ -1,45 +1,48 @@
-"use client"
+import { Bounds, Center, useGLTF } from "@react-three/drei";
+import { useEffect, useRef, useState } from "react";
+import type * as Three from "three";
+import { getModelById } from "@/config/models";
 
-import { useRef, useEffect, useState } from "react"
-import { useGLTF, Center, Bounds } from "@react-three/drei"
-import type * as THREE from "three"
-import { getModelById } from "@/config/models"
+type Model3dProps = {
+  modelId: string;
+};
 
-interface Model3DProps {
-  modelId: string
-}
-
-export function Model3D({ modelId }: Model3DProps) {
-  const groupRef = useRef<THREE.Group>(null)
-  const [modelConfig, setModelConfig] = useState(() => getModelById(modelId))
+export function Model3D({ modelId }: Model3dProps) {
+  const groupRef = useRef<Three.Group>(null);
+  const [modelConfig, setModelConfig] = useState(() => getModelById(modelId));
 
   useEffect(() => {
-    setModelConfig(getModelById(modelId))
-  }, [modelId])
+    setModelConfig(getModelById(modelId));
+  }, [modelId]);
 
-  const { scene } = useGLTF(modelConfig?.modelPath || "/assets/3d/duck.glb")
+  const { scene } = useGLTF(modelConfig?.modelPath || "/assets/3d/duck.glb");
 
   // This allows the touch controls to properly manage rotation
 
   if (!modelConfig) {
-    return null
+    return null;
   }
 
-  const { scale = 1, position = [0, 0, 0], rotation = [0, 0, 0] } = modelConfig
+  const { scale = 1, position = [0, 0, 0], rotation = [0, 0, 0] } = modelConfig;
 
   return (
-    <Bounds fit clip observe margin={1.2}>
+    <Bounds clip fit margin={1.2} observe>
       <Center>
-        <group ref={groupRef} scale={scale} position={position} rotation={rotation}>
+        <group
+          position={position}
+          ref={groupRef}
+          rotation={rotation}
+          scale={scale}
+        >
           <primitive object={scene.clone()} />
         </group>
       </Center>
     </Bounds>
-  )
+  );
 }
 
 export function preloadModels(modelPaths: string[]) {
-  modelPaths.forEach((path) => {
-    useGLTF.preload(path)
-  })
+  for (const path of modelPaths) {
+    useGLTF.preload(path);
+  }
 }
