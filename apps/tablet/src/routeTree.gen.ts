@@ -9,25 +9,19 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as PolaroidRouteImport } from './routes/polaroid'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PolaroidIndexRouteImport } from './routes/polaroid/index'
 import { Route as ViewerIdRouteImport } from './routes/viewer/$id'
 
-const PolaroidRoute = PolaroidRouteImport.update({
-  id: '/polaroid',
-  path: '/polaroid',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PolaroidIndexRoute = PolaroidIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => PolaroidRoute,
+  id: '/polaroid/',
+  path: '/polaroid/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ViewerIdRoute = ViewerIdRouteImport.update({
   id: '/viewer/$id',
@@ -37,9 +31,8 @@ const ViewerIdRoute = ViewerIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/polaroid': typeof PolaroidRouteWithChildren
   '/viewer/$id': typeof ViewerIdRoute
-  '/polaroid/': typeof PolaroidIndexRoute
+  '/polaroid': typeof PolaroidIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -49,33 +42,25 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/polaroid': typeof PolaroidRouteWithChildren
   '/viewer/$id': typeof ViewerIdRoute
   '/polaroid/': typeof PolaroidIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/polaroid' | '/viewer/$id' | '/polaroid/'
+  fullPaths: '/' | '/viewer/$id' | '/polaroid'
   fileRoutesByTo: FileRoutesByTo
   to: '/' | '/viewer/$id' | '/polaroid'
-  id: '__root__' | '/' | '/polaroid' | '/viewer/$id' | '/polaroid/'
+  id: '__root__' | '/' | '/viewer/$id' | '/polaroid/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  PolaroidRoute: typeof PolaroidRouteWithChildren
   ViewerIdRoute: typeof ViewerIdRoute
+  PolaroidIndexRoute: typeof PolaroidIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/polaroid': {
-      id: '/polaroid'
-      path: '/polaroid'
-      fullPath: '/polaroid'
-      preLoaderRoute: typeof PolaroidRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -85,10 +70,10 @@ declare module '@tanstack/react-router' {
     }
     '/polaroid/': {
       id: '/polaroid/'
-      path: '/'
-      fullPath: '/polaroid/'
+      path: '/polaroid'
+      fullPath: '/polaroid'
       preLoaderRoute: typeof PolaroidIndexRouteImport
-      parentRoute: typeof PolaroidRoute
+      parentRoute: typeof rootRouteImport
     }
     '/viewer/$id': {
       id: '/viewer/$id'
@@ -100,22 +85,10 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface PolaroidRouteChildren {
-  PolaroidIndexRoute: typeof PolaroidIndexRoute
-}
-
-const PolaroidRouteChildren: PolaroidRouteChildren = {
-  PolaroidIndexRoute: PolaroidIndexRoute,
-}
-
-const PolaroidRouteWithChildren = PolaroidRoute._addFileChildren(
-  PolaroidRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  PolaroidRoute: PolaroidRouteWithChildren,
   ViewerIdRoute: ViewerIdRoute,
+  PolaroidIndexRoute: PolaroidIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

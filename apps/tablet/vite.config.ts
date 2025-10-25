@@ -16,7 +16,15 @@ export default defineConfig({
 		tailwindcss(),
 		VitePWA({
 			registerType: "autoUpdate",
-			includeAssets: ["favicon.svg", "robots.txt", "apple-touch-icon.png"],
+			includeAssets: [
+				"favicon.svg",
+				"robots.txt",
+				"apple-touch-icon.png",
+				"models/**/*.glb",
+				"models/**/*.gltf",
+				"models/**/*.jpg",
+				"models/**/*.png",
+			],
 			manifest: {
 				name: "Orbit",
 				short_name: "Orbit",
@@ -35,6 +43,53 @@ export default defineConfig({
 						src: "/pwa-512x512.png",
 						sizes: "512x512",
 						type: "image/png",
+					},
+				],
+			},
+			workbox: {
+				globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp,woff,woff2}"],
+				runtimeCaching: [
+					{
+						urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+						handler: "CacheFirst",
+						options: {
+							cacheName: "google-fonts-cache",
+							expiration: {
+								maxEntries: 10,
+								maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+							},
+							cacheableResponse: {
+								statuses: [0, 200],
+							},
+						},
+					},
+					{
+						urlPattern: /\/models\/.*\.(glb|gltf)$/i,
+						handler: "CacheFirst",
+						options: {
+							cacheName: "3d-models-cache",
+							expiration: {
+								maxEntries: 20,
+								maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+							},
+							cacheableResponse: {
+								statuses: [0, 200],
+							},
+						},
+					},
+					{
+						urlPattern: /\/models\/.*\.(jpg|png|jpeg)$/i,
+						handler: "CacheFirst",
+						options: {
+							cacheName: "model-textures-cache",
+							expiration: {
+								maxEntries: 30,
+								maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+							},
+							cacheableResponse: {
+								statuses: [0, 200],
+							},
+						},
 					},
 				],
 			},
