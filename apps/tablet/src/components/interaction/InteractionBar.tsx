@@ -1,37 +1,25 @@
 import { Keyboard, Mic, Send } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 type InteractionBarProps = {
   mode: "voice" | "text";
   onModeChange: (mode: "voice" | "text") => void;
+  onTalkWithOrbit: () => void;
 };
 
-export function InteractionBar({ mode, onModeChange }: InteractionBarProps) {
-  const [isListening, setIsListening] = useState(false);
+export function InteractionBar({
+  mode,
+  onModeChange,
+  onTalkWithOrbit,
+}: InteractionBarProps) {
   const [inputValue, setInputValue] = useState("");
-  const [waveformBars, setWaveformBars] = useState<number[]>(
-    new Array(48).fill(20)
-  );
-
-  useEffect(() => {
-    if (isListening) {
-      const interval = setInterval(() => {
-        setWaveformBars(
-          new Array(48).fill(0).map(() => Math.random() * 36 + 12)
-        );
-      }, 500);
-      return () => clearInterval(interval);
-    }
-    setWaveformBars(new Array(48).fill(20));
-  }, [isListening]);
 
   const handleVoiceClick = () => {
-    setIsListening(!isListening);
+    onTalkWithOrbit();
   };
 
   const handleSwitchToText = () => {
     onModeChange("text");
-    setIsListening(false);
   };
 
   const handleSwitchToVoice = () => {
@@ -50,58 +38,27 @@ export function InteractionBar({ mode, onModeChange }: InteractionBarProps) {
     return (
       <div className="fade-in slide-in-from-bottom-4 flex animate-in items-center gap-4 duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)]">
         <button
-          className={`flex flex-1 items-center justify-center gap-4 rounded-3xl px-8 py-5 transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-[0.98] ${
-            isListening
-              ? "border-2 border-blue-400 bg-gradient-to-br from-blue-600 to-blue-700 shadow-2xl shadow-blue-500/50"
-              : "border-2 border-blue-400 bg-gradient-to-br from-blue-500 to-blue-600 shadow-blue-500/40 shadow-xl"
-          }`}
+          className="border-2 border-blue-400 bg-gradient-to-br from-blue-500 to-blue-600 shadow-blue-500/40 shadow-xl flex flex-1 items-center justify-center gap-4 rounded-3xl px-8 py-5 transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-[0.98]"
           onClick={handleVoiceClick}
           type="button"
         >
-          {isListening ? (
-            <div className="flex h-[40px] w-full items-center justify-between gap-px px-4">
-              {waveformBars.map((height, i) => (
-                <div
-                  className="w-1.5 rounded-full bg-white/90 transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
-                  key={i}
-                  style={{
-                    height: `${height}px`,
-                  }}
-                />
-              ))}
-            </div>
-          ) : (
-            <>
-              <Mic className="h-7 w-7 text-white" />
-              <span
-                className="font-bold font-orbitron text-lg text-white md:text-xl"
-                style={{ fontFamily: "var(--font-orbitron)" }}
-              >
-                Talk with Orbit
-              </span>
-            </>
-          )}
+          <Mic className="h-7 w-7 text-white" />
+          <span
+            className="font-bold font-orbitron text-lg text-white md:text-xl"
+            style={{ fontFamily: "var(--font-orbitron)" }}
+          >
+            Talk with Orbit
+          </span>
         </button>
 
-        {isListening ? (
-          <button
-            aria-label="Stop listening"
-            className="fade-in zoom-in-95 flex h-14 w-14 flex-shrink-0 animate-in items-center justify-center rounded-2xl border-2 border-red-400 bg-red-500 shadow-lg shadow-red-500/30 transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-95 md:h-16 md:w-16"
-            onClick={handleVoiceClick}
-            type="button"
-          >
-            <div className="h-4 w-4 rounded-sm bg-white md:h-5 md:w-5" />
-          </button>
-        ) : (
-          <button
-            aria-label="Switch to text input"
-            className="fade-in zoom-in-95 flex h-14 w-14 flex-shrink-0 animate-in items-center justify-center rounded-2xl border-2 border-gray-300 bg-white shadow-md transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-95 md:h-16 md:w-16"
-            onClick={handleSwitchToText}
-            type="button"
-          >
-            <Keyboard className="h-6 w-6 text-gray-700 md:h-7 md:w-7" />
-          </button>
-        )}
+        <button
+          aria-label="Switch to text input"
+          className="fade-in zoom-in-95 flex h-14 w-14 flex-shrink-0 animate-in items-center justify-center rounded-2xl border-2 border-gray-300 bg-white shadow-md transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-95 md:h-16 md:w-16"
+          onClick={handleSwitchToText}
+          type="button"
+        >
+          <Keyboard className="h-6 w-6 text-gray-700 md:h-7 md:w-7" />
+        </button>
       </div>
     );
   }
