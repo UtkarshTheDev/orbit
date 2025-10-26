@@ -4,299 +4,308 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-	/* Tailwind v4: use --font-* tokens to generate font-* utilities */
-	--font-pacifico: "Pacifico", cursive;
-	/* --font-space: "Space Grotesk Variable", "Space Grotesk", sans-serif; */
-	--font-orbitron: "Orbitron", sans-serif;
-	--font-sans: "Outfit", sans-serif;
-	--radius-sm: calc(var(--radius) - 4px);
-	--radius-md: calc(var(--radius) - 2px);
-	--radius-lg: var(--radius);
-	--radius-xl: calc(var(--radius) + 4px);
-	--color-background: var(--background);
-	--color-foreground: var(--foreground);
-	--color-card: var(--card);
-	--color-card-foreground: var(--card-foreground);
-	--color-popover: var(--popover);
-	--color-popover-foreground: var(--popover-foreground);
-	--color-primary: var(--primary);
-	--color-primary-foreground: var(--primary-foreground);
-	--color-secondary: var(--secondary);
-	--color-secondary-foreground: var(--secondary-foreground);
-	--color-muted: var(--muted);
-	--color-muted-foreground: var(--muted-foreground);
-	--color-accent: var(--accent);
-	--color-accent-foreground: var(--accent-foreground);
-	--color-destructive: var(--destructive);
-	--color-border: var(--border);
-	--color-input: var(--input);
-	--color-ring: var(--ring);
-	--color-chart-1: var(--chart-1);
-	--color-chart-2: var(--chart-2);
-	--color-chart-3: var(--chart-3);
-	--color-chart-4: var(--chart-4);
-	--color-chart-5: var(--chart-5);
-	--color-sidebar: var(--sidebar);
-	--color-sidebar-foreground: var(--sidebar-foreground);
-	--color-sidebar-primary: var(--sidebar-primary);
-	--color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-	--color-sidebar-accent: var(--sidebar-accent);
-	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-	--color-sidebar-border: var(--sidebar-border);
-	--color-sidebar-ring: var(--sidebar-ring);
+  /* Tailwind v4: use --font-* tokens to generate font-* utilities */
+  --font-pacifico: "Pacifico", cursive;
+  /* --font-space: "Space Grotesk Variable", "Space Grotesk", sans-serif; */
+  --font-orbitron: "Orbitron", sans-serif;
+  --font-sans: "Outfit", sans-serif;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
 }
 
 :root {
-	--radius: 0.625rem;
-	--background: oklch(1 0 0);
-	--foreground: oklch(0.145 0 0);
-	--card: oklch(1 0 0);
-	--card-foreground: oklch(0.145 0 0);
-	--popover: oklch(1 0 0);
-	--popover-foreground: oklch(0.145 0 0);
-	--primary: oklch(0.205 0 0);
-	--primary-foreground: oklch(0.985 0 0);
-	--secondary: oklch(0.97 0 0);
-	--secondary-foreground: oklch(0.205 0 0);
-	--muted: oklch(0.97 0 0);
-	--muted-foreground: oklch(0.556 0 0);
-	--accent: oklch(0.97 0 0);
-	--accent-foreground: oklch(0.205 0 0);
-	--destructive: oklch(0.577 0.245 27.325);
-	--border: oklch(0.922 0 0);
-	--input: oklch(0.922 0 0);
-	--ring: oklch(0.708 0 0);
-	--chart-1: oklch(0.646 0.222 41.116);
-	--chart-2: oklch(0.6 0.118 184.704);
-	--chart-3: oklch(0.398 0.07 227.392);
-	--chart-4: oklch(0.828 0.189 84.429);
-	--chart-5: oklch(0.769 0.188 70.08);
-	--sidebar: oklch(0.985 0 0);
-	--sidebar-foreground: oklch(0.145 0 0);
-	--sidebar-primary: oklch(0.205 0 0);
-	--sidebar-primary-foreground: oklch(0.985 0 0);
-	--sidebar-accent: oklch(0.97 0 0);
-	--sidebar-accent-foreground: oklch(0.205 0 0);
-	--sidebar-border: oklch(0.922 0 0);
-	--sidebar-ring: oklch(0.708 0 0);
-	/* PhotoBooth component variables */
-	--glow: oklch(0.65 0.2 220 / 0.3);
-	--circuit-pattern: oklch(0.92 0.02 240);
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+  /* PhotoBooth component variables */
+  --glow: oklch(0.65 0.2 220 / 0.3);
+  --circuit-pattern: oklch(0.92 0.02 240);
 }
 
 @layer base {
-	* {
-		@apply border-border outline-ring/50;
-	}
-	body {
-		@apply bg-transparent text-foreground font-sans;
-	}
-	#root {
-		@apply bg-transparent;
-	}
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-transparent text-foreground font-sans;
+  }
+  #root {
+    @apply bg-transparent;
+  }
 }
 
 /* Added custom animations for Orbit UI */
 @keyframes fadeInUp {
-	from {
-		opacity: 0;
-		transform: translateY(20px);
-	}
-	to {
-		opacity: 1;
-		transform: translateY(0);
-	}
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes glowPulse {
-	0%,
-	100% {
-		filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.3));
-	}
-	50% {
-		filter: drop-shadow(0 0 16px rgba(59, 130, 246, 0.5));
-	}
+  0%,
+  100% {
+    filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.3));
+  }
+  50% {
+    filter: drop-shadow(0 0 16px rgba(59, 130, 246, 0.5));
+  }
 }
 
 @keyframes scaleIn {
-	from {
-		opacity: 0;
-		transform: scale(0.9);
-		filter: blur(4px);
-	}
-	to {
-		opacity: 1;
-		transform: scale(1);
-		filter: blur(0);
-	}
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
 }
 
 @keyframes rotateIn {
-	from {
-		opacity: 0;
-		transform: rotate(-5deg) scale(0.95);
-	}
-	to {
-		opacity: 1;
-		transform: rotate(0) scale(1);
-	}
+  from {
+    opacity: 0;
+    transform: rotate(-5deg) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(0) scale(1);
+  }
 }
 
 @keyframes slideInLeft {
-	from {
-		transform: translateX(-100px);
-	}
-	to {
-		transform: translateX(0);
-	}
+  from {
+    transform: translateX(-100px);
+  }
+  to {
+    transform: translateX(0);
+  }
 }
 
 @keyframes slideInRight {
-	from {
-		transform: translateX(100px);
-	}
-	to {
-		transform: translateX(0);
-	}
+  from {
+    transform: translateX(100px);
+  }
+  to {
+    transform: translateX(0);
+  }
 }
 
 @keyframes zoomOut {
-	from {
-		opacity: 0;
-		transform: scale(1.1);
-		filter: blur(4px);
-	}
-	to {
-		opacity: 1;
-		transform: scale(1);
-		filter: blur(0);
-	}
+  from {
+    opacity: 0;
+    transform: scale(1.1);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
 }
 
 @keyframes pulseSubtle {
-	0%,
-	100% {
-		transform: scale(1);
-		opacity: 1;
-	}
-	50% {
-		transform: scale(1.05);
-		opacity: 0.9;
-	}
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.9;
+  }
 }
 
 .animate-fade-in-up {
-	animation: fadeInUp 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: fadeInUp 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 .animate-glow-pulse {
-	animation: glowPulse 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: glowPulse 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 .animate-scale-in {
-	animation: scaleIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: scaleIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 .animate-rotate-in {
-	animation: rotateIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: rotateIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 .animate-slide-in-left {
-	animation: slideInLeft 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: slideInLeft 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 .animate-slide-in-right {
-	animation: slideInRight 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: slideInRight 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 .animate-zoom-out {
-	animation: zoomOut 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: zoomOut 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 .animate-pulse-subtle {
-	animation: pulseSubtle 2s ease-in-out infinite;
+  animation: pulseSubtle 2s ease-in-out infinite;
 }
 
 .circuit-bg {
-	background-image:
-		linear-gradient(90deg, var(--circuit-pattern) 1px, transparent 1px),
-		linear-gradient(0deg, var(--circuit-pattern) 1px, transparent 1px);
-	background-size: 40px 40px;
-	opacity: 0.3;
+  background-image:
+    linear-gradient(90deg, var(--circuit-pattern) 1px, transparent 1px),
+    linear-gradient(0deg, var(--circuit-pattern) 1px, transparent 1px);
+  background-size: 40px 40px;
+  opacity: 0.3;
 }
 
 /* Glow effect */
 .glow-effect {
-	box-shadow:
-		0 0 20px rgba(59, 130, 246, 0.3),
-		0 0 40px rgba(59, 130, 246, 0.2);
+  box-shadow:
+    0 0 20px rgba(59, 130, 246, 0.3),
+    0 0 40px rgba(59, 130, 246, 0.2);
 }
 
 /* Floating animation */
 @keyframes float {
-	0%,
-	100% {
-		transform: translateY(0px);
-	}
-	50% {
-		transform: translateY(-10px);
-	}
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
 .animate-float {
-	animation: float 3s ease-in-out infinite;
+  animation: float 3s ease-in-out infinite;
 }
 
 /* Pulse glow animation */
 @keyframes pulse-glow {
-	0%,
-	100% {
-		box-shadow:
-			0 0 10px rgba(59, 130, 246, 0.3),
-			0 0 20px rgba(59, 130, 246, 0.2);
-	}
-	50% {
-		box-shadow:
-			0 0 20px rgba(59, 130, 246, 0.4),
-			0 0 40px rgba(59, 130, 246, 0.3),
-			0 0 60px rgba(59, 130, 246, 0.2);
-	}
+  0%,
+  100% {
+    box-shadow:
+      0 0 10px rgba(59, 130, 246, 0.3),
+      0 0 20px rgba(59, 130, 246, 0.2);
+  }
+  50% {
+    box-shadow:
+      0 0 20px rgba(59, 130, 246, 0.4),
+      0 0 40px rgba(59, 130, 246, 0.3),
+      0 0 60px rgba(59, 130, 246, 0.2);
+  }
 }
 
 .animate-pulse-glow {
-	animation: pulse-glow 2s ease-in-out infinite;
+  animation: pulse-glow 2s ease-in-out infinite;
 }
 
 /* Custom animations for camera UI */
 @keyframes flash {
-	0% {
-		opacity: 0;
-	}
-	50% {
-		opacity: 1;
-	}
-	100% {
-		opacity: 0;
-	}
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
 .animate-flash {
-	animation: flash 0.5s ease-out;
+  animation: flash 0.5s ease-out;
 }
 
 /* Added custom gradient background for futuristic feel */
 .gradient-bg {
-  background: linear-gradient(135deg, oklch(0.98 0.005 240) 0%, oklch(0.95 0.01 240) 50%, oklch(0.92 0.015 240) 100%);
+  background: linear-gradient(
+    135deg,
+    oklch(0.98 0.005 240) 0%,
+    oklch(0.95 0.01 240) 50%,
+    oklch(0.92 0.015 240) 100%
+  );
 }
 
 /* Added glow effect for interactive cards */
 .card-glow {
-  box-shadow: 0 0 20px rgba(100, 120, 255, 0.15), 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 0 20px rgba(100, 120, 255, 0.15),
+    0 4px 12px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
 }
 
 .card-glow:hover {
-  box-shadow: 0 0 30px rgba(100, 120, 255, 0.25), 0 8px 20px rgba(0, 0, 0, 0.12);
+  box-shadow:
+    0 0 30px rgba(100, 120, 255, 0.25),
+    0 8px 20px rgba(0, 0, 0, 0.12);
   transform: translateY(-2px);
 }
 
@@ -313,4 +322,232 @@
 
 .pulse-border {
   animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Custom scrollbar for transcript */
+.transcript-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.transcript-scroll::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.transcript-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.transcript-scroll::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Animations */
+@keyframes pulse-breathing {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes dot-pulse {
+  0%,
+  20% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.3;
+  }
+}
+
+@keyframes typing-dots {
+  0% {
+    content: "";
+  }
+  25% {
+    content: ".";
+  }
+  50% {
+    content: "..";
+  }
+  75% {
+    content: "...";
+  }
+  100% {
+    content: "";
+  }
+}
+
+/* Added animations for status bar pulsing */
+@keyframes pulse-bar {
+  0%,
+  100% {
+    transform: scaleY(0.5);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+.breathing-pulse {
+  animation: pulse-breathing 2s ease-in-out infinite;
+}
+
+.dot-pulse-1 {
+  animation: dot-pulse 1.4s ease-in-out infinite;
+  animation-delay: 0s;
+}
+
+.dot-pulse-2 {
+  animation: dot-pulse 1.4s ease-in-out infinite;
+  animation-delay: 0.2s;
+}
+
+.dot-pulse-3 {
+  animation: dot-pulse 1.4s ease-in-out infinite;
+  animation-delay: 0.4s;
+}
+
+/* Added staggered bar animations for status display */
+.animate-pulse-bar-1 {
+  animation: pulse-bar 1.2s ease-in-out infinite;
+  animation-delay: 0s;
+}
+
+.animate-pulse-bar-2 {
+  animation: pulse-bar 1.2s ease-in-out infinite;
+  animation-delay: 0.15s;
+}
+
+.animate-pulse-bar-3 {
+  animation: pulse-bar 1.2s ease-in-out infinite;
+  animation-delay: 0.3s;
+}
+
+/* Added shimmer animation for ShimmeringText component */
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 3s linear infinite;
+}
+
+/* Fade in animation */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+/* Adding animated grid background */
+@keyframes grid-move {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(40px);
+  }
+}
+
+.animated-grid {
+  animation: grid-move 20s linear infinite;
+}
+
+/* Adding scan line effect */
+@keyframes scan-line {
+  0% {
+    top: 0%;
+  }
+  100% {
+    top: 100%;
+  }
+}
+
+.scan-line {
+  animation: scan-line 8s linear infinite;
+}
+
+/* Adding corner bracket animations */
+@keyframes corner-glow {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.corner-bracket {
+  animation: corner-glow 3s ease-in-out infinite;
+}
+
+/* Adding entrance animations */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.6s ease-out;
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scale-in 0.4s ease-out;
+}
+
+/* Adding glow effect */
+@keyframes glow-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(59, 130, 246, 0.6);
+  }
+}
+
+.glow-active {
+  animation: glow-pulse 2s ease-in-out infinite;
 }
