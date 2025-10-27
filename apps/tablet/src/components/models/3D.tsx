@@ -10,32 +10,19 @@ type Model3dProps = {
 export function Model3D({ modelId }: Model3dProps) {
   const groupRef = useRef<Three.Group>(null);
   const [modelConfig, setModelConfig] = useState(() => getModelById(modelId));
-  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     setModelConfig(getModelById(modelId));
-    setError(null);
   }, [modelId]);
-
-  let scene: Three.Group | Three.Scene;
-  
-  try {
-    const gltf = useGLTF(modelConfig?.modelPath || "/assets/3d/duck.glb");
-    scene = gltf.scene;
-  } catch (err) {
-    console.error("[Model3D] Failed to load model:", err);
-    setError(err as Error);
-    return null;
-  }
 
   if (!modelConfig) {
     return null;
   }
 
-  if (error) {
-    console.error("[Model3D] Error loading model:", error);
-    return null;
-  }
+  // Always call useGLTF at the top level - this is a hook rule
+  // Errors will be handled by the Suspense boundary in the parent component
+  const gltf = useGLTF(modelConfig.modelPath);
+  let scene: Three.Group | Three.Scene = gltf.scene;
 
   const { scale = 1, position = [0, 0, 0], rotation = [0, 0, 0] } = modelConfig;
 
