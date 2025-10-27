@@ -3,6 +3,7 @@ import type { BunWebSocketData } from "hono/bun";
 import { broadcastToTablets } from "./broadcast";
 import type { WSConnection } from "./connection";
 import { clientRoles } from "./connection";
+import { handleTextQuery } from "./handlers/textQueryHandler";
 import { handleVoiceQuery } from "./handlers/voiceQueryHandler";
 import { addToQueue, removeFromQueue } from "./polaroidQueue";
 
@@ -52,6 +53,16 @@ export function handleMessage(
         handleVoiceQuery(ws, msg).catch((error) => {
           console.error(
             `[Backend] Error handling voice query from ${ws.id}:`,
+            error
+          );
+        });
+        break;
+      case "text_query":
+        console.log(`[Backend] Client ${ws.id} sent text query, processing...`);
+        // Handle text query asynchronously
+        handleTextQuery(ws, msg).catch((error) => {
+          console.error(
+            `[Backend] Error handling text query from ${ws.id}:`,
             error
           );
         });

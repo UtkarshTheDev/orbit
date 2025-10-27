@@ -23,6 +23,7 @@ interface VoiceResponse {
 
 interface UseVoiceWebSocketReturn {
   sendVoiceQuery: (audioBase64: string, format: string) => void;
+  sendTextQuery: (text: string) => void;
   response: VoiceResponse;
   resetResponse: () => void;
 }
@@ -151,6 +152,31 @@ export const useVoiceWebSocket = (): UseVoiceWebSocketReturn => {
     sendWs(message);
   }, [wsReady, sendWs]);
 
+  const sendTextQuery = useCallback((text: string) => {
+    if (!wsReady) {
+      console.error("[VoiceWS] WebSocket not ready");
+      setResponse({ stage: "error", error: "Connection not ready" });
+      return;
+    }
+
+    // Generate unique ID for this query
+    const queryId = `text_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    currentQueryIdRef.current = queryId;
+
+    // Reset response state
+    setResponse({ stage: "thinking" });
+
+    // Send text query message
+    const message = {
+      type: "text_query",
+      id: queryId,
+      text: text,
+    };
+
+    console.log(`[VoiceWS] Sending text query: ${queryId}, text: ${text}`);
+    sendWs(message);
+  }, [wsReady, sendWs]);
+
   const resetResponse = useCallback(() => {
     setResponse({ stage: "idle" });
     currentQueryIdRef.current = null;
@@ -158,6 +184,7 @@ export const useVoiceWebSocket = (): UseVoiceWebSocketReturn => {
 
   return {
     sendVoiceQuery,
+    sendTextQuery,
     response,
     resetResponse,
   };

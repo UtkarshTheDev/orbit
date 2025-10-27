@@ -41,7 +41,7 @@ function VoiceApp() {
     stopRecording,
     error: recorderError,
   } = useVoiceRecorder();
-  const { sendVoiceQuery, response, resetResponse } = useVoiceWebSocket();
+  const { sendVoiceQuery, sendTextQuery, response, resetResponse } = useVoiceWebSocket();
   const { playAudio, stopAudio, isPlaying } = useAudioPlayer();
 
   // Track if we're waiting for TTS to finish
@@ -244,19 +244,12 @@ function VoiceApp() {
     setUserQuery(question);
     setAriaLiveMessage(`Processing question: ${question}`);
     resetResponse();
+    playedAudioRef.current = null; // Reset played audio tracker
+    stopAudio(); // Stop any currently playing audio
 
-    // Simulate sending text query (you can extend backend to handle text queries)
-    // For now, we'll just show a message
+    // Send text query to backend
+    sendTextQuery(question);
     setState("thinking");
-
-    // Create a mock voice query by converting text to a simple format
-    // In a real implementation, you might want to add a text query endpoint
-    setTimeout(() => {
-      setState("error");
-      setAriaLiveMessage(
-        "Text queries not yet supported. Please use voice input."
-      );
-    }, 1000);
   };
 
   const handleRetry = () => {
