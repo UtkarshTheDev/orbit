@@ -252,6 +252,7 @@ type AnimationState =
   | "listening"
   | "speaking"
   | "thinking"
+  | "analyzing"
   | undefined
 
 export const useBarAnimator = (
@@ -267,7 +268,7 @@ export const useBarAnimator = (
   const sequence = useMemo(() => {
     if (state === "thinking" || state === "listening") {
       return generateListeningSequenceBar(columns)
-    } else if (state === "connecting" || state === "initializing") {
+    } else if (state === "connecting" || state === "initializing" || state === "analyzing") {
       return generateConnectingSequenceBar(columns)
     } else if (state === undefined || state === "speaking") {
       return [new Array(columns).fill(0).map((_, idx) => idx)]
@@ -329,6 +330,7 @@ export type AgentState =
   | "listening"
   | "speaking"
   | "thinking"
+  | "analyzing"
 
 export interface BarVisualizerProps
   extends React.HTMLAttributes<HTMLDivElement> {
@@ -446,7 +448,7 @@ const BarVisualizerComponent = React.forwardRef<
     const highlightedIndices = useBarAnimator(
       state,
       barCount,
-      state === "connecting"
+      state === "connecting" || state === "analyzing"
         ? 2000 / barCount
         : state === "thinking"
           ? 150
