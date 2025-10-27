@@ -253,6 +253,7 @@ type AnimationState =
   | "speaking"
   | "thinking"
   | "analyzing"
+  | "responding"
   | undefined
 
 export const useBarAnimator = (
@@ -331,6 +332,7 @@ export type AgentState =
   | "speaking"
   | "thinking"
   | "analyzing"
+  | "responding"
 
 export interface BarVisualizerProps
   extends React.HTMLAttributes<HTMLDivElement> {

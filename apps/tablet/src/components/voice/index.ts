@@ -1,5 +1,4 @@
 export { default as VoiceApp } from "./VoiceApp"
-export { default as WaveformVisualizer } from "./WaveformVisualizer"
 export { default as TranscriptBox } from "./TranscriptBox"
 export { default as PillSuggestions } from "./PillSuggestions"
 export { default as StatusText } from "./StatusText"

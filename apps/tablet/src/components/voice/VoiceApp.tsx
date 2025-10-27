@@ -51,7 +51,7 @@ function VoiceApp() {
   // Track which audio we've already played to prevent repeats
   const playedAudioRef = useRef<string | null>(null);
   // Track timeout for forcing done state
-  const doneTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const doneTimeoutRef = useRef<number | null>(null);
 
   // Initialize with welcome message
   useEffect(() => {
@@ -134,7 +134,7 @@ function VoiceApp() {
 
       // Store final state BEFORE playing (so it's available when audio ends)
       pendingDoneRef.current = {
-        transcript: aiText,
+        transcript: aiText || "",
         query: transcribedText || userQuery,
       };
 
