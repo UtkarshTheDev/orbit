@@ -75,7 +75,7 @@ export function OrbitMain({ skipWelcomeAudio = false }: OrbitMainProps) {
 	}, [skipWelcomeAudio]);
 
 	return (
-		<div className="relative min-h-screen bg-[#F9FAFB]">
+		<div className="relative h-screen bg-[#F9FAFB]">
 			<AnimatePresence mode="wait">
 				{activeView === "main" && (
 					<motion.main
@@ -158,7 +158,7 @@ export function OrbitMain({ skipWelcomeAudio = false }: OrbitMainProps) {
 				{activeView === "photobooth" && (
 					<motion.div
 						animate={{ opacity: 1 }}
-						className="min-h-screen"
+						className="h-screen"
 						exit={{ opacity: 0 }}
 						initial={{ opacity: 0 }}
 						key="photobooth"
@@ -178,7 +178,7 @@ export function OrbitMain({ skipWelcomeAudio = false }: OrbitMainProps) {
 				{activeView === "models" && (
 					<motion.div
 						animate={{ opacity: 1 }}
-						className="min-h-screen"
+						className="h-screen"
 						exit={{ opacity: 0 }}
 						initial={{ opacity: 0 }}
 						key="models"
@@ -198,7 +198,7 @@ export function OrbitMain({ skipWelcomeAudio = false }: OrbitMainProps) {
 				{activeView === "voice" && (
 					<motion.div
 						animate={{ opacity: 1 }}
-						className="min-h-screen"
+						className="h-screen"
 						exit={{ opacity: 0 }}
 						initial={{ opacity: 0 }}
 						key="voice"

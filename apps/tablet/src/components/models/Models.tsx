@@ -12,7 +12,7 @@ export default function Models() {
   };
 
   return (
-    <div className="gradient-bg min-h-screen">
+    <div className="gradient-bg h-screen">
       <div className="container mx-auto px-8 py-12 md:px-12 md:py-16 lg:px-16">
         {/* Header */}
         <motion.h1
