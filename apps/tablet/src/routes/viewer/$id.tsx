@@ -47,7 +47,6 @@ function ViewerPage() {
     if (!canvas) return;
 
     let lastTap = 0;
-    let timeout: NodeJS.Timeout;
 
     const handleTouchEnd = () => {
       const now = Date.now();
@@ -65,7 +64,6 @@ function ViewerPage() {
     canvas.addEventListener("touchend", handleTouchEnd);
     return () => {
       canvas.removeEventListener("touchend", handleTouchEnd);
-      clearTimeout(timeout);
     };
   }, [currentModelId]);
 
@@ -199,7 +197,6 @@ function ViewerPage() {
               touches={{
                 ONE: 2, // TOUCH.ROTATE
                 TWO: 1, // TOUCH.DOLLY_PAN
-                THREE: 4, // TOUCH.PAN
               }}
               zoomSpeed={0.9}
             />
@@ -260,16 +257,7 @@ function ViewerPage() {
                 <span className="font-semibold text-white text-xs">2</span>
               </div>
               <span className="font-medium text-slate-200">
-                Pinch to zoom
-              </span>
-            </div>
-            <div className="hidden h-6 w-px bg-slate-600/50 sm:block" />
-            <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-700/80">
-                <span className="font-semibold text-white text-xs">3</span>
-              </div>
-              <span className="font-medium text-slate-200">
-                Drag 3 fingers to pan
+                Pinch to zoom & pan
               </span>
             </div>
           </div>
