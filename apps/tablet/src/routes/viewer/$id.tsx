@@ -106,7 +106,7 @@ function ViewerPage() {
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-slate-900 touch-pan-y" style={{ touchAction: "none", overscrollBehavior: "none" }}>
+    <div className="flex h-screen w-screen overflow-hidden bg-slate-900" style={{ overscrollBehavior: "none" }}>
       {/* Main Viewer Area */}
       <div className="relative flex-1">
         {/* Back Button */}
