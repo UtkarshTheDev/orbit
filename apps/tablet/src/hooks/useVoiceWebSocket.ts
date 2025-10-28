@@ -23,7 +23,7 @@ interface VoiceResponse {
 
 interface UseVoiceWebSocketReturn {
   sendVoiceQuery: (audioBase64: string, format: string) => void;
-  sendTextQuery: (text: string) => void;
+  sendTextQuery: (text: string, tts?: boolean) => void;
   response: VoiceResponse;
   resetResponse: () => void;
 }
@@ -152,7 +152,7 @@ export const useVoiceWebSocket = (): UseVoiceWebSocketReturn => {
     sendWs(message);
   }, [wsReady, sendWs]);
 
-  const sendTextQuery = useCallback((text: string) => {
+  const sendTextQuery = useCallback((text: string, tts: boolean = false) => {
     if (!wsReady) {
       console.error("[VoiceWS] WebSocket not ready");
       setResponse({ stage: "error", error: "Connection not ready" });
@@ -171,9 +171,10 @@ export const useVoiceWebSocket = (): UseVoiceWebSocketReturn => {
       type: "text_query",
       id: queryId,
       text: text,
+      tts,
     };
 
-    console.log(`[VoiceWS] Sending text query: ${queryId}, text: ${text}`);
+    console.log(`[VoiceWS] Sending text query: ${queryId}, text: ${text}, TTS: ${tts}`);
     sendWs(message);
   }, [wsReady, sendWs]);
 

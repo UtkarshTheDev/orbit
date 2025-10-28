@@ -16,6 +16,7 @@ type TextQueryMessage = {
   type: "text_query";
   id: string;
   text: string;
+  tts?: boolean;
 };
 
 /**
@@ -64,6 +65,10 @@ function validateTextQuery(msg: unknown): msg is TextQueryMessage {
   if (!message.text || typeof message.text !== "string") {
     return false;
   }
+  // tts is optional, but if present must be boolean
+  if (message.tts !== undefined && typeof message.tts !== "boolean") {
+    return false;
+  }
   return true;
 }
 
@@ -81,16 +86,17 @@ export async function handleTextQuery(
       return;
     }
 
-    const { id, text } = msg;
+    const { id, text, tts = false } = msg;
 
-    console.log(`[TextQuery] Processing query ${id}: ${text}`);
+    console.log(`[TextQuery] Processing query ${id}: ${text} (TTS: ${tts})`);
 
     // Check if services are configured
     if (!isAIConfigured()) {
       sendError(ws, "config", "AI service not configured");
       return;
     }
-    if (!isTTSConfigured()) {
+    // Only check TTS config if TTS is requested
+    if (tts && !isTTSConfigured()) {
       sendError(ws, "config", "Text-to-speech service not configured");
       return;
     }
@@ -141,22 +147,27 @@ export async function handleTextQuery(
       `[TextQuery] AI response: ${fullAiResponse.substring(0, 100)}...`
     );
 
-    // Stage 4: Converting to speech
-    sendStatus(ws, "tts", "Converting to speech...");
+    // Stage 4: Converting to speech (only if TTS is requested)
+    if (tts) {
+      sendStatus(ws, "tts", "Converting to speech...");
 
-    // Convert to speech
-    const { audio, duration } = await textToSpeechWithTimeout(fullAiResponse);
+      // Convert to speech
+      const { audio, duration } = await textToSpeechWithTimeout(fullAiResponse);
 
-    // Stage 5: TTS ready
-    ws.send(
-      JSON.stringify({
-        type: "tts_ready",
-        audio,
-        duration,
-      })
-    );
+      // Stage 5: TTS ready
+      ws.send(
+        JSON.stringify({
+          type: "tts_ready",
+          audio,
+          duration,
+        })
+      );
 
-    console.log(`[TextQuery] TTS ready: ${duration}s`);
+      console.log(`[TextQuery] TTS ready: ${duration}s`);
+    } else {
+      console.log(`[TextQuery] TTS disabled, skipping speech conversion`);
+    }
+
     console.log(`[TextQuery] Query ${id} completed successfully`);
   } catch (error) {
     console.error("[TextQuery] Error processing text query:", error);

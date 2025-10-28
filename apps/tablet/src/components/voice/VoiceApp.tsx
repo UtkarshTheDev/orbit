@@ -247,8 +247,8 @@ function VoiceApp() {
     playedAudioRef.current = null; // Reset played audio tracker
     stopAudio(); // Stop any currently playing audio
 
-    // Send text query to backend
-    sendTextQuery(question);
+    // Send text query to backend (TTS enabled)
+    sendTextQuery(question, true);
     setState("thinking");
   };
 
