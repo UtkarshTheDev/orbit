@@ -11,10 +11,8 @@ interface HomeProps {
 
 export default function Home({ onBack, onNavigateToVoice }: HomeProps) {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
   const { sendTextQuery, response, resetResponse } = useVoiceWebSocket();
-  const revealSpeed = 20;
 
   // Handle WebSocket response updates
   useEffect(() => {
@@ -22,7 +20,6 @@ export default function Home({ onBack, onNavigateToVoice }: HomeProps) {
 
     if (error) {
       console.error("[Home] WebSocket error:", error);
-      setIsLoading(false);
       setStreamingMessageId(null);
       // Add error message
       const errorMessage: Message = {
@@ -52,7 +49,6 @@ export default function Home({ onBack, onNavigateToVoice }: HomeProps) {
 
     if (stage === "responding" && aiText && streamingMessageId) {
       // AI response is complete
-      setIsLoading(false);
       setStreamingMessageId(null);
     }
   }, [response, streamingMessageId]);
@@ -70,7 +66,6 @@ export default function Home({ onBack, onNavigateToVoice }: HomeProps) {
     };
 
     setMessages((prev) => [...prev, userMessage]);
-    setIsLoading(true);
 
     // Create streaming AI message placeholder
     const messageId = `ai_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -97,9 +92,6 @@ export default function Home({ onBack, onNavigateToVoice }: HomeProps) {
     onNavigateToVoice?.();
   };
 
-  const handleClearChat = () => {
-    setMessages([]);
-  };
 
   return (
     <div className="relative h-screen">
@@ -119,10 +111,7 @@ export default function Home({ onBack, onNavigateToVoice }: HomeProps) {
         messages={messages}
         onSend={handleSend}
         onTalkClick={handleTalkClick}
-        tokenRevealSpeedMs={revealSpeed}
-        onStreamStop={() => console.log("Stream stopped")}
         onError={(error) => console.error("Chat error:", error)}
-        onMessageRendered={(id) => console.log("Message rendered:", id)}
       />
     </div>
   );

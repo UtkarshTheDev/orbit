@@ -27,13 +27,11 @@ function MarkdownContent({ content }: { content: string }) {
     const elements: React.ReactNode[] = [];
     let inCodeBlock = false;
     let codeBlockContent: string[] = [];
-    let codeBlockLang = "";
 
     lines.forEach((line, index) => {
       if (line.startsWith("```")) {
         if (!inCodeBlock) {
           inCodeBlock = true;
-          codeBlockLang = line.slice(3).trim();
           codeBlockContent = [];
         } else {
           inCodeBlock = false;
