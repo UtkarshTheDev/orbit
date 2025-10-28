@@ -2,7 +2,7 @@
  * Text-to-Speech Service using ElevenLabs
  */
 
-import { ElevenLabsClient } from "elevenlabs";
+import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 import {
   ELEVENLABS_API_KEY,
   ELEVENLABS_VOICE_ID,
@@ -41,7 +41,7 @@ export async function textToSpeech(
     );
     const client = getElevenLabsClient();
 
-    // Generate speech audio using convert method (returns async iterable)
+    // Generate speech audio using generate method (returns async iterable)
     const audioStream = await client.textToSpeech.convert(ELEVENLABS_VOICE_ID, {
       text,
       model_id: "eleven_turbo_v2_5", // Fast, high-quality model
@@ -49,7 +49,7 @@ export async function textToSpeech(
     });
 
     // Collect audio chunks
-    const chunks: Uint8Array[] = [];
+    const chunks: Buffer[] = [];
     for await (const chunk of audioStream) {
       chunks.push(chunk);
     }
