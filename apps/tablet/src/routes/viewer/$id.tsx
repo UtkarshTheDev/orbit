@@ -5,6 +5,7 @@ import {
   PerspectiveCamera,
 } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
+import * as THREE from "three";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -41,6 +42,25 @@ function ViewerPage() {
     preloadModels(modelPaths);
   }, [models]);
 
+  // Ensure canvas is touch-enabled
+  useEffect(() => {
+    const canvasElement = canvasRef.current?.querySelector('canvas');
+    if (canvasElement) {
+      canvasElement.style.touchAction = 'none';
+      console.log('Canvas touch-action set to none for OrbitControls');
+    }
+  }, []);
+
+  // Initialize controls for touch
+  useEffect(() => {
+    if (controlsRef.current) {
+      controlsRef.current.enableRotate = true;
+      controlsRef.current.enableZoom = true;
+      controlsRef.current.enablePan = true;
+      console.log('OrbitControls touch enabled');
+    }
+  }, [controlsRef.current]);
+
   // Double-tap to reset camera
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -48,12 +68,13 @@ function ViewerPage() {
 
     let lastTap = 0;
 
-    const handleTouchEnd = () => {
+    const handleTouchEnd = (e: TouchEvent) => {
       const now = Date.now();
       const timeSinceLastTap = now - lastTap;
 
       if (timeSinceLastTap < 300 && timeSinceLastTap > 0) {
         // Double tap detected
+        e.preventDefault();
         handleReset();
         lastTap = 0;
       } else {
@@ -61,7 +82,7 @@ function ViewerPage() {
       }
     };
 
-    canvas.addEventListener("touchend", handleTouchEnd);
+    canvas.addEventListener("touchend", handleTouchEnd, { passive: false });
     return () => {
       canvas.removeEventListener("touchend", handleTouchEnd);
     };
@@ -184,21 +205,20 @@ function ViewerPage() {
             <OrbitControls
               autoRotate={isAutoRotating}
               autoRotateSpeed={1.5}
-              dampingFactor={0.08}
-              enableDamping={true}
+              enableDamping={false}
               enablePan={true}
               enableRotate={true}
               enableZoom={true}
               maxDistance={25}
               minDistance={0.5}
-              panSpeed={1}
+              panSpeed={1.5}
               ref={controlsRef}
-              rotateSpeed={0.9}
+              rotateSpeed={1.2}
               touches={{
-                ONE: 2, // TOUCH.ROTATE
-                TWO: 1, // TOUCH.DOLLY_PAN
+                ONE: THREE.TOUCH.ROTATE,
+                TWO: THREE.TOUCH.DOLLY_PAN,
               }}
-              zoomSpeed={0.9}
+              zoomSpeed={1.2}
             />
             <ambientLight intensity={0.8} />
             <directionalLight
