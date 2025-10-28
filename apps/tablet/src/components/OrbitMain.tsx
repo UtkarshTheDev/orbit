@@ -7,6 +7,7 @@ import RobotHead from "./robot/RobotHead";
 import PhotoBooth from "./photobooth/PhotoBooth";
 import Models from "./models/Models";
 import VoiceApp from "./voice/VoiceApp";
+import Home from "./aichat/Home";
 
 type OrbitMainProps = {
 	skipWelcomeAudio?: boolean;
@@ -14,7 +15,7 @@ type OrbitMainProps = {
 
 export function OrbitMain({ skipWelcomeAudio = false }: OrbitMainProps) {
 	const [inputMode, setInputMode] = useState<"voice" | "text">("voice");
-	const [activeView, setActiveView] = useState<"main" | "photobooth" | "models" | "voice">("main");
+	const [activeView, setActiveView] = useState<"main" | "photobooth" | "models" | "voice" | "home">("main");
 
 	const features = [
 		{
@@ -50,6 +51,9 @@ export function OrbitMain({ skipWelcomeAudio = false }: OrbitMainProps) {
 		if (feature === "View 3D Models") {
 			setActiveView("models");
 		}
+		if (feature === "Ask Questions") {
+			setActiveView("home");
+		}
 	};
 
 	const handleTalkWithOrbit = () => {
@@ -58,6 +62,10 @@ export function OrbitMain({ skipWelcomeAudio = false }: OrbitMainProps) {
 
 	const handleBackToMain = () => {
 		setActiveView("main");
+	};
+
+	const handleNavigateToHome = () => {
+		setActiveView("home");
 	};
 
 	useEffect(() => {
@@ -150,6 +158,7 @@ export function OrbitMain({ skipWelcomeAudio = false }: OrbitMainProps) {
 								mode={inputMode}
 								onModeChange={setInputMode}
 								onTalkWithOrbit={handleTalkWithOrbit}
+								onNavigateToHome={handleNavigateToHome}
 							/>
 						</motion.div>
 					</motion.main>
@@ -213,6 +222,18 @@ export function OrbitMain({ skipWelcomeAudio = false }: OrbitMainProps) {
 							<span className="font-medium">Back</span>
 						</button>
 						<VoiceApp />
+					</motion.div>
+				)}
+				{activeView === "home" && (
+					<motion.div
+						animate={{ opacity: 1 }}
+						className="h-screen"
+						exit={{ opacity: 0 }}
+						initial={{ opacity: 0 }}
+						key="home"
+						transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+					>
+						<Home onBack={handleBackToMain} onNavigateToVoice={handleTalkWithOrbit} />
 					</motion.div>
 				)}
 			</AnimatePresence>

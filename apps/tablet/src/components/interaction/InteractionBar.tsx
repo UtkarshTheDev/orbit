@@ -5,12 +5,14 @@ type InteractionBarProps = {
   mode: "voice" | "text";
   onModeChange: (mode: "voice" | "text") => void;
   onTalkWithOrbit: () => void;
+  onNavigateToHome?: () => void;
 };
 
 export function InteractionBar({
   mode,
   onModeChange,
   onTalkWithOrbit,
+  onNavigateToHome,
 }: InteractionBarProps) {
   const [inputValue, setInputValue] = useState("");
 
@@ -20,6 +22,7 @@ export function InteractionBar({
 
   const handleSwitchToText = () => {
     onModeChange("text");
+    onNavigateToHome?.();
   };
 
   const handleSwitchToVoice = () => {
