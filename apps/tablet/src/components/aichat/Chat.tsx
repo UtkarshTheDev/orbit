@@ -4,7 +4,6 @@ import type React from "react";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ShimmeringText } from "@/components/ui/shimmering-text";
 import PillSuggestions from "@/components/voice/PillSuggestions";
 import { Send, Mic, User, Bot } from "lucide-react";
 
@@ -18,13 +17,8 @@ export interface Message {
 export interface OrbitChatProps {
   messages: Message[];
   onSend: (text: string) => Promise<void>;
-  aiAvatar?: string;
-  userAvatar?: string;
   onTalkClick?: () => void;
-  tokenRevealSpeedMs?: number;
-  onStreamStop?: () => void;
   onError?: (error: Error) => void;
-  onMessageRendered?: (messageId: string) => void;
 }
 
 function MarkdownContent({ content }: { content: string }) {
@@ -151,23 +145,27 @@ function MarkdownContent({ content }: { content: string }) {
 
 function AnimatedContent({ content }: { content: string }) {
   const [displayedContent, setDisplayedContent] = useState("");
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentWordIndex, setCurrentWordIndex] = useState(0);
+
+  const words = content.split(" ");
 
   useEffect(() => {
     setDisplayedContent("");
-    setCurrentIndex(0);
+    setCurrentWordIndex(0);
   }, [content]);
 
   useEffect(() => {
-    if (currentIndex < content.length) {
+    if (currentWordIndex < words.length) {
       const timer = setTimeout(() => {
-        setDisplayedContent((prev) => prev + content[currentIndex]);
-        setCurrentIndex((prev) => prev + 1);
-      }, 10); // Faster animation speed
+        setDisplayedContent((prev) => 
+          prev + (prev ? " " : "") + words[currentWordIndex]
+        );
+        setCurrentWordIndex((prev) => prev + 1);
+      }, 100); // Word-by-word animation speed
 
       return () => clearTimeout(timer);
     }
-  }, [content, currentIndex]);
+  }, [currentWordIndex, words]);
 
   return <MarkdownContent content={displayedContent} />;
 }
@@ -175,19 +173,13 @@ function AnimatedContent({ content }: { content: string }) {
 export function OrbitChat({
   messages,
   onSend,
-  aiAvatar,
-  userAvatar,
   onTalkClick,
-  tokenRevealSpeedMs = 20,
-  onStreamStop,
   onError,
-  onMessageRendered,
 }: OrbitChatProps) {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -300,7 +292,6 @@ export function OrbitChat({
       ) : (
         <>
           <div
-            ref={scrollContainerRef}
             className="flex-1 overflow-y-auto px-6 py-8 space-y-8 md:px-10 lg:px-16"
           >
             {messages.map((message) => {
@@ -344,8 +335,17 @@ export function OrbitChat({
                         <p className="text-base leading-relaxed whitespace-pre-wrap">
                           {message.content}
                         </p>
-                      ) : (
+                      ) : message.content ? (
                         <AnimatedContent content={message.content} />
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <div className="flex gap-1">
+                            <span className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:0ms]"></span>
+                            <span className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:150ms]"></span>
+                            <span className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:300ms]"></span>
+                          </div>
+                          <span className="text-sm font-medium text-muted-foreground">Thinking...</span>
+                        </div>
                       )}
                     </div>
 
@@ -358,7 +358,7 @@ export function OrbitChat({
                 </div>
               );
             })}
-            {isLoading && (
+            {isLoading && messages.length > 0 && messages[messages.length - 1].role === "user" && (
               <div className="flex gap-4 animate-fade-in">
                 <div className="flex flex-col items-center gap-2 flex-shrink-0">
                   <div className="w-12 h-12 rounded-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600 text-white animate-breathe">
@@ -370,12 +370,14 @@ export function OrbitChat({
                 </div>
                 <div className="flex flex-col gap-2 max-w-[80%] md:max-w-[70%]">
                   <div className="rounded-2xl px-5 py-4 bg-card border border-border text-card-foreground">
-                    <ShimmeringText
-                      text="Thinking..."
-                      duration={1.5}
-                      className="text-sm font-medium"
-                      spread={1}
-                    />
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-1">
+                        <span className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:0ms]"></span>
+                        <span className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:150ms]"></span>
+                        <span className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:300ms]"></span>
+                      </div>
+                      <span className="text-sm font-medium text-muted-foreground">Thinking...</span>
+                    </div>
                   </div>
                 </div>
               </div>
