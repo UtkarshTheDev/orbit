@@ -1,22 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { OrbitChat, type Message } from "@/components/aichat/Chat";
-
-// Mock AI response generator
-const generateMockAIResponse = async (userMessage: string): Promise<string> => {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 500));
-
-  const responses = [
-    `I understand you said: "${userMessage}". Let me help you with that! Here's some **important information** you should know.`,
-    `That's an interesting question about "${userMessage}". Let me break it down:\n\n- First point to consider\n- Second important aspect\n- Third key element`,
-    `Great point! Regarding "${userMessage}", here's what I think:\n\n**Key Points:**\n- First consideration\n- Second aspect\n- Third element\n\nI hope this helps clarify things!`,
-    `Let me break down "${userMessage}" for you:\n\n1. **Analysis**: This is a complex topic\n2. **Solution**: We can approach it systematically\n3. **Result**: Here's a practical example\n\n\`\`\`javascript\nconst example = "code block";\nconsole.log(example);\n\`\`\``,
-  ];
-
-  return responses[Math.floor(Math.random() * responses.length)];
-};
+import { useVoiceWebSocket } from "@/hooks/useVoiceWebSocket";
 
 interface HomeProps {
   onBack?: () => void;
@@ -25,12 +11,56 @@ interface HomeProps {
 
 export default function Home({ onBack, onNavigateToVoice }: HomeProps) {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
+  const { sendTextQuery, response, resetResponse } = useVoiceWebSocket();
   const revealSpeed = 20;
+
+  // Handle WebSocket response updates
+  useEffect(() => {
+    const { stage, aiText, aiTextChunk, error } = response;
+
+    if (error) {
+      console.error("[Home] WebSocket error:", error);
+      setIsLoading(false);
+      setStreamingMessageId(null);
+      // Add error message
+      const errorMessage: Message = {
+        id: `error_${Date.now()}`,
+        role: "assistant",
+        content: `Sorry, I encountered an error: ${error}`,
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+      return;
+    }
+
+    if (aiTextChunk && streamingMessageId) {
+      // Update the streaming message in real-time by appending the chunk
+      setMessages((prev) =>
+        prev.map((msg) => {
+          if (msg.id === streamingMessageId) {
+            return { ...msg, content: msg.content + aiTextChunk };
+          }
+          return msg;
+        })
+      );
+    }
+
+    if (stage === "responding" && aiText && streamingMessageId) {
+      // AI response is complete
+      setIsLoading(false);
+      setStreamingMessageId(null);
+    }
+  }, [response, streamingMessageId]);
 
   const handleSend = async (text: string) => {
     // Add user message
     const userMessage: Message = {
-      id: Date.now().toString(),
+      id: `user_${Date.now()}`,
       role: "user",
       content: text,
       timestamp: new Date().toLocaleTimeString([], {
@@ -40,21 +70,27 @@ export default function Home({ onBack, onNavigateToVoice }: HomeProps) {
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    setIsLoading(true);
 
-    // Generate AI response
-    const aiResponse = await generateMockAIResponse(text);
+    // Create streaming AI message placeholder
+    const messageId = `ai_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    setStreamingMessageId(messageId);
 
-    const aiMessage: Message = {
-      id: (Date.now() + 1).toString(),
+    const streamingMessage: Message = {
+      id: messageId,
       role: "assistant",
-      content: aiResponse,
+      content: "", // Will be updated as we stream
       timestamp: new Date().toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
       }),
     };
 
-    setMessages((prev) => [...prev, aiMessage]);
+    setMessages((prev) => [...prev, streamingMessage]);
+
+    // Send via WebSocket without TTS
+    resetResponse();
+    sendTextQuery(text, false); // TTS disabled
   };
 
   const handleTalkClick = () => {

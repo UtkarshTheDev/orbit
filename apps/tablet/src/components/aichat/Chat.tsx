@@ -4,6 +4,8 @@ import type React from "react";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { ShimmeringText } from "@/components/ui/shimmering-text";
+import PillSuggestions from "@/components/voice/PillSuggestions";
 import { Send, Mic, User, Bot } from "lucide-react";
 
 export interface Message {
@@ -147,6 +149,29 @@ function MarkdownContent({ content }: { content: string }) {
   return <div className="space-y-1 text-sm">{parseMarkdown(content)}</div>;
 }
 
+function AnimatedContent({ content }: { content: string }) {
+  const [displayedContent, setDisplayedContent] = useState("");
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    setDisplayedContent("");
+    setCurrentIndex(0);
+  }, [content]);
+
+  useEffect(() => {
+    if (currentIndex < content.length) {
+      const timer = setTimeout(() => {
+        setDisplayedContent((prev) => prev + content[currentIndex]);
+        setCurrentIndex((prev) => prev + 1);
+      }, 10); // Faster animation speed
+
+      return () => clearTimeout(timer);
+    }
+  }, [content, currentIndex]);
+
+  return <MarkdownContent content={displayedContent} />;
+}
+
 export function OrbitChat({
   messages,
   onSend,
@@ -212,10 +237,10 @@ export function OrbitChat({
         <div className="flex-1 flex flex-col items-center justify-center px-8 py-12 animate-fade-in">
           <div className="text-center space-y-12 max-w-4xl w-full">
             <div className="space-y-6">
-              <h1 className="text-6xl md:text-7xl lg:text-8xl font-orbitron font-bold tracking-tight text-foreground">
+              <h1 className="text-6xl md:text-7xl lg:text-8xl font-orbitron font-bold tracking-tight text-foreground mb-4">
                 Orbit <span className="text-primary">AI</span>
               </h1>
-              <p className="text-2xl md:text-3xl lg:text-4xl text-muted-foreground font-normal leading-relaxed">
+              <p className="text-lg md:text-xl lg:text-2xl text-muted-foreground font-normal leading-relaxed max-w-2xl mx-auto">
                 Ask me anything, and I'll help you find the answers
               </p>
             </div>
@@ -240,7 +265,7 @@ export function OrbitChat({
                     onKeyDown={handleKeyDown}
                     placeholder="Type your message here..."
                     disabled={isLoading}
-                    className="min-h-[48px] max-h-[144px] resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent rounded-lg px-4 py-3 text-base placeholder:text-muted-foreground/50 transition-all duration-200"
+                    className="min-h-[48px] max-h-[144px] resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent rounded-lg px-4 py-3 text-lg placeholder:text-muted-foreground/50 transition-all duration-200"
                     rows={1}
                   />
                 </div>
@@ -260,6 +285,15 @@ export function OrbitChat({
               <p className="text-base text-muted-foreground text-center mt-5">
                 Tap Send to submit your message
               </p>
+            </div>
+
+            <div className="mt-8">
+              <PillSuggestions onPillClick={(suggestion) => {
+                setInput(suggestion);
+                if (textareaRef.current) {
+                  textareaRef.current.focus();
+                }
+              }} />
             </div>
           </div>
         </div>
@@ -311,7 +345,7 @@ export function OrbitChat({
                           {message.content}
                         </p>
                       ) : (
-                        <MarkdownContent content={message.content} />
+                        <AnimatedContent content={message.content} />
                       )}
                     </div>
 
@@ -324,6 +358,28 @@ export function OrbitChat({
                 </div>
               );
             })}
+            {isLoading && (
+              <div className="flex gap-4 animate-fade-in">
+                <div className="flex flex-col items-center gap-2 flex-shrink-0">
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600 text-white animate-breathe">
+                    <Bot className="w-6 h-6" />
+                  </div>
+                  <span className="text-xs font-orbitron font-semibold text-muted-foreground">
+                    Orbit AI
+                  </span>
+                </div>
+                <div className="flex flex-col gap-2 max-w-[80%] md:max-w-[70%]">
+                  <div className="rounded-2xl px-5 py-4 bg-card border border-border text-card-foreground">
+                    <ShimmeringText
+                      text="Thinking..."
+                      duration={1.5}
+                      className="text-sm font-medium"
+                      spread={1}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
             <div ref={messagesEndRef} />
           </div>
 
@@ -348,7 +404,7 @@ export function OrbitChat({
                     onKeyDown={handleKeyDown}
                     placeholder="Message Orbit..."
                     disabled={isLoading}
-                    className="min-h-[48px] max-h-[144px] resize-none pr-4 rounded-2xl border-input focus-visible:ring-2 focus-visible:ring-ring text-base py-3 px-4"
+                    className="min-h-[48px] max-h-[144px] resize-none pr-4 rounded-2xl border-input focus-visible:ring-2 focus-visible:ring-ring text-lg py-3 px-4"
                     rows={1}
                   />
                 </div>
