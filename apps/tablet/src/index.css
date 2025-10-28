@@ -608,3 +608,14 @@
 .animate-pulse-glow {
   animation: pulse-glow 3s ease-in-out infinite;
 }
+
+html, body, #root {
+  height: 100%;
+  min-height: 100vh;
+}
+
+.main-content {
+  min-height: 100vh;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  background: var(--background);
+}

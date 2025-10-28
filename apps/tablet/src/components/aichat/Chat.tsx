@@ -3,9 +3,9 @@
 import type React from "react";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import PillSuggestions from "@/components/voice/PillSuggestions";
 import { Send, Mic, User, Bot } from "lucide-react";
+import { Input } from "../ui/input";
 
 export interface Message {
   id: string;
@@ -177,7 +177,7 @@ export function OrbitChat({
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -190,10 +190,6 @@ export function OrbitChat({
     setInput("");
     setIsLoading(true);
 
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-    }
-
     try {
       await onSend(text);
     } catch (error) {
@@ -203,20 +199,15 @@ export function OrbitChat({
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
       e.preventDefault();
       handleSend();
     }
   };
 
-  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInput(e.target.value);
-
-    const textarea = e.target;
-    textarea.style.height = "auto";
-    const newHeight = Math.min(textarea.scrollHeight, 144);
-    textarea.style.height = `${newHeight}px`;
   };
 
   const hasMessages = messages.length > 0;
@@ -236,7 +227,7 @@ export function OrbitChat({
             </div>
 
             <div className="w-full max-w-4xl mx-auto pt-8">
-              <div className="flex items-end gap-4 bg-card border-2 border-border rounded-3xl p-4 hover:border-primary/40 transition-all duration-300">
+              <div className="flex items-center gap-4 bg-card border-2 border-border rounded-3xl px-4 py-2 hover:border-primary/40 transition-all duration-300">
                 <Button
                   type="button"
                   size="icon"
@@ -248,15 +239,14 @@ export function OrbitChat({
                 </Button>
 
                 <div className="flex-1 relative">
-                  <Textarea
-                    ref={textareaRef}
+                  <Input
+                    ref={inputRef}
                     value={input}
-                    onChange={handleTextareaChange}
+                    onChange={handleInputChange}
                     onKeyDown={handleKeyDown}
                     placeholder="Type your message here..."
                     disabled={isLoading}
-                    className="min-h-[48px] max-h-[144px] resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent rounded-lg px-4 py-3 text-lg placeholder:text-muted-foreground/50 transition-all duration-200"
-                    rows={1}
+                    className="h-12 border-0 focus-visible:ring-0 shadow-none bg-transparent rounded-lg px-2 text-lg placeholder:text-muted-foreground/50 transition-all md:text-xl"
                   />
                 </div>
 
@@ -280,8 +270,8 @@ export function OrbitChat({
             <div className="mt-8">
               <PillSuggestions onPillClick={(suggestion) => {
                 setInput(suggestion);
-                if (textareaRef.current) {
-                  textareaRef.current.focus();
+                if (inputRef.current) {
+                  inputRef.current.focus();
                 }
               }} />
             </div>
@@ -385,7 +375,7 @@ export function OrbitChat({
 
           <div className="border-t border-border bg-card px-6 py-6 md:px-10 lg:px-16">
             <div className="max-w-5xl mx-auto">
-              <div className="flex items-end gap-4">
+              <div className="flex items-center gap-4 bg-card border-2 border-border rounded-2xl px-4 py-2 hover:border-primary/40 transition-all duration-300">
                 <Button
                   type="button"
                   size="icon"
@@ -397,15 +387,14 @@ export function OrbitChat({
                 </Button>
 
                 <div className="flex-1 relative">
-                  <Textarea
-                    ref={textareaRef}
+                  <Input
+                    ref={inputRef}
                     value={input}
-                    onChange={handleTextareaChange}
+                    onChange={handleInputChange}
                     onKeyDown={handleKeyDown}
                     placeholder="Message Orbit..."
                     disabled={isLoading}
-                    className="min-h-[48px] max-h-[144px] resize-none pr-4 rounded-2xl border-input focus-visible:ring-2 focus-visible:ring-ring text-lg py-3 px-4"
-                    rows={1}
+                    className="h-12 border-0 focus-visible:ring-0 shadow-none bg-transparent rounded-lg px-2 text-lg placeholder:text-muted-foreground/50 transition-all md:text-xl"
                   />
                 </div>
 
