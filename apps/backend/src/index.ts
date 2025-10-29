@@ -11,6 +11,11 @@ import {
   recordPong,
   startHeartbeat,
 } from "./ws/connection";
+import {
+  cancelEditSession,
+  getSessionsByPhone,
+  getSessionsByTablet,
+} from "./ws/imageEditSession";
 import { handleMessage } from "./ws/messageHandler";
 import { removeFromQueue } from "./ws/polaroidQueue";
 import { createWebSocketServer } from "./ws/server";
@@ -55,17 +60,93 @@ const wsHandler = upgradeWebSocket((c) => {
       console.log(`[Backend] Connection ${ws.id} closed`, {
         remainingConnections: connectionsById.size - 1,
       });
-      if (clientRoles.get(ws.id) === "tablet") {
+      const role = clientRoles.get(ws.id);
+      
+      if (role === "tablet") {
         (ws as any).raw.unsubscribe("tablets");
+        // Cancel any active editing sessions for this tablet
+        const tabletSessions = getSessionsByTablet(ws.id);
+        for (const session of tabletSessions) {
+          console.log(`[Backend] Cancelling editing session ${session.sessionId} due to tablet disconnect`);
+          cancelEditSession(session.sessionId);
+          // Notify phone if connected
+          const phoneConnection = connectionsById.get(session.phoneId);
+          if (phoneConnection) {
+            phoneConnection.send(JSON.stringify({
+              type: "ai_edit_cancelled",
+              sessionId: session.sessionId,
+              reason: "Tablet disconnected"
+            }));
+          }
+        }
       }
+      
+      if (role === "phone") {
+        // Cancel any active editing sessions for this phone
+        const phoneSessions = getSessionsByPhone(ws.id);
+        for (const session of phoneSessions) {
+          console.log(`[Backend] Cancelling editing session ${session.sessionId} due to phone disconnect`);
+          cancelEditSession(session.sessionId);
+          // Notify tablet if connected
+          if (session.tabletId) {
+            const tabletConnection = connectionsById.get(session.tabletId);
+            if (tabletConnection) {
+              tabletConnection.send(JSON.stringify({
+                type: "ai_edit_cancelled",
+                sessionId: session.sessionId,
+                reason: "Phone disconnected"
+              }));
+            }
+          }
+        }
+      }
+      
       removeFromQueue(ws.id, server);
       cleanupConnection(ws, (ws as any).pingInterval);
     },
     onError: (error: Error, ws: WSConnection) => {
       console.error(`[Backend] WebSocket error on client ${ws.id}:`, error);
-      if (clientRoles.get(ws.id) === "tablet") {
+      const role = clientRoles.get(ws.id);
+      
+      if (role === "tablet") {
         (ws as any).raw.unsubscribe("tablets");
+        // Cancel any active editing sessions for this tablet
+        const tabletSessions = getSessionsByTablet(ws.id);
+        for (const session of tabletSessions) {
+          console.log(`[Backend] Cancelling editing session ${session.sessionId} due to tablet error`);
+          cancelEditSession(session.sessionId);
+          // Notify phone if connected
+          const phoneConnection = connectionsById.get(session.phoneId);
+          if (phoneConnection) {
+            phoneConnection.send(JSON.stringify({
+              type: "ai_edit_cancelled",
+              sessionId: session.sessionId,
+              reason: "Tablet connection error"
+            }));
+          }
+        }
       }
+      
+      if (role === "phone") {
+        // Cancel any active editing sessions for this phone
+        const phoneSessions = getSessionsByPhone(ws.id);
+        for (const session of phoneSessions) {
+          console.log(`[Backend] Cancelling editing session ${session.sessionId} due to phone error`);
+          cancelEditSession(session.sessionId);
+          // Notify tablet if connected
+          if (session.tabletId) {
+            const tabletConnection = connectionsById.get(session.tabletId);
+            if (tabletConnection) {
+              tabletConnection.send(JSON.stringify({
+                type: "ai_edit_cancelled",
+                sessionId: session.sessionId,
+                reason: "Phone connection error"
+              }));
+            }
+          }
+        }
+      }
+      
       removeFromQueue(ws.id, server);
       cleanupConnection(ws, (ws as any).pingInterval);
     },
