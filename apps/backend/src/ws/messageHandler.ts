@@ -3,6 +3,13 @@ import type { BunWebSocketData } from "hono/bun";
 import { broadcastToTablets } from "./broadcast";
 import type { WSConnection } from "./connection";
 import { clientRoles } from "./connection";
+import {
+	handleAIEditAccept,
+	handleAIEditCancel,
+	handleAIEditFinalize,
+	handleAIEditPrompt,
+	handleStartAIEdit,
+} from "./handlers/imageEditHandler";
 import { handleTextQuery } from "./handlers/textQueryHandler";
 import { handleVoiceQuery } from "./handlers/voiceQueryHandler";
 import { addToQueue, removeFromQueue } from "./polaroidQueue";
@@ -63,6 +70,66 @@ export function handleMessage(
         handleTextQuery(ws, msg).catch((error) => {
           console.error(
             `[Backend] Error handling text query from ${ws.id}:`,
+            error
+          );
+        });
+        break;
+      case "start_ai_edit":
+        console.log(
+          `[Backend] Client ${ws.id} started AI image editing`
+        );
+        // Handle AI edit start asynchronously
+        handleStartAIEdit(ws, server, msg).catch((error) => {
+          console.error(
+            `[Backend] Error handling AI edit start from ${ws.id}:`,
+            error
+          );
+        });
+        break;
+      case "ai_edit_accept":
+        console.log(
+          `[Backend] Client ${ws.id} accepted AI edit session`
+        );
+        // Handle AI edit accept asynchronously
+        handleAIEditAccept(ws, msg).catch((error) => {
+          console.error(
+            `[Backend] Error handling AI edit accept from ${ws.id}:`,
+            error
+          );
+        });
+        break;
+      case "ai_edit_prompt":
+        console.log(
+          `[Backend] Client ${ws.id} sent AI edit prompt`
+        );
+        // Handle AI edit prompt asynchronously
+        handleAIEditPrompt(ws, msg).catch((error) => {
+          console.error(
+            `[Backend] Error handling AI edit prompt from ${ws.id}:`,
+            error
+          );
+        });
+        break;
+      case "ai_edit_finalize":
+        console.log(
+          `[Backend] Client ${ws.id} finalized AI edit`
+        );
+        // Handle AI edit finalize asynchronously
+        handleAIEditFinalize(ws, msg).catch((error) => {
+          console.error(
+            `[Backend] Error handling AI edit finalize from ${ws.id}:`,
+            error
+          );
+        });
+        break;
+      case "ai_edit_cancel":
+        console.log(
+          `[Backend] Client ${ws.id} cancelled AI edit`
+        );
+        // Handle AI edit cancel asynchronously
+        handleAIEditCancel(ws, msg).catch((error) => {
+          console.error(
+            `[Backend] Error handling AI edit cancel from ${ws.id}:`,
             error
           );
         });
