@@ -3,6 +3,7 @@ import "@fontsource/quicksand/600.css";
 import { useEffect } from "react";
 import { useSessionStore } from "@/lib/sessionStore";
 import CameraInterface from "./CameraInterface";
+import { Toaster } from "sonner";
 
 export default function Home() {
   const sendWs = useSessionStore((s) => s.sendWs);
@@ -17,8 +18,11 @@ export default function Home() {
   }, [isTablet, wsReady, sendWs]);
 
   return (
-    <div style={{ fontFamily: '"Quicksand", "Outfit", sans-serif' }}>
-      <CameraInterface />
-    </div>
+    <>
+      <div style={{ fontFamily: '"Quicksand", "Outfit", sans-serif' }}>
+        <CameraInterface />
+      </div>
+      <Toaster position="top-center" richColors />
+    </>
   );
 }

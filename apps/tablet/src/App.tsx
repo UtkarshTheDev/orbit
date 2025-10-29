@@ -4,19 +4,22 @@ import OrbitGreeting from "@/components/greeting/GreetingAnimation";
 import RobotFace from "@/components/robot/RobotFace";
 import Background from "@/components/ui/Background";
 import { OrbitMain } from "./components/OrbitMain";
+import AIImageEditor from "./components/ImageEditor/Editor";
 import { useSessionStore } from "./lib/sessionStore";
+import { Toaster } from "sonner";
 
 export default function Home() {
   const [isDisappearing, setIsDisappearing] = useState(false);
   const [showGreeting, setShowGreeting] = useState(false);
   const [showMainApp, setShowMainApp] = useState(false);
 
-  // Session state: isTablet + photo booth mode
+  // Session state: isTablet + photo booth mode + AI editing
   const connectWs = useSessionStore((s) => s.connectWs);
   const isTablet = useSessionStore((s) => s.isTablet);
   const photoBoothActive = useSessionStore((s) => s.photoBoothActive);
   const showMainAppFromStore = useSessionStore((s) => s.showMainApp);
   const isRetakeRequested = useSessionStore((s) => s.isRetakeRequested);
+  const aiEditActive = useSessionStore((s) => s.aiEditActive);
 
   useEffect(() => {
     connectWs();
@@ -31,6 +34,19 @@ export default function Home() {
     }
   };
 
+  // Tablet: AI Image Editor (highest priority)
+  if (isTablet && aiEditActive) {
+    return (
+      <main className="relative flex h-screen w-full items-center justify-center overflow-hidden text-foreground">
+        <Background />
+        <div className="relative z-20 h-full w-full flex items-center justify-center">
+          <AIImageEditor />
+        </div>
+        <Toaster position="top-center" richColors />
+      </main>
+    );
+  }
+  
   // Tablet should always display specialized robotface in booth mode OR when retake is requested
   if (isTablet && (photoBoothActive || isRetakeRequested)) {
     return (
@@ -39,6 +55,7 @@ export default function Home() {
         <div className="relative z-20 h-full w-full">
           <RobotFace isPhotoBooth isRetake={isRetakeRequested} />
         </div>
+        <Toaster position="top-center" richColors />
       </main>
     );
   }
@@ -50,6 +67,7 @@ export default function Home() {
         <div className="relative z-20 h-full w-full">
           <OrbitMain skipWelcomeAudio />
         </div>
+        <Toaster position="top-center" richColors />
       </main>
     );
   }
@@ -79,6 +97,7 @@ export default function Home() {
         </AnimatePresence>
         {!showGreeting && showMainApp && <OrbitMain />}
       </div>
+      <Toaster position="top-center" richColors />
     </main>
   );
 }

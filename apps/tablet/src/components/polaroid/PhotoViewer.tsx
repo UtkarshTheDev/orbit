@@ -1,9 +1,10 @@
 "use client";
 
-import { Camera, Download, Sparkles } from "lucide-react";
+import { Camera, Download, Sparkles, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useSessionStore } from "@/lib/sessionStore";
 import { Button } from "../ui/button";
+import { toast } from "sonner";
 
 interface PhotoViewerProps {
   capturedImage: string;
@@ -16,14 +17,52 @@ export default function PhotoViewer({
 }: PhotoViewerProps) {
   const sendWs = useSessionStore((s) => s.sendWs);
   const isTablet = useSessionStore((s) => s.isTablet);
+  const ws = useSessionStore((s) => s.ws);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [polaroidImage, setPolaroidImage] = useState<string | null>(null);
   const [rotation] = useState(() => (Math.random() > 0.5 ? -2 : 3));
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isEditingWithAI, setIsEditingWithAI] = useState(false);
+  const [currentImage, setCurrentImage] = useState(capturedImage);
 
   useEffect(() => {
     generatePolaroidImage();
-  }, [capturedImage]);
+  }, [currentImage]);
+
+  // Listen for edited image from backend
+  useEffect(() => {
+    if (!ws) return;
+
+    const handleMessage = (event: MessageEvent) => {
+      try {
+        const msg = JSON.parse(event.data);
+        
+        if (msg.type === "ai_edit_started" && !isTablet) {
+          console.log("[PhotoViewer] AI editing started", msg.sessionId);
+          setIsEditingWithAI(true);
+          toast.info("Your image is being edited with Orbit AI ✨");
+        }
+        
+        if (msg.type === "ai_edit_complete" && !isTablet) {
+          console.log("[PhotoViewer] AI editing complete, updating image");
+          setIsEditingWithAI(false);
+          setCurrentImage(msg.editedImage);
+          toast.success("Image edited successfully! 🎨");
+        }
+        
+        if (msg.type === "ai_edit_cancelled" && !isTablet) {
+          console.log("[PhotoViewer] AI editing cancelled");
+          setIsEditingWithAI(false);
+          toast.info("Image editing was cancelled");
+        }
+      } catch (error) {
+        // Ignore parse errors
+      }
+    };
+
+    ws.addEventListener("message", handleMessage);
+    return () => ws.removeEventListener("message", handleMessage);
+  }, [ws, isTablet]);
 
   // Handle retake photo
   const handleRetakePhoto = () => {
@@ -244,7 +283,17 @@ export default function PhotoViewer({
       setTimeout(() => setIsLoaded(true), 50);
     };
 
-    img.src = capturedImage;
+    img.src = currentImage;
+  };
+
+  const handleEditWithAI = () => {
+    if (!isTablet) {
+      console.log("[PhotoViewer] Starting AI edit with original image");
+      sendWs({
+        type: "start_ai_edit",
+        image: currentImage,
+      });
+    }
   };
 
   const downloadPolaroid = () => {
@@ -322,12 +371,11 @@ export default function PhotoViewer({
           }}
         >
           <Button
-            className="group relative h-14 w-full overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600 font-semibold text-base text-white shadow-lg shadow-blue-500/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/60 hover:scale-[1.02] active:scale-[0.98]"
-            onClick={() => {
-              /* TODO: Implement AI editing */
-            }}
+            className="group relative h-14 w-full overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600 font-semibold text-base text-white shadow-lg shadow-blue-500/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/60 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={handleEditWithAI}
             size="lg"
             style={{ fontFamily: '"Quicksand", sans-serif' }}
+            disabled={isEditingWithAI}
           >
             {/* Animated gradient overlay */}
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-500 opacity-0 transition-opacity duration-300 group-hover:opacity-100" 
@@ -354,10 +402,21 @@ export default function PhotoViewer({
             
             {/* Content */}
             <div className="relative flex items-center justify-center">
-              <Sparkles className="mr-2 h-5 w-5 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
-              <span className="tracking-wide">
-                Edit with <span className="font-orbitron font-bold bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">Orbit AI</span>
-              </span>
+              {isEditingWithAI ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  <span className="tracking-wide">
+                    Editing with <span className="font-orbitron font-bold bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">Orbit AI</span>...
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="mr-2 h-5 w-5 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
+                  <span className="tracking-wide">
+                    Edit with <span className="font-orbitron font-bold bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">Orbit AI</span>
+                  </span>
+                </>
+              )}
             </div>
           </Button>
 
