@@ -10,6 +10,10 @@ type SessionState = {
 	photoBoothActive: boolean;
 	showMainApp: boolean;
 	isRetakeRequested: boolean;
+	aiEditActive: boolean;
+	aiEditSessionId: string | null;
+	aiEditImage: string | null;
+	aiEditCurrentImage: string | null;
 	ws: WebSocket | null;
 	wsReady: boolean;
 	wsReconnecting: boolean;
@@ -21,6 +25,10 @@ type SessionState = {
 	setPhotoBoothActive: (val: boolean) => void;
 	setShowMainApp: (val: boolean) => void;
 	setIsRetakeRequested: (val: boolean) => void;
+	setAiEditActive: (val: boolean) => void;
+	setAiEditSessionId: (val: string | null) => void;
+	setAiEditImage: (val: string | null) => void;
+	setAiEditCurrentImage: (val: string | null) => void;
 };
 
 // Connection configuration
@@ -116,6 +124,10 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 	photoBoothActive: false,
 	showMainApp: false,
 	isRetakeRequested: false,
+	aiEditActive: false,
+	aiEditSessionId: null,
+	aiEditImage: null,
+	aiEditCurrentImage: null,
 	ws: null,
 	wsReady: false,
 	wsReconnecting: false,
@@ -254,6 +266,48 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 								set({ isRetakeRequested: false });
 							}, 3000);
 						}
+						if (msg.type === "ai_edit_request" && get().isTablet) {
+							console.log(
+								"[Frontend] AI edit request received",
+								msg.sessionId,
+							);
+							// Auto-accept and show editor
+							set({
+								aiEditActive: true,
+								aiEditSessionId: msg.sessionId,
+								aiEditImage: msg.image,
+								aiEditCurrentImage: msg.image,
+								photoBoothActive: false,
+								showMainApp: false,
+							});
+							// Send accept message
+							get().sendWs({
+								type: "ai_edit_accept",
+								sessionId: msg.sessionId,
+							});
+						}
+						if (msg.type === "ai_edit_result" && get().isTablet) {
+							console.log(
+								"[Frontend] AI edit result received",
+								msg.sessionId,
+							);
+							if (msg.success && msg.image) {
+								set({ aiEditCurrentImage: msg.image });
+							}
+						}
+						if (msg.type === "ai_edit_cancelled" && get().isTablet) {
+							console.log(
+								"[Frontend] AI edit cancelled",
+								msg.sessionId,
+							);
+							set({
+								aiEditActive: false,
+								aiEditSessionId: null,
+								aiEditImage: null,
+								aiEditCurrentImage: null,
+								showMainApp: true,
+							});
+						}
 					} catch {
 						// ignore non-JSON
 					}
@@ -349,5 +403,17 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 	},
 	setIsRetakeRequested: (val) => {
 		set({ isRetakeRequested: val });
+	},
+	setAiEditActive: (val) => {
+		set({ aiEditActive: val });
+	},
+	setAiEditSessionId: (val) => {
+		set({ aiEditSessionId: val });
+	},
+	setAiEditImage: (val) => {
+		set({ aiEditImage: val });
+	},
+	setAiEditCurrentImage: (val) => {
+		set({ aiEditCurrentImage: val });
 	},
 }));
