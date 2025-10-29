@@ -26,3 +26,9 @@ export const TEMP_UPLOAD_DIR = process.env.TEMP_UPLOAD_DIR || "/tmp/uploads";
 export const STT_TIMEOUT = 60_000; // 60 seconds for transcription
 export const AI_TIMEOUT = 120_000; // 2 minutes for AI response
 export const TTS_TIMEOUT = 60_000; // 60 seconds for text-to-speech
+
+// AI Image Editing Configuration
+export const HUGGINGFACE_API_TOKEN = process.env.HUGGINGFACE_API_TOKEN || "";
+export const IMAGE_EDIT_TIMEOUT = 120_000; // 2 minutes for image editing
+export const MAX_IMAGE_SIZE_MB = 10; // Max image size for editing
+export const MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024;
