@@ -194,7 +194,7 @@ export default function GreetingAnimation({
 											lineIndex === 0
 												? "font-bold font-sans text-6xl text-blue-500 tracking-tight md:text-8xl lg:text-9xl"
 												: "font-sans font-semibold text-5xl text-blue-500 tracking-tight md:text-7xl lg:text-8xl"
-										} mt-6`}
+										} ${lineIndex === 1 ? "mt-12": "mt-6"} `}
 										initial={{ opacity: 0, y: 10 }}
 										key={lineIndex}
 									>

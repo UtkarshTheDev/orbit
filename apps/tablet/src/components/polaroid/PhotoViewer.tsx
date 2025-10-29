@@ -322,17 +322,43 @@ export default function PhotoViewer({
           }}
         >
           <Button
-            className="relative h-14 w-full rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 font-semibold text-base text-white shadow-md transition-all duration-150 active:scale-95"
+            className="group relative h-14 w-full overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600 font-semibold text-base text-white shadow-lg shadow-blue-500/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/60 hover:scale-[1.02] active:scale-[0.98]"
             onClick={() => {
               /* TODO: Implement AI editing */
             }}
             size="lg"
             style={{ fontFamily: '"Quicksand", sans-serif' }}
           >
-            <Sparkles className="mr-2 h-5 w-5" />
-            <span className="tracking-wide">
-              Edit with <span className="font-orbitron">Orbit AI</span>
-            </span>
+            {/* Animated gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-500 opacity-0 transition-opacity duration-300 group-hover:opacity-100" 
+                 style={{ 
+                   backgroundSize: '200% 100%',
+                   animation: 'gradient-shift 3s ease infinite'
+                 }} 
+            />
+            
+            {/* Magical glow rings */}
+            <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+              <div className="absolute inset-0 rounded-2xl bg-blue-400/20 blur-xl animate-pulse" />
+            </div>
+            
+            {/* Shimmer effect */}
+            <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-1000 group-hover:translate-x-full" />
+            
+            {/* Sparkle particles */}
+            <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+              <div className="absolute top-2 left-8 h-1 w-1 rounded-full bg-white/80 animate-ping" style={{ animationDelay: '0s' }} />
+              <div className="absolute top-4 right-12 h-1 w-1 rounded-full bg-white/80 animate-ping" style={{ animationDelay: '0.3s' }} />
+              <div className="absolute bottom-3 left-16 h-1 w-1 rounded-full bg-white/80 animate-ping" style={{ animationDelay: '0.6s' }} />
+            </div>
+            
+            {/* Content */}
+            <div className="relative flex items-center justify-center">
+              <Sparkles className="mr-2 h-5 w-5 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
+              <span className="tracking-wide">
+                Edit with <span className="font-orbitron font-bold bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">Orbit AI</span>
+              </span>
+            </div>
           </Button>
 
           <Button
