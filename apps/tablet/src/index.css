@@ -632,3 +632,13 @@ html, body, #root {
   padding-bottom: env(safe-area-inset-bottom, 0);
   background: var(--background);
 }
+
+/* Hide scrollbar for horizontal pill suggestions */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

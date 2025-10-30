@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Mic, Download, Sparkles, Zap, Grid3x3, X } from "lucide-react"
+import { Mic, Download, Sparkles, Zap, Grid3x3, X, Send } from "lucide-react"
 import { toast } from "sonner"
 import { useSessionStore } from "@/lib/sessionStore"
 
@@ -238,7 +238,7 @@ export default function AIImageEditor() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="w-full max-w-2xl mx-auto space-y-6"
+        className="w-full h-screen max-w-5xl mx-auto flex flex-col px-8 py-6"
       >
         {/* Animated Background */}
         <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
@@ -273,18 +273,18 @@ export default function AIImageEditor() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="text-4xl font-bold text-center text-blue-600"
+          className="text-3xl font-bold text-center text-blue-600 mb-6"
           style={{ fontFamily: "Orbitron, sans-serif" }}
         >
           AI Image Editor
         </motion.h1>
 
-        {/* Image Card */}
+        {/* Image Card - Centered and Square */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.3 }}
-          className="relative aspect-square w-full max-w-md mx-auto rounded-2xl overflow-hidden shadow-lg border border-blue-100"
+          className="relative w-full aspect-square max-w-lg mx-auto rounded-2xl overflow-hidden shadow-xl border border-blue-100 flex-shrink-0"
         >
           {/* Base Image */}
           <img
@@ -298,7 +298,7 @@ export default function AIImageEditor() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             onClick={handleClose}
-            className="absolute top-4 right-4 bg-red-500/80 backdrop-blur-sm text-white p-2 rounded-full hover:bg-red-600 transition-colors"
+            className="absolute top-3 right-3 bg-red-500/80 backdrop-blur-sm text-white p-2 rounded-full hover:bg-red-600 transition-colors z-20"
           >
             <X className="w-5 h-5" />
           </motion.button>
@@ -310,10 +310,33 @@ export default function AIImageEditor() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0 }}
-                className="absolute top-4 left-4 bg-blue-500/80 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm"
+                className="absolute top-3 left-3 bg-blue-500/80 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm z-20"
                 style={{ fontFamily: "Orbitron, sans-serif" }}
               >
                 ✨ Edited
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Download Button Overlay */}
+          <AnimatePresence>
+            {aiEditCurrentImage && aiEditCurrentImage !== aiEditImage && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="absolute bottom-0 left-0 right-0 flex justify-center pb-4 z-20"
+              >
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleDownload}
+                  className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full px-6 py-2.5 shadow-2xl hover:shadow-blue-500/50 transition-all flex items-center gap-2 backdrop-blur-sm border border-white/20"
+                  style={{ fontFamily: "Outfit, sans-serif" }}
+                >
+                  <Download className="w-5 h-5" />
+                  <span className="font-semibold">Download</span>
+                </motion.button>
               </motion.div>
             )}
           </AnimatePresence>
@@ -353,34 +376,16 @@ export default function AIImageEditor() {
           </AnimatePresence>
         </motion.div>
 
-        {/* Download Button */}
-        <AnimatePresence>
-          {aiEditCurrentImage && aiEditCurrentImage !== aiEditImage && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="flex justify-center"
-            >
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleDownload}
-                className="bg-blue-500 text-white rounded-full px-6 py-2 shadow-md hover:bg-blue-600 transition-colors flex items-center gap-2"
-                style={{ fontFamily: "Outfit, sans-serif" }}
-              >
-                <Download className="w-4 h-4" />
-                Download Image
-              </motion.button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="flex flex-wrap justify-center gap-3"
+        {/* Bottom Section - Pills and Input */}
+        <div className="mt-auto space-y-4 pb-4">
+          {/* Suggestion Pills - Centered Horizontal Scroll */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="overflow-x-auto scrollbar-hide"
+          >
+            <div className="flex gap-2.5 justify-center px-2"
         >
           {suggestions.map((suggestion, index) => {
             const Icon = suggestion.icon
@@ -397,7 +402,7 @@ export default function AIImageEditor() {
                 whileTap={{ scale: 0.98 }}
                 onClick={() => handleEdit(suggestion.text)}
                 disabled={isProcessing}
-                className="px-5 py-3 rounded-xl border border-blue-300 text-blue-700 bg-white hover:border-blue-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed min-h-[48px] flex items-center gap-2.5 font-medium shadow-sm hover:shadow-md cursor-pointer"
+                className="px-4 py-2.5 rounded-lg border-2 border-blue-300 text-blue-700 bg-white hover:border-blue-500 hover:bg-blue-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium shadow-sm hover:shadow-md cursor-pointer whitespace-nowrap"
                 style={{ fontFamily: "Outfit, sans-serif" }}
               >
                 <Icon className="w-4 h-4" />
@@ -405,22 +410,23 @@ export default function AIImageEditor() {
               </motion.button>
             )
           })}
-        </motion.div>
+            </div>
+          </motion.div>
 
-        {/* Input Section */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          className="flex items-center gap-3 max-w-xl mx-auto"
-        >
+          {/* Input Section with Send Button */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+            className="flex items-center gap-3 max-w-4xl mx-auto"
+          >
           <div className="flex-1 relative">
             <input
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Describe how you want to edit the image…"
-              className="w-full px-6 py-4 rounded-2xl border-2 border-blue-200 focus:border-blue-400 focus:outline-none shadow-inner bg-white/80 backdrop-blur-sm text-blue-900 placeholder:text-blue-400"
+              placeholder="Describe your edit…"
+              className="w-full pl-5 pr-14 py-3.5 rounded-xl border-2 border-blue-200 focus:border-blue-400 focus:outline-none shadow-inner bg-white/80 backdrop-blur-sm text-blue-900 placeholder:text-blue-400"
               style={{ fontFamily: "Outfit, sans-serif" }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && inputValue.trim()) {
@@ -429,19 +435,33 @@ export default function AIImageEditor() {
               }}
               disabled={isProcessing}
             />
+            {/* Mic Button Inside Input */}
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={handleMicClick}
+              className={`absolute right-2.5 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all ${
+                isListening ? "bg-red-500 text-white animate-pulse" : "bg-blue-100 text-blue-600 hover:bg-blue-200"
+              }`}
+              disabled={isProcessing}
+              title="Voice input"
+            >
+              <Mic className="w-4.5 h-4.5" />
+            </motion.button>
           </div>
+          {/* Send Button */}
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={handleMicClick}
-            className={`p-4 rounded-full bg-blue-500 text-white shadow-lg hover:bg-blue-600 transition-all min-w-[56px] min-h-[56px] flex items-center justify-center ${
-              isListening ? "ring-4 ring-blue-300 animate-pulse bg-red-500" : ""
-            }`}
-            disabled={isProcessing}
+            onClick={() => inputValue.trim() && handleEdit(inputValue)}
+            className="p-3.5 rounded-xl bg-blue-500 text-white shadow-lg hover:bg-blue-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isProcessing || !inputValue.trim()}
+            title="Send prompt"
           >
-            <Mic className="w-6 h-6" />
+            <Send className="w-5.5 h-5.5" />
           </motion.button>
-        </motion.div>
+          </motion.div>
+        </div>
       </motion.div>
     </>
   )
