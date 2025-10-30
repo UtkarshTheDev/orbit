@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Mic, Download, Sparkles, Zap, Grid3x3, X, Send } from "lucide-react"
+import { Download, Sparkles, Zap, Grid3x3, X, Send } from "lucide-react"
 import { toast } from "sonner"
 import { useSessionStore } from "@/lib/sessionStore"
 import CinematicOverlay from "./CinematicOverlay"
@@ -27,14 +27,8 @@ export default function AIImageEditor() {
 
   // Local state
   const [isProcessing, setIsProcessing] = useState(false)
-  const [isListening, setIsListening] = useState(false)
   const [inputValue, setInputValue] = useState("")
-  const [isRecording, setIsRecording] = useState(false)
   const [editingImageSnapshot, setEditingImageSnapshot] = useState<string | null>(null)
-  
-  // Voice recording
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
-  const audioChunksRef = useRef<Blob[]>([])
 
   // Listen for processing status from backend
   useEffect(() => {
@@ -73,101 +67,7 @@ export default function AIImageEditor() {
     }, 120000)
   }
 
-  const handleMicClick = async () => {
-    if (isRecording) {
-      // Stop recording
-      stopRecording()
-    } else {
-      // Start recording
-      await startRecording()
-    }
-  }
 
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const mediaRecorder = new MediaRecorder(stream)
-      mediaRecorderRef.current = mediaRecorder
-      audioChunksRef.current = []
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data)
-        }
-      }
-
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" })
-        await processVoiceInput(audioBlob)
-        
-        // Stop all tracks
-        stream.getTracks().forEach(track => track.stop())
-      }
-
-      mediaRecorder.start()
-      setIsRecording(true)
-      setIsListening(true)
-      toast.info("Listening... Speak your editing instruction")
-    } catch (error) {
-      console.error("Error starting recording:", error)
-      toast.error("Could not access microphone")
-    }
-  }
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop()
-      setIsRecording(false)
-      setIsListening(false)
-    }
-  }
-
-  const processVoiceInput = async (audioBlob: Blob) => {
-    try {
-      // Convert blob to base64
-      const reader = new FileReader()
-      reader.readAsDataURL(audioBlob)
-      
-      reader.onloadend = () => {
-        const base64Audio = reader.result as string
-        
-        // Send to backend for STT
-        sendWs({
-          type: "voice_query",
-          data: base64Audio,
-          format: "webm",
-        })
-        
-        toast.info("Processing voice input...")
-      }
-    } catch (error) {
-      console.error("Error processing voice:", error)
-      toast.error("Failed to process voice input")
-    }
-  }
-
-  // Listen for STT result
-  useEffect(() => {
-    const ws = useSessionStore.getState().ws
-    if (!ws) return
-
-    const handleMessage = (event: MessageEvent) => {
-      try {
-        const msg = JSON.parse(event.data)
-        
-        if (msg.type === "stt_done" && msg.text) {
-          // Set the transcribed text as input
-          setInputValue(msg.text)
-          toast.success(`Heard: "${msg.text}"`)
-        }
-      } catch (error) {
-        // Ignore parse errors
-      }
-    }
-
-    ws.addEventListener("message", handleMessage)
-    return () => ws.removeEventListener("message", handleMessage)
-  }, [])
 
   // Stop processing when result arrives - only when we get a NEW image different from what we sent
   useEffect(() => {
@@ -260,8 +160,7 @@ export default function AIImageEditor() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="text-3xl font-bold text-center text-blue-600 mb-6"
-          style={{ fontFamily: "Orbitron, sans-serif" }}
+          className="text-3xl md:text-4xl font-bold text-center text-blue-600 mb-6 mt-2 md:mt-4 font-orbitron"
         >
           AI Image Editor
         </motion.h1>
@@ -297,8 +196,7 @@ export default function AIImageEditor() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0 }}
-                className="absolute top-3 left-3 bg-blue-500/80 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm z-20"
-                style={{ fontFamily: "Orbitron, sans-serif" }}
+                className="absolute top-3 left-3 bg-blue-500/80 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm z-20 font-orbitron"
               >
                 ✨ Edited
               </motion.div>
@@ -318,8 +216,7 @@ export default function AIImageEditor() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={handleDownload}
-                  className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full px-6 py-2.5 shadow-2xl hover:shadow-blue-500/50 transition-all flex items-center gap-2 backdrop-blur-sm border border-white/20"
-                  style={{ fontFamily: "Outfit, sans-serif" }}
+                  className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full px-6 py-2.5 shadow-2xl hover:shadow-blue-500/50 transition-all flex items-center gap-2 backdrop-blur-sm border border-white/20 font-orbitron"
                 >
                   <Download className="w-5 h-5" />
                   <span className="font-semibold">Download</span>
@@ -333,7 +230,7 @@ export default function AIImageEditor() {
         </motion.div>
 
         {/* Bottom Section - Pills and Input */}
-        <div className="mt-auto space-y-4 pb-4">
+        <div className="mt-3 space-y-5 pb-4">
           {/* Suggestion Pills - Centered Horizontal Scroll */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -358,8 +255,7 @@ export default function AIImageEditor() {
                 whileTap={{ scale: 0.98 }}
                 onClick={() => handleEdit(suggestion.text)}
                 disabled={isProcessing}
-                className="px-4 py-2.5 rounded-lg border-2 border-blue-300 text-blue-700 bg-white hover:border-blue-500 hover:bg-blue-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium shadow-sm hover:shadow-md cursor-pointer whitespace-nowrap"
-                style={{ fontFamily: "Outfit, sans-serif" }}
+                className="px-4 py-2.5 rounded-lg border-2 border-blue-300 text-blue-700 bg-white hover:border-blue-500 hover:bg-blue-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium shadow-sm hover:shadow-md cursor-pointer whitespace-nowrap font-orbitron"
               >
                 <Icon className="w-4 h-4" />
                 <span>{suggestion.text}</span>
@@ -382,8 +278,7 @@ export default function AIImageEditor() {
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               placeholder="Describe your edit…"
-              className="w-full pl-5 pr-14 py-3.5 rounded-xl border-2 border-blue-200 focus:border-blue-400 focus:outline-none shadow-inner bg-white/80 backdrop-blur-sm text-blue-900 placeholder:text-blue-400"
-              style={{ fontFamily: "Outfit, sans-serif" }}
+              className="w-full pl-5 pr-5 py-3.5 rounded-xl border-2 border-blue-200 focus:border-blue-400 focus:outline-none shadow-inner bg-white/80 backdrop-blur-sm text-blue-900 placeholder:text-blue-400 font-orbitron mb-5"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && inputValue.trim()) {
                   handleEdit(inputValue)
@@ -391,26 +286,13 @@ export default function AIImageEditor() {
               }}
               disabled={isProcessing}
             />
-            {/* Mic Button Inside Input */}
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={handleMicClick}
-              className={`absolute right-2.5 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all ${
-                isListening ? "bg-red-500 text-white animate-pulse" : "bg-blue-100 text-blue-600 hover:bg-blue-200"
-              }`}
-              disabled={isProcessing}
-              title="Voice input"
-            >
-              <Mic className="w-4.5 h-4.5" />
-            </motion.button>
           </div>
           {/* Send Button */}
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => inputValue.trim() && handleEdit(inputValue)}
-            className="p-3.5 rounded-xl bg-blue-500 text-white shadow-lg hover:bg-blue-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-3.5 rounded-xl bg-blue-500 text-white shadow-lg hover:bg-blue-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-orbitron"
             disabled={isProcessing || !inputValue.trim()}
             title="Send prompt"
           >

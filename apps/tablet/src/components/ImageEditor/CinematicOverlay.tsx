@@ -10,9 +10,10 @@ interface CinematicOverlayProps {
 
 const messages = [
   "Analyzing your image…",
-  "Understanding your request…",
+  "Understanding your instructions…",
   "Processing visual data…",
   "Applying intelligent edits…",
+  "Optimizing visual elements…",
   "Finalizing AI edits…",
 ]
 
@@ -36,13 +37,13 @@ export default function CinematicOverlay({ isVisible, duration = 12 }: Cinematic
       setPhase("middle")
     }, startDuration)
 
-    // Middle phase - cycle messages (5x slower transitions)
+    // Middle phase - cycle messages (2.5x slower transitions - reduced from 5x)
     const messageInterval = setInterval(() => {
       setMessageIndex((prev) => {
         if (prev < messages.length - 2) return prev + 1
         return prev
       })
-    }, (middleDuration / (messages.length - 2)) * 5)
+    }, (middleDuration / (messages.length - 2)) * 2.5)
 
     // End phase
     const endTimer = setTimeout(() => {
