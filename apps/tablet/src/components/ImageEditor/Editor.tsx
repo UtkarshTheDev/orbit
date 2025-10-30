@@ -160,7 +160,7 @@ export default function AIImageEditor() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="text-3xl md:text-4xl mt-6 font-bold text-center text-blue-600 mb-6 lg:mt-12 font-orbitron"
+          className="text-3xl md:text-4xl mt-auto font-bold text-center text-blue-600 mb-6 font-orbitron"
         >
           AI Image Editor
         </motion.h1>
