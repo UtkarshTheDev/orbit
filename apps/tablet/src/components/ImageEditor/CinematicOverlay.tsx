@@ -30,7 +30,6 @@ export default function CinematicOverlay({ isVisible, duration = 12 }: Cinematic
     // Phase timing
     const startDuration = 3000 // 0-3s
     const middleDuration = (duration - 5) * 1000 // 3-10s
-    const endDuration = 2000 // 10-12s
 
     // Start phase
     const startTimer = setTimeout(() => {
@@ -420,7 +419,7 @@ export default function CinematicOverlay({ isVisible, duration = 12 }: Cinematic
       </div>
 
       {/* Shimmer animation keyframes */}
-      <style jsx>{`
+      <style>{`
         @keyframes shimmer {
           0% {
             background-position: -200% 0;

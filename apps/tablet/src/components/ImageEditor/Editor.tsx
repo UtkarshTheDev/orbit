@@ -13,8 +13,6 @@ const suggestions = [
   { text: "Convert to Pixel Art", icon: Grid3x3 },
 ]
 
-const loadingMessages = ["Analyzing your image…", "Applying artistic magic…", "Finalizing details…"]
-
 export default function AIImageEditor() {
   // Session store
   const sendWs = useSessionStore((s) => s.sendWs)
@@ -29,7 +27,6 @@ export default function AIImageEditor() {
 
   // Local state
   const [isProcessing, setIsProcessing] = useState(false)
-  const [currentMessage, setCurrentMessage] = useState(0)
   const [isListening, setIsListening] = useState(false)
   const [inputValue, setInputValue] = useState("")
   const [isRecording, setIsRecording] = useState(false)
@@ -56,18 +53,7 @@ export default function AIImageEditor() {
     setEditingImageSnapshot(currentImg)
     
     setIsProcessing(true)
-    setCurrentMessage(0)
     setInputValue("") // Clear input after sending
-
-    // Cycle through loading messages
-    const interval = setInterval(() => {
-      setCurrentMessage((prev) => {
-        if (prev < loadingMessages.length - 1) {
-          return prev + 1
-        }
-        return prev
-      })
-    }, 1500)
 
     // Send edit prompt to backend
     sendWs({
@@ -77,18 +63,8 @@ export default function AIImageEditor() {
       image: currentImg,
     })
 
-    // Stop loading messages after result (handled by sessionStore update)
-    const checkInterval = setInterval(() => {
-      if (!isProcessing) {
-        clearInterval(interval)
-        clearInterval(checkInterval)
-      }
-    }, 100)
-
     // Timeout after 2 minutes
     setTimeout(() => {
-      clearInterval(interval)
-      clearInterval(checkInterval)
       if (isProcessing) {
         setIsProcessing(false)
         setEditingImageSnapshot(null)
