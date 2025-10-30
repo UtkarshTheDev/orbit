@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Mic, Download, Sparkles, Zap, Grid3x3, X, Send } from "lucide-react"
 import { toast } from "sonner"
 import { useSessionStore } from "@/lib/sessionStore"
+import CinematicOverlay from "./CinematicOverlay"
 
 const suggestions = [
   { text: "Transform to Ghibli Style", icon: Sparkles },
@@ -32,6 +33,7 @@ export default function AIImageEditor() {
   const [isListening, setIsListening] = useState(false)
   const [inputValue, setInputValue] = useState("")
   const [isRecording, setIsRecording] = useState(false)
+  const [editingImageSnapshot, setEditingImageSnapshot] = useState<string | null>(null)
   
   // Voice recording
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
@@ -49,6 +51,10 @@ export default function AIImageEditor() {
       return
     }
 
+    // Take a snapshot of the current image before editing
+    const currentImg = aiEditCurrentImage || aiEditImage
+    setEditingImageSnapshot(currentImg)
+    
     setIsProcessing(true)
     setCurrentMessage(0)
     setInputValue("") // Clear input after sending
@@ -68,7 +74,7 @@ export default function AIImageEditor() {
       type: "ai_edit_prompt",
       sessionId: aiEditSessionId,
       prompt: prompt.trim(),
-      image: aiEditCurrentImage || aiEditImage,
+      image: currentImg,
     })
 
     // Stop loading messages after result (handled by sessionStore update)
@@ -85,6 +91,7 @@ export default function AIImageEditor() {
       clearInterval(checkInterval)
       if (isProcessing) {
         setIsProcessing(false)
+        setEditingImageSnapshot(null)
         toast.error("Request timed out. Please try again.")
       }
     }, 120000)
@@ -186,13 +193,17 @@ export default function AIImageEditor() {
     return () => ws.removeEventListener("message", handleMessage)
   }, [])
 
-  // Stop processing when result arrives
+  // Stop processing when result arrives - only when we get a NEW image different from what we sent
   useEffect(() => {
-    if (aiEditCurrentImage && isProcessing) {
-      setIsProcessing(false)
-      toast.success("Image edited successfully!")
+    if (isProcessing && editingImageSnapshot && aiEditCurrentImage) {
+      // Check if the current image is different from the snapshot we took before editing
+      if (aiEditCurrentImage !== editingImageSnapshot) {
+        setIsProcessing(false)
+        setEditingImageSnapshot(null)
+        toast.success("Image edited successfully!")
+      }
     }
-  }, [aiEditCurrentImage, isProcessing])
+  }, [aiEditCurrentImage, isProcessing, editingImageSnapshot])
 
   const handleDownload = () => {
     if (!aiEditSessionId || !aiEditCurrentImage) {
@@ -341,39 +352,8 @@ export default function AIImageEditor() {
             )}
           </AnimatePresence>
 
-          {/* AI Processing Overlay */}
-          <AnimatePresence>
-            {isProcessing && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 backdrop-blur-md bg-gradient-to-br from-blue-400/40 via-blue-300/30 to-blue-500/40 flex items-center justify-center"
-              >
-                <motion.div
-                  animate={{
-                    background: [
-                      "linear-gradient(45deg, rgba(59, 130, 246, 0.5), rgba(147, 197, 253, 0.5))",
-                      "linear-gradient(90deg, rgba(147, 197, 253, 0.5), rgba(59, 130, 246, 0.5))",
-                      "linear-gradient(135deg, rgba(59, 130, 246, 0.5), rgba(147, 197, 253, 0.5))",
-                    ],
-                  }}
-                  transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
-                  className="absolute inset-0"
-                />
-                <motion.div
-                  key={currentMessage}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="relative z-10 text-white text-xl font-semibold text-center px-6"
-                  style={{ fontFamily: "Outfit, sans-serif" }}
-                >
-                  {loadingMessages[currentMessage]}
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* AI Processing Overlay - Cinematic */}
+          <CinematicOverlay isVisible={isProcessing} duration={12} />
         </motion.div>
 
         {/* Bottom Section - Pills and Input */}
