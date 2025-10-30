@@ -61,33 +61,6 @@ function ViewerPage() {
     }
   }, [controlsRef.current]);
 
-  // Double-tap to reset camera
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    let lastTap = 0;
-
-    const handleTouchEnd = (e: TouchEvent) => {
-      const now = Date.now();
-      const timeSinceLastTap = now - lastTap;
-
-      if (timeSinceLastTap < 300 && timeSinceLastTap > 0) {
-        // Double tap detected
-        e.preventDefault();
-        handleReset();
-        lastTap = 0;
-      } else {
-        lastTap = now;
-      }
-    };
-
-    canvas.addEventListener("touchend", handleTouchEnd, { passive: false });
-    return () => {
-      canvas.removeEventListener("touchend", handleTouchEnd);
-    };
-  }, [currentModelId]);
-
   const handleModelChange = (newModelId: string) => {
     setCurrentModelId(newModelId);
     navigate({ to: "/viewer/$id", params: { id: newModelId } });
@@ -145,16 +118,6 @@ function ViewerPage() {
           >
             <ArrowLeft className="h-6 w-6 text-slate-900 md:h-5 md:w-5" />
           </Button>
-        </motion.div>
-
-        {/* Double-tap hint */}
-        <motion.div
-          animate={{ opacity: 1, y: 0 }}
-          className="absolute top-6 left-1/2 -translate-x-1/2 z-10 rounded-full bg-slate-800/60 backdrop-blur-sm px-3 py-1.5 font-sans text-slate-300 text-xs md:hidden"
-          initial={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.4, delay: 0.8 }}
-        >
-          💡 Double-tap to reset view
         </motion.div>
 
         <motion.div
