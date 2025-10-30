@@ -1,224 +1,185 @@
-import { HUGGINGFACE_API_TOKEN, IMAGE_EDIT_TIMEOUT } from "../config";
+import { GoogleGenAI } from "@google/genai";
+import { GOOGLE_GEMINI_API_KEY, IMAGE_EDIT_TIMEOUT } from "../config";
 
-const QWEN_IMAGE_EDIT_API_URL =
-	"https://api-inference.huggingface.co/models/Qwen/Qwen-Image-Edit";
 
 interface ImageEditRequest {
-	image: string; // Base64 encoded image (with or without data URL prefix)
-	prompt: string; // Natural language editing instruction
-	negativePrompt?: string; // Optional: what to avoid in the edit
+  image: string; // Base64 encoded image (with or without data URL prefix)
+  prompt: string; // Natural language editing instruction
+  negativePrompt?: string; // Optional: what to avoid in the edit
 }
 
 interface ImageEditResponse {
-	success: boolean;
-	editedImage?: string; // Base64 encoded edited image
-	error?: string;
+  success: boolean;
+  editedImage?: string; // Base64 encoded edited image
+  error?: string;
 }
 
 /**
- * Converts a data URL to base64 string without the prefix
+ * Converts a data URL or base64 string to pure base64 (without prefix)
  */
-function extractBase64FromDataUrl(dataUrl: string): string {
-	if (dataUrl.startsWith("data:")) {
-		const base64Index = dataUrl.indexOf("base64,");
-		if (base64Index !== -1) {
-			return dataUrl.substring(base64Index + 7);
-		}
-	}
-	return dataUrl;
+function toBase64(dataUrl: string): string {
+  if (dataUrl.startsWith("data:")) {
+    // Extract base64 from data URL
+    const base64Index = dataUrl.indexOf("base64,");
+    if (base64Index !== -1) {
+      return dataUrl.substring(base64Index + 7);
+    }
+  }
+  // Already base64
+  return dataUrl;
 }
 
-/**
- * Converts base64 string to Blob for API request
- */
-function base64ToBlob(base64: string, mimeType = "image/png"): Blob {
-	const cleanBase64 = extractBase64FromDataUrl(base64);
-	const byteCharacters = atob(cleanBase64);
-	const byteNumbers = new Array(byteCharacters.length);
-
-	for (let i = 0; i < byteCharacters.length; i++) {
-		byteNumbers[i] = byteCharacters.charCodeAt(i);
-	}
-
-	const byteArray = new Uint8Array(byteNumbers);
-	return new Blob([byteArray], { type: mimeType });
-}
 
 /**
- * Converts Blob to base64 data URL
+ * Edit an image using Gemini 2.5 Flash Image API
  */
-async function blobToBase64(blob: Blob): Promise<string> {
-	return new Promise((resolve, reject) => {
-		const reader = new FileReader();
-		reader.onloadend = () => resolve(reader.result as string);
-		reader.onerror = reject;
-		reader.readAsDataURL(blob);
-	});
-}
-
-/**
- * Edit an image using Qwen-Image-Edit model via Hugging Face Inference API
- */
-export async function editImageWithQwen(
-	request: ImageEditRequest,
+export async function editImageWithGemini(
+  request: ImageEditRequest,
 ): Promise<ImageEditResponse> {
-	console.log("[ImageEditService] Starting image edit with Qwen-Image-Edit");
-	console.log(`[ImageEditService] Prompt: "${request.prompt}"`);
+  try {
+    console.log("[ImageEditService] Starting image edit with Gemini 2.5 Flash Image");
+    console.log("[ImageEditService] Prompt:", request.prompt);
 
-	// Validate API token
-	if (!HUGGINGFACE_API_TOKEN) {
-		console.error(
-			"[ImageEditService] HUGGINGFACE_API_TOKEN is not configured",
-		);
-		return {
-			success: false,
-			error:
-				"Hugging Face API token is not configured. Please set HUGGINGFACE_API_TOKEN in .env",
-		};
-	}
+    // Validate API key
+    if (!GOOGLE_GEMINI_API_KEY) {
+      console.error(
+        "[ImageEditService] Google Gemini API key not configured",
+      );
+      return {
+        success: false,
+        error:
+          "Google Gemini API key not configured. Please set GOOGLE_GEMINI_API_KEY in your environment.",
+      };
+    }
 
-	try {
-		// Convert base64 image to Blob
-		const imageBlob = base64ToBlob(request.image);
-		console.log(
-			`[ImageEditService] Image blob size: ${(imageBlob.size / 1024).toFixed(2)} KB`,
-		);
+    // Initialize Gemini client
+    const ai = new GoogleGenAI({ apiKey: GOOGLE_GEMINI_API_KEY });
 
-		// Prepare request payload
-		const payload = {
-			inputs: request.image, // Send base64 directly
-			parameters: {
-				prompt: request.prompt,
-				...(request.negativePrompt && {
-					negative_prompt: request.negativePrompt,
-				}),
-			},
-		};
+    // Convert image to base64 (without data URL prefix)
+    const base64Image = toBase64(request.image);
+    console.log(
+      `[ImageEditService] Image base64 length: ${base64Image.length} characters`,
+    );
 
-		console.log("[ImageEditService] Sending request to Hugging Face API...");
+    // Prepare the prompt with image for editing
+    const contents = [
+      {
+        text: request.prompt,
+      },
+      {
+        inlineData: {
+          mimeType: "image/png",
+          data: base64Image,
+        },
+      },
+    ];
 
-		// Create abort controller for timeout
-		const controller = new AbortController();
-		const timeoutId = setTimeout(() => controller.abort(), IMAGE_EDIT_TIMEOUT);
+    // Call Gemini API with timeout
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(
+        () => reject(new Error("Request timed out")),
+        IMAGE_EDIT_TIMEOUT,
+      ),
+    );
 
-		// Make API request
-		const response = await fetch(QWEN_IMAGE_EDIT_API_URL, {
-			method: "POST",
-			headers: {
-				Authorization: `Bearer ${HUGGINGFACE_API_TOKEN}`,
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify(payload),
-			signal: controller.signal,
-		});
+    console.log("[ImageEditService] Sending request to Gemini API...");
+    const responsePromise = ai.models.generateContent({
+      model: "gemini-2.5-flash-image",
+      contents: contents,
+    });
 
-		clearTimeout(timeoutId);
+    const response: any = await Promise.race([
+      responsePromise,
+      timeoutPromise,
+    ]);
 
-		// Check response status
-		if (!response.ok) {
-			const errorText = await response.text();
-			console.error(
-				`[ImageEditService] API error: ${response.status} - ${errorText}`,
-			);
+    console.log("[ImageEditService] Received response from Gemini");
 
-			// Handle specific error cases
-			if (response.status === 503) {
-				return {
-					success: false,
-					error:
-						"Model is loading. Please try again in a few moments. (This is common for the first request)",
-				};
-			}
+    // Extract the edited image from response
+    if (!response.candidates || response.candidates.length === 0) {
+      console.error(
+        "[ImageEditService] No candidates in response:",
+        response,
+      );
+      return {
+        success: false,
+        error: "No image generated by Gemini API",
+      };
+    }
 
-			if (response.status === 401) {
-				return {
-					success: false,
-					error: "Invalid Hugging Face API token. Please check your configuration.",
-				};
-			}
+    const parts = response.candidates[0].content.parts;
+    let editedImageBase64: string | null = null;
 
-			return {
-				success: false,
-				error: `API request failed: ${response.status} - ${errorText}`,
-			};
-		}
+    // Look for inline image data in response
+    for (const part of parts) {
+      if (part.text) {
+        console.log("[ImageEditService] Gemini text response:", part.text);
+      } else if (part.inlineData) {
+        // Found the edited image
+        editedImageBase64 = part.inlineData.data;
+        console.log(
+          "[ImageEditService] Found edited image in response",
+        );
+        break;
+      }
+    }
 
-		// Parse response
-		const contentType = response.headers.get("content-type");
+    if (!editedImageBase64) {
+      console.error(
+        "[ImageEditService] No image data found in response",
+      );
+      return {
+        success: false,
+        error: "No image data in Gemini response",
+      };
+    }
 
-		if (contentType?.includes("application/json")) {
-			// Response is JSON (might contain base64 or URL)
-			const jsonResponse = await response.json();
-			console.log("[ImageEditService] Received JSON response");
+    // Convert to data URL format
+    const dataUrl = `data:image/png;base64,${editedImageBase64}`;
+    console.log("[ImageEditService] Successfully edited image with Gemini");
 
-			// Handle different response formats
-			if (jsonResponse.images && jsonResponse.images[0]) {
-				// Format: { images: ["data:image/png;base64,..."] }
-				return {
-					success: true,
-					editedImage: jsonResponse.images[0],
-				};
-			}
+    return {
+      success: true,
+      editedImage: dataUrl,
+    };
+  } catch (error: any) {
+    if (error.message === "Request timed out") {
+      console.error(
+        "[ImageEditService] Request timed out after",
+        IMAGE_EDIT_TIMEOUT,
+        "ms",
+      );
+      return {
+        success: false,
+        error: "Request timed out. The image editing service is taking too long to respond.",
+      };
+    }
 
-			if (jsonResponse[0] && typeof jsonResponse[0] === "string") {
-				// Format: ["data:image/png;base64,..."]
-				return {
-					success: true,
-					editedImage: jsonResponse[0],
-				};
-			}
+    // Handle API quota errors
+    if (error.message && error.message.includes("quota")) {
+      console.error("[ImageEditService] API quota exceeded:", error.message);
+      return {
+        success: false,
+        error: "API quota exceeded. Please try again later.",
+      };
+    }
 
-			console.error(
-				"[ImageEditService] Unexpected JSON response format:",
-				jsonResponse,
-			);
-			return {
-				success: false,
-				error: "Unexpected response format from API",
-			};
-		}
+    // Handle authentication errors
+    if (error.message && error.message.includes("API key")) {
+      console.error("[ImageEditService] API key error:", error.message);
+      return {
+        success: false,
+        error: "Invalid API key. Please check your configuration.",
+      };
+    }
 
-		if (contentType?.includes("image/")) {
-			// Response is raw image blob
-			console.log("[ImageEditService] Received image blob response");
-			const imageBlob = await response.blob();
-			const base64Image = await blobToBase64(imageBlob);
-
-			return {
-				success: true,
-				editedImage: base64Image,
-			};
-		}
-
-		// Unknown content type
-		console.error(
-			`[ImageEditService] Unexpected content type: ${contentType}`,
-		);
-		return {
-			success: false,
-			error: `Unexpected response content type: ${contentType}`,
-		};
-	} catch (error) {
-		if (error instanceof Error) {
-			if (error.name === "AbortError") {
-				console.error("[ImageEditService] Request timeout");
-				return {
-					success: false,
-					error: "Image editing request timed out. Please try again.",
-				};
-			}
-
-			console.error("[ImageEditService] Error:", error.message);
-			return {
-				success: false,
-				error: `Image editing failed: ${error.message}`,
-			};
-		}
-
-		console.error("[ImageEditService] Unknown error:", error);
-		return {
-			success: false,
-			error: "An unknown error occurred during image editing",
-		};
-	}
+    console.error("[ImageEditService] Error editing image:", error);
+    return {
+      success: false,
+      error: error.message || "Unknown error occurred during image editing",
+    };
+  }
 }
+
+// Backward compatibility export
+export const editImageWithQwen = editImageWithGemini;

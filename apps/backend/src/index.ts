@@ -39,33 +39,57 @@ const wsHandler = upgradeWebSocket((c) => {
   const server = c.env.server as ReturnType<typeof Bun.serve>;
   return {
     onOpen: (_event: Event, ws: WSConnection) => {
-      ws.id = crypto.randomUUID();
-      connectionsById.set(ws.id, ws);
-      console.log(`[Backend] New connection ${ws.id} established`, {
+      // IMPORTANT: Don't replace ws.raw.data, just add clientId property
+      // Hono stores its internal events in ws.raw.data.events
+      const clientId = crypto.randomUUID();
+      if (!(ws as any).raw.data) {
+        (ws as any).raw.data = {};
+      }
+      (ws as any).raw.data.clientId = clientId; // Add property without replacing object
+      ws.id = clientId;
+      connectionsById.set(clientId, ws);
+      console.log(`[Backend] New connection ${clientId} established`, {
         totalConnections: connectionsById.size,
       });
       (ws as any).pingInterval = startHeartbeat(ws);
-      ws.send(JSON.stringify({ type: "connected", clientId: ws.id }));
+      ws.send(JSON.stringify({ type: "connected", clientId: clientId }));
     },
     onMessage: (event: MessageEvent, ws: WSConnection) => {
+     // Get ID from raw WebSocket data
+      const clientId = (ws as any).raw?.data?.clientId;
+      if (!clientId) {
+        console.error("[Backend] Message from connection without ID");
+        return;
+      }
+      ws.id = clientId; // Attach ID to ws object
       const buffer = Buffer.from(
         typeof event.data === "string" ? event.data : String(event.data)
       );
       handleMessage(ws, server, buffer);
     },
     onPong: (_event: Event, ws: WSConnection) => {
-      recordPong(ws);
+      const clientId = (ws as any).raw?.data?.clientId;
+      if (clientId){
+        ws.id = clientId
+        recordPong(ws);
+      }
     },
     onClose: (_event: CloseEvent, ws: WSConnection) => {
-      console.log(`[Backend] Connection ${ws.id} closed`, {
+      const clientId = (ws as any).raw?.data?.clientId;
+      if (!clientId){
+        console.error("[Backend] Close from connection without ID");
+        return;
+      }
+      ws.id = clientId
+      console.log(`[Backend] Connection ${clientId} closed`, {
         remainingConnections: connectionsById.size - 1,
       });
-      const role = clientRoles.get(ws.id);
+      const role = clientRoles.get(clientId);
       
       if (role === "tablet") {
         (ws as any).raw.unsubscribe("tablets");
         // Cancel any active editing sessions for this tablet
-        const tabletSessions = getSessionsByTablet(ws.id);
+        const tabletSessions = getSessionsByTablet(clientId);
         for (const session of tabletSessions) {
           console.log(`[Backend] Cancelling editing session ${session.sessionId} due to tablet disconnect`);
           cancelEditSession(session.sessionId);
@@ -104,9 +128,14 @@ const wsHandler = upgradeWebSocket((c) => {
       removeFromQueue(ws.id, server);
       cleanupConnection(ws, (ws as any).pingInterval);
     },
-    onError: (error: Error, ws: WSConnection) => {
-      console.error(`[Backend] WebSocket error on client ${ws.id}:`, error);
-      const role = clientRoles.get(ws.id);
+    onError: (_event: Error, ws: WSConnection) => {
+      const clientId = (ws as any).raw?.data?.clientId;
+      if (!clientId){
+        console.error("[Backend] Error from connection without ID");
+        return;
+      }
+      ws.id = clientId
+      const role = clientRoles.get(clientId);
       
       if (role === "tablet") {
         (ws as any).raw.unsubscribe("tablets");
