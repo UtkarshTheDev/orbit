@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import sharp from "sharp";
 import { GOOGLE_GEMINI_API_KEY, IMAGE_EDIT_TIMEOUT } from "../config";
 
 
@@ -27,6 +28,33 @@ function toBase64(dataUrl: string): string {
   }
   // Already base64
   return dataUrl;
+}
+
+
+/**
+ * Compresses an image buffer to a high-quality JPEG data URL.
+ * @param imageBuffer The raw image buffer.
+ * @returns A promise that resolves to the compressed image as a base64 data URL.
+ */
+async function compressEditedImage(imageBuffer: Buffer): Promise<string> {
+	console.log(
+		`[ImageEditService] Compressing image. Original size: ${
+			(imageBuffer.length / 1024).toFixed(2)
+		} KB`,
+	);
+
+	const compressedBuffer = await sharp(imageBuffer)
+		.resize(1280, 1280, { fit: "inside", withoutEnlargement: true })
+		.jpeg({ quality: 90 })
+		.toBuffer();
+
+	console.log(
+		`[ImageEditService] Compression complete. New size: ${
+			(compressedBuffer.length / 1024).toFixed(2)
+		} KB`,
+	);
+
+	return `data:image/jpeg;base64,${compressedBuffer.toString("base64")}`;
 }
 
 
@@ -134,14 +162,15 @@ export async function editImageWithGemini(
       };
     }
 
-    // Convert to data URL format
-    const dataUrl = `data:image/png;base64,${editedImageBase64}`;
-    console.log("[ImageEditService] Successfully edited image with Gemini");
+    const imageBuffer = Buffer.from(editedImageBase64, "base64");
+		const compressedDataUrl = await compressEditedImage(imageBuffer);
 
-    return {
-      success: true,
-      editedImage: dataUrl,
-    };
+		console.log("[ImageEditService] Successfully edited and compressed image with Gemini");
+
+		return {
+			success: true,
+			editedImage: compressedDataUrl,
+		};
   } catch (error: any) {
     if (error.message === "Request timed out") {
       console.error(
