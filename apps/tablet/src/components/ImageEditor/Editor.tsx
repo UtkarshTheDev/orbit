@@ -271,7 +271,7 @@ export default function AIImageEditor() {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.3 }}
-          className="relative w-full aspect-square max-w-lg mx-auto rounded-2xl overflow-hidden shadow-xl border border-blue-100 flex-shrink-0"
+          className="relative w-full aspect-square max-w-sm mx-auto rounded-2xl overflow-hidden shadow-xl border border-blue-100 flex-shrink-0"
         >
           {/* Base Image */}
           <img
