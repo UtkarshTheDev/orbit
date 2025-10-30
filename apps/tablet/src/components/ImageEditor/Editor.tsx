@@ -1,53 +1,55 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { Download, Sparkles, Zap, Grid3x3, X, Send } from "lucide-react"
-import { toast } from "sonner"
-import { useSessionStore } from "@/lib/sessionStore"
-import CinematicOverlay from "./CinematicOverlay"
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Download, Sparkles, Zap, Grid3x3, X, Send } from "lucide-react";
+import { toast } from "sonner";
+import { useSessionStore } from "@/lib/sessionStore";
+import CinematicOverlay from "./CinematicOverlay";
 
 const suggestions = [
   { text: "Transform to Ghibli Style", icon: Sparkles },
   { text: "Add Cyberpunk Neon", icon: Zap },
   { text: "Convert to Pixel Art", icon: Grid3x3 },
-]
+];
 
 export default function AIImageEditor() {
   // Session store
-  const sendWs = useSessionStore((s) => s.sendWs)
-  const aiEditSessionId = useSessionStore((s) => s.aiEditSessionId)
-  const aiEditImage = useSessionStore((s) => s.aiEditImage)
-  const aiEditCurrentImage = useSessionStore((s) => s.aiEditCurrentImage)
-  const setAiEditActive = useSessionStore((s) => s.setAiEditActive)
-  const setAiEditSessionId = useSessionStore((s) => s.setAiEditSessionId)
-  const setAiEditImage = useSessionStore((s) => s.setAiEditImage)
-  const setAiEditCurrentImage = useSessionStore((s) => s.setAiEditCurrentImage)
-  const setShowMainApp = useSessionStore((s) => s.setShowMainApp)
+  const sendWs = useSessionStore((s) => s.sendWs);
+  const aiEditSessionId = useSessionStore((s) => s.aiEditSessionId);
+  const aiEditImage = useSessionStore((s) => s.aiEditImage);
+  const aiEditCurrentImage = useSessionStore((s) => s.aiEditCurrentImage);
+  const setAiEditActive = useSessionStore((s) => s.setAiEditActive);
+  const setAiEditSessionId = useSessionStore((s) => s.setAiEditSessionId);
+  const setAiEditImage = useSessionStore((s) => s.setAiEditImage);
+  const setAiEditCurrentImage = useSessionStore((s) => s.setAiEditCurrentImage);
+  const setShowMainApp = useSessionStore((s) => s.setShowMainApp);
 
   // Local state
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [inputValue, setInputValue] = useState("")
-  const [editingImageSnapshot, setEditingImageSnapshot] = useState<string | null>(null)
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [inputValue, setInputValue] = useState("");
+  const [editingImageSnapshot, setEditingImageSnapshot] = useState<
+    string | null
+  >(null);
 
   // Listen for processing status from backend
   useEffect(() => {
     // Processing status is handled by sessionStore
     // We just need to manage local UI state
-  }, [])
+  }, []);
 
   const handleEdit = (prompt: string) => {
     if (!prompt.trim() || !aiEditSessionId) {
-      toast.error("Please enter a prompt")
-      return
+      toast.error("Please enter a prompt");
+      return;
     }
 
     // Take a snapshot of the current image before editing
-    const currentImg = aiEditCurrentImage || aiEditImage
-    setEditingImageSnapshot(currentImg)
-    
-    setIsProcessing(true)
-    setInputValue("") // Clear input after sending
+    const currentImg = aiEditCurrentImage || aiEditImage;
+    setEditingImageSnapshot(currentImg);
+
+    setIsProcessing(true);
+    setInputValue(""); // Clear input after sending
 
     // Send edit prompt to backend
     sendWs({
@@ -55,36 +57,34 @@ export default function AIImageEditor() {
       sessionId: aiEditSessionId,
       prompt: prompt.trim(),
       image: currentImg,
-    })
+    });
 
     // Timeout after 2 minutes
     setTimeout(() => {
       if (isProcessing) {
-        setIsProcessing(false)
-        setEditingImageSnapshot(null)
-        toast.error("Request timed out. Please try again.")
+        setIsProcessing(false);
+        setEditingImageSnapshot(null);
+        toast.error("Request timed out. Please try again.");
       }
-    }, 120000)
-  }
-
-
+    }, 120000);
+  };
 
   // Stop processing when result arrives - only when we get a NEW image different from what we sent
   useEffect(() => {
     if (isProcessing && editingImageSnapshot && aiEditCurrentImage) {
       // Check if the current image is different from the snapshot we took before editing
       if (aiEditCurrentImage !== editingImageSnapshot) {
-        setIsProcessing(false)
-        setEditingImageSnapshot(null)
-        toast.success("Image edited successfully!")
+        setIsProcessing(false);
+        setEditingImageSnapshot(null);
+        toast.success("Image edited successfully!");
       }
     }
-  }, [aiEditCurrentImage, isProcessing, editingImageSnapshot])
+  }, [aiEditCurrentImage, isProcessing, editingImageSnapshot]);
 
   const handleDownload = () => {
     if (!aiEditSessionId || !aiEditCurrentImage) {
-      toast.error("No edited image to download")
-      return
+      toast.error("No edited image to download");
+      return;
     }
 
     // Send finalize message to backend
@@ -92,15 +92,15 @@ export default function AIImageEditor() {
       type: "ai_edit_finalize",
       sessionId: aiEditSessionId,
       finalImage: aiEditCurrentImage,
-    })
+    });
 
-    toast.success("✨ Sending edited image to your phone!")
-    
+    toast.success("✨ Sending edited image to your phone!");
+
     // Close editor after a delay
     setTimeout(() => {
-      handleClose()
-    }, 2000)
-  }
+      handleClose();
+    }, 2000);
+  };
 
   const handleClose = () => {
     // Cancel the editing session
@@ -108,16 +108,16 @@ export default function AIImageEditor() {
       sendWs({
         type: "ai_edit_cancel",
         sessionId: aiEditSessionId,
-      })
+      });
     }
 
     // Reset state
-    setAiEditActive(false)
-    setAiEditSessionId(null)
-    setAiEditImage(null)
-    setAiEditCurrentImage(null)
-    setShowMainApp(true)
-  }
+    setAiEditActive(false);
+    setAiEditSessionId(null);
+    setAiEditImage(null);
+    setAiEditCurrentImage(null);
+    setShowMainApp(true);
+  };
 
   return (
     <>
@@ -160,7 +160,7 @@ export default function AIImageEditor() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="text-3xl md:text-4xl font-bold text-center text-blue-600 mb-6 mt-2 md:mt-4 font-orbitron"
+          className="text-3xl md:text-4xl mt-6 font-bold text-center text-blue-600 mb-6 lg:mt-12 font-orbitron"
         >
           AI Image Editor
         </motion.h1>
@@ -230,7 +230,7 @@ export default function AIImageEditor() {
         </motion.div>
 
         {/* Bottom Section - Pills and Input */}
-        <div className="mt-3 space-y-5 pb-4">
+        <div className="mt-12 space-y-8 pb-4">
           {/* Suggestion Pills - Centered Horizontal Scroll */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -238,30 +238,29 @@ export default function AIImageEditor() {
             transition={{ delay: 0.4 }}
             className="overflow-x-auto scrollbar-hide"
           >
-            <div className="flex gap-2.5 justify-center px-2"
-        >
-          {suggestions.map((suggestion, index) => {
-            const Icon = suggestion.icon
-            return (
-              <motion.button
-                key={suggestion.text}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.5 + index * 0.1 }}
-                whileHover={{
-                  scale: 1.02,
-                  backgroundColor: "rgba(59, 130, 246, 0.1)",
-                }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => handleEdit(suggestion.text)}
-                disabled={isProcessing}
-                className="px-4 py-2.5 rounded-lg border-2 border-blue-300 text-blue-700 bg-white hover:border-blue-500 hover:bg-blue-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium shadow-sm hover:shadow-md cursor-pointer whitespace-nowrap font-orbitron"
-              >
-                <Icon className="w-4 h-4" />
-                <span>{suggestion.text}</span>
-              </motion.button>
-            )
-          })}
+            <div className="flex gap-2.5 justify-center px-2">
+              {suggestions.map((suggestion, index) => {
+                const Icon = suggestion.icon;
+                return (
+                  <motion.button
+                    key={suggestion.text}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.5 + index * 0.1 }}
+                    whileHover={{
+                      scale: 1.02,
+                      backgroundColor: "rgba(59, 130, 246, 0.1)",
+                    }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => handleEdit(suggestion.text)}
+                    disabled={isProcessing}
+                    className="px-4 py-2.5 rounded-lg border-2 border-blue-300 text-blue-700 bg-white hover:border-blue-500 hover:bg-blue-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium shadow-sm hover:shadow-md cursor-pointer whitespace-nowrap font-sans"
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{suggestion.text}</span>
+                  </motion.button>
+                );
+              })}
             </div>
           </motion.div>
 
@@ -272,35 +271,35 @@ export default function AIImageEditor() {
             transition={{ delay: 0.6 }}
             className="flex items-center gap-3 max-w-4xl mx-auto"
           >
-          <div className="flex-1 relative">
-            <input
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Describe your edit…"
-              className="w-full pl-5 pr-5 py-3.5 rounded-xl border-2 border-blue-200 focus:border-blue-400 focus:outline-none shadow-inner bg-white/80 backdrop-blur-sm text-blue-900 placeholder:text-blue-400 font-orbitron mb-5"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && inputValue.trim()) {
-                  handleEdit(inputValue)
-                }
-              }}
-              disabled={isProcessing}
-            />
-          </div>
-          {/* Send Button */}
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => inputValue.trim() && handleEdit(inputValue)}
-            className="p-3.5 rounded-xl bg-blue-500 text-white shadow-lg hover:bg-blue-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-orbitron"
-            disabled={isProcessing || !inputValue.trim()}
-            title="Send prompt"
-          >
-            <Send className="w-5.5 h-5.5" />
-          </motion.button>
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                placeholder="Describe your edit…"
+                className="w-full pl-5 pr-5 py-3.5 rounded-xl border-2 border-blue-200 focus:border-blue-400 focus:outline-none shadow-inner bg-white/80 backdrop-blur-sm text-blue-900 placeholder:text-blue-400 font-sans mb-5"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && inputValue.trim()) {
+                    handleEdit(inputValue);
+                  }
+                }}
+                disabled={isProcessing}
+              />
+            </div>
+            {/* Send Button */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => inputValue.trim() && handleEdit(inputValue)}
+              className="p-3.5 rounded-xl bg-blue-500 text-white shadow-lg -mt-6 hover:bg-blue-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-sans"
+              disabled={isProcessing || !inputValue.trim()}
+              title="Send prompt"
+            >
+              <Send className="w-5.5 h-5.5" />
+            </motion.button>
           </motion.div>
         </div>
       </motion.div>
     </>
-  )
+  );
 }
