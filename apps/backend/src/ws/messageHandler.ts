@@ -30,7 +30,12 @@ export function handleMessage(
         if (msg.role === "tablet") {
           (ws as any).raw.subscribe("tablets");
         }
-        console.log(`[Backend] Client ${ws.id} identified as: ${msg.role}`);
+        if (msg.role === "esp32_sensor") {
+          const esp32Count = Array.from(clientRoles.values()).filter((r) => r === "esp32_sensor").length;
+          console.log(`[Backend] ESP32 sensor identified: ${ws.id}. Total ESP32 connected: ${esp32Count}`);
+        } else {
+          console.log(`[Backend] Client ${ws.id} identified as: ${msg.role}`);
+        }
         break;
       case "polaroid_entered":
         console.log(
@@ -51,6 +56,29 @@ export function handleMessage(
           `[Backend] Client ${ws.id} requested retake, broadcasting to tablets`
         );
         broadcastToTablets(server, { type: "retake_photo" });
+        break;
+      case "motion_detected":
+        if (clientRoles.get(ws.id) !== "esp32_sensor") {
+          console.warn(`[Backend] Ignoring motion_detected from non-esp32 client ${ws.id}`);
+          break;
+        }
+        console.log(`[ESP32] Motion detected from ${ws.id}`);
+        break;
+      case "user_passed":
+        if (clientRoles.get(ws.id) !== "esp32_sensor") {
+          console.warn(`[Backend] Ignoring user_passed from non-esp32 client ${ws.id}`);
+          break;
+        }
+        console.log(`[ESP32] User passed by (from ${ws.id})`);
+        broadcastToTablets(server, { type: "user_passed" });
+        break;
+      case "user_arrived":
+        if (clientRoles.get(ws.id) !== "esp32_sensor") {
+          console.warn(`[Backend] Ignoring user_arrived from non-esp32 client ${ws.id}`);
+          break;
+        }
+        console.log(`[ESP32] User arrived near (from ${ws.id})`);
+        broadcastToTablets(server, { type: "user_arrived" });
         break;
       case "voice_query":
         console.log(

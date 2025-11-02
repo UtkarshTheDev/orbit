@@ -2,11 +2,12 @@ import type { WSConnection } from "./connection";
 import { POLAROID_QUEUE_TIMEOUT } from "../config";
 import { broadcastToTablets } from "./broadcast";
 import type { Server } from "bun";
+import type { BunWebSocketData } from "hono/bun";
 
 // Use the client's unique ID (string) as the key
 export const polaroidQueue = new Map<string, NodeJS.Timeout>();
 
-export function removeFromQueue(clientId: string, server: Server) {
+export function removeFromQueue(clientId: string, server: Server<BunWebSocketData>) {
 	console.log(`[Backend] removeFromQueue called for client ID: ${clientId}`);
 	if (polaroidQueue.has(clientId)) {
 		const timeoutId = polaroidQueue.get(clientId);
@@ -32,7 +33,7 @@ export function removeFromQueue(clientId: string, server: Server) {
 	}
 }
 
-export function addToQueue(ws: WSConnection, server: Server) {
+export function addToQueue(ws: WSConnection, server: Server<BunWebSocketData>) {
 	// If the client is already in the queue, clear the old timeout
 	if (polaroidQueue.has(ws.id)) {
 		clearTimeout(polaroidQueue.get(ws.id));

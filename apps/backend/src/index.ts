@@ -81,10 +81,17 @@ const wsHandler = upgradeWebSocket((c) => {
         return;
       }
       ws.id = clientId
-      console.log(`[Backend] Connection ${clientId} closed`, {
+      const role = clientRoles.get(clientId);
+      console.log(`[Backend] Connection ${clientId} closed (role: ${role ?? 'unknown'})`, {
         remainingConnections: connectionsById.size - 1,
       });
-      const role = clientRoles.get(clientId);
+      
+      // If ESP32, log remaining ESP32 sensors after this disconnect
+      if (role === "esp32_sensor") {
+        const esp32Total = Array.from(clientRoles.values()).filter((r) => r === "esp32_sensor").length;
+        const remainingEsp32 = Math.max(0, esp32Total - 1);
+        console.log(`[Backend] ESP32 sensor disconnected: ${clientId}. Remaining ESP32 connected: ${remainingEsp32}`);
+      }
       
       if (role === "tablet") {
         (ws as any).raw.unsubscribe("tablets");

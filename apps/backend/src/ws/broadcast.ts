@@ -1,8 +1,9 @@
 import type { WSConnection } from "./connection";
 import { clientRoles } from "./connection";
 import type { Server } from "bun";
+import type { BunWebSocketData } from "hono/bun";
 
-export function broadcastToTablets(server: Server, message: object) {
+export function broadcastToTablets(server: Server<BunWebSocketData>, message: object) {
   const messageStr = JSON.stringify(message);
   const broadcastCount = server.publish("tablets", messageStr);
   console.log(
