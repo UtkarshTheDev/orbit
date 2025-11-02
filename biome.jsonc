@@ -1,7 +1,18 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "extends": ["ultracite"],
+  "organizeImports": {
+    "enabled": true
+  },
+  "formatter": {
+    "enabled": true,
+    "formatWithErrors": true,
+    "indentStyle": "space",
+    "indentSize": 2,
+    "lineWidth": 80
+  },
   "linter": {
+    "enabled": true,
     "rules": {
       "style": {
         "noMagicNumbers": "off"
@@ -18,3 +29,4 @@
     }
   }
 }
+
