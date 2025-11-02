@@ -24,20 +24,36 @@ const int TRIG_PIN = 12;          // Ultrasonic sensor trigger pin
 const int ECHO_PIN = 13;          // Ultrasonic sensor echo pin
 
 // ===========================
-// Distance Thresholds (in cm)
+// Configurable Parameters
 // ===========================
-const float NEAR_THRESHOLD = 50.0;      // Enter near when distance <= 50 cm
-const float NEAR_EXIT_THRESHOLD = 60.0; // Exit near when distance >= 60 cm (hysteresis)
-const float FAR_THRESHOLD = 100.0;      // Distance considered "far" (user passed)
-const float DISTANCE_CHANGE_MIN = 5.0;  // Minimum distance change to consider as significant
+// Edit these values to tune behavior without changing code logic.
+const unsigned long SENSOR_READ_INTERVAL_MS = 100;   // Sensor loop period
+const uint8_t MEDIAN_SAMPLES_PER_BURST = 5;          // Samples per burst for median
+const unsigned long BURST_SAMPLE_DELAY_US = 5000;    // Delay between burst samples
 
-// ===========================
-// Timing Configuration
-// ===========================
-const unsigned long SENSOR_READ_INTERVAL = 100;    // Read sensors every 100ms
-const unsigned long DEBOUNCE_DELAY = 2000;         // 2 second debounce for state changes
-const unsigned long RECONNECT_INTERVAL = 5000;     // Reconnect attempt interval
-const unsigned long NEAR_REARM_AWAY_TIME = 3000;   // Must be out of near for 3s to allow a new "arrived"
+const float MIN_DISTANCE_CM = 2.0;                   // Plausible min range
+const float MAX_DISTANCE_CM = 300.0;                 // Plausible max range
+const float DISTANCE_CHANGE_MIN_CM = 5.0;            // Significant change threshold (for logs only)
+
+const float NEAR_THRESHOLD_CM = 50.0;                // Enter near when distance <= 50 cm
+const float NEAR_EXIT_THRESHOLD_CM = 60.0;           // Exit near when distance >= 60 cm (hysteresis)
+const float FAR_THRESHOLD_CM = 100.0;                // Mid-range (passed) when 50 < d <= 100
+
+const uint8_t CONFIRMATION_COUNT = 3;                // Consecutive medians required to confirm state
+
+const unsigned long DEBOUNCE_DELAY_MS = 2000;        // Debounce between state changes
+const unsigned long NEAR_REARM_AWAY_TIME_MS = 3000;  // Time outside near to allow new ARRIVED
+
+const unsigned long MOTION_VALID_WINDOW_NEAR_MS = 3000;    // PIR must be recent for ARRIVED
+const unsigned long MOTION_VALID_WINDOW_PASSED_MS = 5000;  // PIR must be recent for PASSED
+
+// Adaptive fast-path for very close arrivals
+const float ADAPTIVE_NEAR_CM = 30.0;                       // If closer than this, allow fast ARRIVED
+const unsigned long ADAPTIVE_NEAR_MOTION_WINDOW_MS = 1000; // Motion window for fast ARRIVED
+const uint8_t ADAPTIVE_NEAR_CONFIRMATIONS = 1;             // Require only 1 confirmed median when adaptive applies
+
+// Other timing
+const unsigned long RECONNECT_INTERVAL = 5000;             // Reconnect attempt interval
 
 // ===========================
 // Global Variables
@@ -185,7 +201,7 @@ void sendUserState(UserState state, float distance) {
 // ===========================
 // Read Ultrasonic Sensor
 // ===========================
-float readUltrasonicDistance() {
+float readUltrasonicDistanceRaw() {
   // Send ultrasonic pulse
   digitalWrite(TRIG_PIN, LOW);
   delayMicroseconds(2);
@@ -203,12 +219,37 @@ float readUltrasonicDistance() {
   // Calculate distance in cm
   float distance = duration * 0.034 / 2.0;
   
-  // Filter out unrealistic values
-  if (distance < 2.0 || distance > 400.0) {
-    return -1.0;
-  }
-  
   return distance;
+}
+
+// ===========================
+// Utility: Burst median reading with plausibility check
+// ===========================
+float readUltrasonicMedian() {
+  float readings[10];
+  uint8_t n = MEDIAN_SAMPLES_PER_BURST > 10 ? 10 : MEDIAN_SAMPLES_PER_BURST;
+  uint8_t got = 0;
+  for (uint8_t i = 0; i < n; i++) {
+    float d = readUltrasonicDistanceRaw();
+    if (d >= MIN_DISTANCE_CM && d <= MAX_DISTANCE_CM) {
+      readings[got++] = d;
+    }
+    delayMicroseconds(BURST_SAMPLE_DELAY_US);
+  }
+  if (got == 0) return -1.0;
+  // Simple insertion sort for small arrays
+  for (uint8_t i = 1; i < got; i++) {
+    float key = readings[i];
+    int8_t j = i - 1;
+    while (j >= 0 && readings[j] > key) {
+      readings[j + 1] = readings[j];
+      j--;
+    }
+    readings[j + 1] = key;
+  }
+  // Median
+  if (got % 2 == 1) return readings[got / 2];
+  return 0.5 * (readings[got / 2 - 1] + readings[got / 2]);
 }
 
 // ===========================
@@ -219,55 +260,51 @@ void processSensorData() {
   unsigned long currentTime = millis();
   
   // Read sensors at specified interval
-  if (currentTime - lastSensorRead < SENSOR_READ_INTERVAL) {
+  if (currentTime - lastSensorRead < SENSOR_READ_INTERVAL_MS) {
     return;
   }
   lastSensorRead = currentTime;
   
   // === PIR Motion Sensor ===
   int pirState = digitalRead(PIR_PIN);
-  if (pirState == HIGH && !motionDetected) {
+  if (pirState == HIGH) {
+    if (!motionDetected) {
+      sendMotionDetected();
+    }
     motionDetected = true;
     lastMotionTime = currentTime;
-    sendMotionDetected();
-  } else if (pirState == LOW && motionDetected) {
+  } else {
     motionDetected = false;
   }
   
   // === Ultrasonic Distance Sensor ===
-  float distance = readUltrasonicDistance();
+  float distance = readUltrasonicMedian();
   
   // Skip if reading is invalid
   if (distance < 0) {
+    Serial.println("[SENSOR] Skipping invalid ultrasonic reading (no plausible median)");
     return;
   }
   
-  // Check if distance has changed significantly
-  bool significantChange = false;
-  if (lastDistance < 0 || abs(distance - lastDistance) >= DISTANCE_CHANGE_MIN) {
-    significantChange = true;
+  // Check if distance has changed significantly (for logs)
+  if (lastDistance < 0 || abs(distance - lastDistance) >= DISTANCE_CHANGE_MIN_CM) {
     lastDistanceChange = currentTime;
   }
   
   // Update last distance
   lastDistance = distance;
   
-  // Only process state changes if distance changed significantly
-  if (!significantChange) {
-    return;
-  }
-  
   // Hysteresis and latch logic for NEAR state
   // 1) If we are near-latched (already announced ARRIVED), we do not send ARRIVED again
   //    until we have been outside the near-exit threshold for NEAR_REARM_AWAY_TIME.
   if (nearLatched) {
-    if (distance >= NEAR_EXIT_THRESHOLD) {
+    if (distance >= NEAR_EXIT_THRESHOLD_CM) {
       // Started being outside near-exit threshold
       if (nearExitStartTime == 0) {
         nearExitStartTime = currentTime;
       }
       // If we have remained away long enough, unlatch
-      if (currentTime - nearExitStartTime >= NEAR_REARM_AWAY_TIME) {
+      if (currentTime - nearExitStartTime >= NEAR_REARM_AWAY_TIME_MS) {
         nearLatched = false;
         nearExitStartTime = 0;
       }
@@ -278,38 +315,73 @@ void processSensorData() {
   }
 
   // Determine new state based on distance with hysteresis
-  UserState newState = STATE_NONE;
-  if (distance <= NEAR_THRESHOLD) {
-    newState = STATE_ARRIVED;
-  } else if (distance > NEAR_THRESHOLD && distance <= FAR_THRESHOLD) {
-    newState = STATE_PASSED;
+  UserState candidateState = STATE_NONE;
+  if (distance <= NEAR_THRESHOLD_CM) {
+    candidateState = STATE_ARRIVED;
+  } else if (distance > NEAR_THRESHOLD_CM && distance <= FAR_THRESHOLD_CM) {
+    candidateState = STATE_PASSED;
   } else {
-    newState = STATE_NONE;
+    candidateState = STATE_NONE;
   }
 
-  // Debounce state changes
-  if (newState != currentState) {
-    if (currentTime - lastStateChange >= DEBOUNCE_DELAY) {
-      currentState = newState;
-      lastStateChange = currentTime;
+  // Confirmation counters across cycles
+  static uint8_t nearConfirmCount = 0;
+  static uint8_t passedConfirmCount = 0;
 
-      // Only send ARRIVED if not latched
-      if (newState == STATE_ARRIVED) {
-        if (!nearLatched) {
-          sendUserState(newState, distance);
-          lastSentState = newState;
-          nearLatched = true; // latch near after sending arrived
-        }
-      } else if (newState == STATE_PASSED) {
-        // Passed events can be sent normally (still debounced)
-        if (newState != lastSentState) {
-          sendUserState(newState, distance);
-          lastSentState = newState;
-        }
-      } else {
-        // STATE_NONE: do nothing
+  if (candidateState == STATE_ARRIVED) {
+    passedConfirmCount = 0;
+    // PIR gating for near
+    bool pirRecent = (currentTime - lastMotionTime) <= MOTION_VALID_WINDOW_NEAR_MS;
+
+    // Adaptive fast path if very close and motion very recent
+    uint8_t requiredConfirms = CONFIRMATION_COUNT;
+    if (distance <= ADAPTIVE_NEAR_CM && (currentTime - lastMotionTime) <= ADAPTIVE_NEAR_MOTION_WINDOW_MS) {
+      requiredConfirms = ADAPTIVE_NEAR_CONFIRMATIONS;
+    }
+
+    if (pirRecent) {
+      if (nearConfirmCount < 255) nearConfirmCount++;
+    } else {
+      nearConfirmCount = 0;
+    }
+
+    // Debounce state changes and latch check
+    if (nearConfirmCount >= requiredConfirms && !nearLatched) {
+      if (currentTime - lastStateChange >= DEBOUNCE_DELAY_MS && pirRecent) {
+        currentState = STATE_ARRIVED;
+        lastStateChange = currentTime;
+        sendUserState(STATE_ARRIVED, distance);
+        lastSentState = STATE_ARRIVED;
+        nearLatched = true;
+        Serial.println("[SENSOR] ARRIVED confirmed and sent");
       }
     }
+  } else if (candidateState == STATE_PASSED) {
+    nearConfirmCount = 0;
+
+    // PIR gating for passed
+    bool pirRecent = (currentTime - lastMotionTime) <= MOTION_VALID_WINDOW_PASSED_MS;
+    if (pirRecent) {
+      if (passedConfirmCount < 255) passedConfirmCount++;
+    } else {
+      passedConfirmCount = 0;
+    }
+
+    if (passedConfirmCount >= CONFIRMATION_COUNT) {
+      if (currentTime - lastStateChange >= DEBOUNCE_DELAY_MS) {
+        currentState = STATE_PASSED;
+        lastStateChange = currentTime;
+        if (lastSentState != STATE_PASSED) {
+          sendUserState(STATE_PASSED, distance);
+          lastSentState = STATE_PASSED;
+          Serial.println("[SENSOR] PASSED confirmed and sent");
+        }
+      }
+    }
+  } else {
+    // None: reset confirmation counters
+    nearConfirmCount = 0;
+    passedConfirmCount = 0;
   }
   
   // Debug output
