@@ -26,7 +26,8 @@ const int ECHO_PIN = 13;          // Ultrasonic sensor echo pin
 // ===========================
 // Distance Thresholds (in cm)
 // ===========================
-const float NEAR_THRESHOLD = 50.0;      // Distance considered "near" (user arrived)
+const float NEAR_THRESHOLD = 50.0;      // Enter near when distance <= 50 cm
+const float NEAR_EXIT_THRESHOLD = 60.0; // Exit near when distance >= 60 cm (hysteresis)
 const float FAR_THRESHOLD = 100.0;      // Distance considered "far" (user passed)
 const float DISTANCE_CHANGE_MIN = 5.0;  // Minimum distance change to consider as significant
 
@@ -36,6 +37,7 @@ const float DISTANCE_CHANGE_MIN = 5.0;  // Minimum distance change to consider a
 const unsigned long SENSOR_READ_INTERVAL = 100;    // Read sensors every 100ms
 const unsigned long DEBOUNCE_DELAY = 2000;         // 2 second debounce for state changes
 const unsigned long RECONNECT_INTERVAL = 5000;     // Reconnect attempt interval
+const unsigned long NEAR_REARM_AWAY_TIME = 3000;   // Must be out of near for 3s to allow a new "arrived"
 
 // ===========================
 // Global Variables
@@ -58,6 +60,10 @@ unsigned long lastDistanceChange = 0;
 unsigned long lastStateChange = 0;
 bool motionDetected = false;
 unsigned long lastMotionTime = 0;
+
+// Near-state rearm tracking: after sending ARRIVED, require leaving near for a while
+bool nearLatched = false;                 // true after we send ARRIVED
+unsigned long nearExitStartTime = 0;      // when we first read distance >= NEAR_EXIT_THRESHOLD
 
 // ===========================
 // WebSocket Event Handler
@@ -251,34 +257,57 @@ void processSensorData() {
     return;
   }
   
-  // Determine new state based on distance
+  // Hysteresis and latch logic for NEAR state
+  // 1) If we are near-latched (already announced ARRIVED), we do not send ARRIVED again
+  //    until we have been outside the near-exit threshold for NEAR_REARM_AWAY_TIME.
+  if (nearLatched) {
+    if (distance >= NEAR_EXIT_THRESHOLD) {
+      // Started being outside near-exit threshold
+      if (nearExitStartTime == 0) {
+        nearExitStartTime = currentTime;
+      }
+      // If we have remained away long enough, unlatch
+      if (currentTime - nearExitStartTime >= NEAR_REARM_AWAY_TIME) {
+        nearLatched = false;
+        nearExitStartTime = 0;
+      }
+    } else {
+      // Still near; reset away timer
+      nearExitStartTime = 0;
+    }
+  }
+
+  // Determine new state based on distance with hysteresis
   UserState newState = STATE_NONE;
-  
   if (distance <= NEAR_THRESHOLD) {
     newState = STATE_ARRIVED;
   } else if (distance > NEAR_THRESHOLD && distance <= FAR_THRESHOLD) {
-    // In the middle zone, keep current state or mark as passed
-    if (currentState == STATE_ARRIVED) {
-      newState = STATE_PASSED;
-    } else {
-      newState = STATE_PASSED;
-    }
+    newState = STATE_PASSED;
   } else {
-    // Too far, no user detected
     newState = STATE_NONE;
   }
-  
+
   // Debounce state changes
   if (newState != currentState) {
     if (currentTime - lastStateChange >= DEBOUNCE_DELAY) {
-      // State has changed and debounce period passed
       currentState = newState;
       lastStateChange = currentTime;
-      
-      // Send event only if it's different from last sent state
-      if (newState != lastSentState && newState != STATE_NONE) {
-        sendUserState(newState, distance);
-        lastSentState = newState;
+
+      // Only send ARRIVED if not latched
+      if (newState == STATE_ARRIVED) {
+        if (!nearLatched) {
+          sendUserState(newState, distance);
+          lastSentState = newState;
+          nearLatched = true; // latch near after sending arrived
+        }
+      } else if (newState == STATE_PASSED) {
+        // Passed events can be sent normally (still debounced)
+        if (newState != lastSentState) {
+          sendUserState(newState, distance);
+          lastSentState = newState;
+        }
+      } else {
+        // STATE_NONE: do nothing
       }
     }
   }
