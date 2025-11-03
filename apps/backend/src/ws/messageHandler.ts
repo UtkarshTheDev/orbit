@@ -3,6 +3,33 @@ import type { BunWebSocketData } from "hono/bun";
 import { broadcastToTablets } from "./broadcast";
 import type { WSConnection } from "./connection";
 import { clientRoles } from "./connection";
+// Connection health tracking for ESP32
+const connectionHealth = new Map<string, {
+  lastPingTime: number;
+  lastPongTime: number;
+  missedPings: number;
+  isHealthy: boolean;
+}>();
+
+function updateConnectionHealth(clientId: string, eventType: "ping" | "pong") {
+  const now = Date.now();
+  const health = connectionHealth.get(clientId) || {
+    lastPingTime: 0,
+    lastPongTime: 0,
+    missedPings: 0,
+    isHealthy: true
+  };
+
+  if (eventType === "ping") {
+    health.lastPingTime = now;
+  } else if (eventType === "pong") {
+    health.lastPongTime = now;
+    health.missedPings = 0;
+    health.isHealthy = true;
+  }
+
+  connectionHealth.set(clientId, health);
+}
 import {
 	handleAIEditAccept,
 	handleAIEditCancel,
@@ -63,6 +90,7 @@ export function handleMessage(
           break;
         }
         console.log(`[ESP32] Motion detected from ${ws.id}`);
+        broadcastToTablets(server, { type: "motion_detected" });
         break;
       case "user_passed":
         if (clientRoles.get(ws.id) !== "esp32_sensor") {
@@ -79,6 +107,21 @@ export function handleMessage(
         }
         console.log(`[ESP32] User arrived near (from ${ws.id})`);
         broadcastToTablets(server, { type: "user_arrived" });
+        break;
+      case "ping":
+        // Respond to ping with pong (for any client, but log ESP32 specifically)
+        ws.send(JSON.stringify({ type: "pong", timestamp: Date.now() }));
+        if (clientRoles.get(ws.id) === "esp32_sensor") {
+          console.log(`[Health] Received ping from ESP32 ${ws.id}`);
+          updateConnectionHealth(ws.id, "ping");
+        }
+        break;
+      case "pong":
+        // Client responded to our ping
+        if (clientRoles.get(ws.id) === "esp32_sensor") {
+          console.log(`[Health] Received pong from ESP32 ${ws.id}`);
+          updateConnectionHealth(ws.id, "pong");
+        }
         break;
       case "voice_query":
         console.log(

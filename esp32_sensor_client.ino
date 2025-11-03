@@ -55,6 +55,11 @@ const uint8_t ADAPTIVE_NEAR_CONFIRMATIONS = 1;             // Require only 1 con
 // Other timing
 const unsigned long RECONNECT_INTERVAL = 5000;             // Reconnect attempt interval
 
+// Ping-Pong Health Check Configuration
+const unsigned long ESP32_PING_INTERVAL_MS = 30000;        // Send ping every 30s
+const unsigned long PING_TIMEOUT_MS = 10000;               // Expect pong within 10s  
+const uint8_t MAX_MISSED_PINGS = 2;                        // Reconnect after 2 timeouts
+
 // ===========================
 // Global Variables
 // ===========================
@@ -80,6 +85,13 @@ unsigned long lastMotionTime = 0;
 // Near-state rearm tracking: after sending ARRIVED, require leaving near for a while
 bool nearLatched = false;                 // true after we send ARRIVED
 unsigned long nearExitStartTime = 0;      // when we first read distance >= NEAR_EXIT_THRESHOLD
+
+// Ping-Pong health tracking
+unsigned long lastPingSentTime = 0;       // when we last sent ping to backend
+unsigned long lastPongReceivedTime = 0;   // when we last received pong from backend
+unsigned long lastBackendPingTime = 0;    // when backend last pinged us
+uint8_t missedPings = 0;                  // consecutive missed pongs
+bool connectionHealthy = true;            // overall connection health status
 
 // ===========================
 // WebSocket Event Handler
@@ -109,7 +121,7 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
       
     case WStype_TEXT:
       Serial.printf("[WS] Received: %s\n", payload);
-      handleWebSocketMessage(payload, length);
+      handleWebSocketMessage((char*)payload);
       break;
       
     case WStype_ERROR:
@@ -126,28 +138,6 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
   }
 }
 
-// ===========================
-// Handle WebSocket Messages
-// ===========================
-void handleWebSocketMessage(uint8_t * payload, size_t length) {
-  StaticJsonDocument<512> doc;
-  DeserializationError error = deserializeJson(doc, payload, length);
-  
-  if (error) {
-    Serial.print("[WS] JSON parse error: ");
-    Serial.println(error.c_str());
-    return;
-  }
-  
-  const char* type = doc["type"];
-  
-  if (strcmp(type, "connected") == 0) {
-    clientId = doc["clientId"].as<String>();
-    Serial.printf("[WS] Assigned Client ID: %s\n", clientId.c_str());
-  }
-  
-  // Handle other message types if needed
-}
 
 // ===========================
 // Send Motion Detection Event
@@ -220,6 +210,108 @@ float readUltrasonicDistanceRaw() {
   float distance = duration * 0.034 / 2.0;
   
   return distance;
+}
+
+// ===========================
+// WebSocket Message Handler
+// ===========================
+void handleWebSocketMessage(const char* message) {
+  // Parse JSON message
+  DynamicJsonDocument doc(1024);
+  DeserializationError error = deserializeJson(doc, message);
+  
+  if (error) {
+    Serial.printf("[ESP32] JSON parse error: %s\n", error.c_str());
+    return;
+  }
+  
+  const char* type = doc["type"];
+  if (!type) return;
+  
+  if (strcmp(type, "pong") == 0) {
+    // Backend responded to our ping
+    lastPongReceivedTime = millis();
+    missedPings = 0;
+    connectionHealthy = true;
+    Serial.println("[ESP32] Received pong from backend - connection healthy");
+  } else if (strcmp(type, "ping") == 0) {
+    // Backend is pinging us, respond with pong
+    lastBackendPingTime = millis();
+    sendPong();
+    Serial.println("[ESP32] Received ping from backend, sent pong");
+  } else if (strcmp(type, "connected") == 0) {
+    clientId = doc["clientId"].as<String>();
+    Serial.printf("[WS] Assigned Client ID: %s\n", clientId.c_str());
+  }
+}
+
+// ===========================
+// Ping-Pong Functions
+// ===========================
+void sendPing() {
+  if (!isConnected) return;
+  
+  DynamicJsonDocument doc(256);
+  doc["type"] = "ping";
+  doc["timestamp"] = millis();
+  
+  String message;
+  serializeJson(doc, message);
+  webSocket.sendTXT(message);
+  
+  lastPingSentTime = millis();
+  Serial.println("[ESP32] Sent ping to backend");
+}
+
+void sendPong() {
+  if (!isConnected) return;
+  
+  DynamicJsonDocument doc(256);
+  doc["type"] = "pong";
+  doc["timestamp"] = millis();
+  
+  String message;
+  serializeJson(doc, message);
+  webSocket.sendTXT(message);
+  
+  Serial.println("[ESP32] Sent pong to backend");
+}
+
+// ===========================
+// Handle Ping-Pong Health Check
+// ===========================
+void handlePingPong() {
+  unsigned long currentTime = millis();
+  
+  // Send ping to backend every ESP32_PING_INTERVAL_MS
+  if (currentTime - lastPingSentTime >= ESP32_PING_INTERVAL_MS) {
+    sendPing();
+  }
+  
+  // Check if we've missed too many pongs
+  if (lastPingSentTime > 0 && lastPongReceivedTime < lastPingSentTime) {
+    // We sent a ping but haven't received pong yet
+    if (currentTime - lastPingSentTime >= PING_TIMEOUT_MS) {
+      missedPings++;
+      Serial.printf("[ESP32] Ping timeout! Missed pings: %d/%d\n", missedPings, MAX_MISSED_PINGS);
+      
+      if (missedPings >= MAX_MISSED_PINGS) {
+        Serial.println("[ESP32] Too many missed pings - connection unhealthy, attempting reconnect");
+        connectionHealthy = false;
+        isConnected = false;
+        webSocket.disconnect();
+        // WebSocket will auto-reconnect due to setReconnectInterval
+        
+        // Reset ping state
+        lastPingSentTime = 0;
+        lastPongReceivedTime = 0;
+        missedPings = 0;
+      } else {
+        // Reset lastPingSentTime to trigger next ping attempt
+        lastPingSentTime = currentTime - ESP32_PING_INTERVAL_MS;
+      }
+    }
+  }
 }
 
 // ===========================
@@ -455,6 +547,7 @@ void loop() {
   // Process sensor data if connected
   if (isConnected) {
     processSensorData();
+    handlePingPong();
   }
   
   // Check WiFi connection
