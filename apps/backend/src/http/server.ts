@@ -6,7 +6,18 @@ const app = new Hono();
 
 // CORS middleware - allow frontend origins
 app.use("/*", cors({
-  origin: WS_ALLOWED_ORIGINS,
+  origin: (origin) => {
+    // Allow requests with no origin (like ESP32 clients or curl)
+    if (!origin) {
+      return origin;
+    }
+    // Check if the origin is in the allowed list from config
+    if (WS_ALLOWED_ORIGINS.includes(origin)) {
+      return origin;
+    }
+    // Deny other origins
+    return "";
+  },
   credentials: true,
 }));
 
