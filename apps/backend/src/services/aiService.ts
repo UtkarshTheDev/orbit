@@ -25,12 +25,14 @@ function getGeminiClient(): GoogleGenAI {
  * Generate AI response with streaming
  * @param userQuery - User's transcribed query
  * @param onChunk - Callback for each chunk of text
- * @returns Full AI response text
+ * @param onSearchDetected - Optional callback when Google Search is detected
+ * @returns Object containing full AI response text and search usage flag
  */
 export async function generateAIResponseStream(
   userQuery: string,
-  onChunk: (chunk: string) => void
-): Promise<string> {
+  onChunk: (chunk: string) => void,
+  onSearchDetected?: () => void
+): Promise<{ text: string; usedSearch: boolean }> {
   try {
     console.log(
       `[AI] Generating response for query: ${userQuery.substring(0, 100)}...`
@@ -40,17 +42,39 @@ export async function generateAIResponseStream(
     // Get system prompt from utility
     const systemPrompt = getOrbitSystemPrompt();
 
+    // Configure Google Search grounding tool
+    const groundingTool = {
+      googleSearch: {},
+    };
+
     // Generate content with streaming using new API
     const response = await client.models.generateContentStream({
       model: "gemini-2.5-flash-lite",
       contents: userQuery,
       config: {
         systemInstruction: systemPrompt,
+        tools: [groundingTool],
       },
     });
 
     let fullText = "";
+    let usedSearch = false;
+    let searchDetectedNotified = false;
+
     for await (const chunk of response) {
+      // Check if Google Search was used (only notify once)
+      if (
+        !searchDetectedNotified &&
+        chunk.candidates?.[0]?.groundingMetadata?.groundingChunks
+      ) {
+        usedSearch = true;
+        searchDetectedNotified = true;
+        console.log("[AI] Google Search detected in response");
+        if (onSearchDetected) {
+          onSearchDetected();
+        }
+      }
+
       const chunkText = chunk.text;
       if (chunkText) {
         fullText += chunkText;
@@ -58,8 +82,10 @@ export async function generateAIResponseStream(
       }
     }
 
-    console.log(`[AI] Response generated: ${fullText.substring(0, 100)}...`);
-    return fullText;
+    console.log(
+      `[AI] Response generated: ${fullText.substring(0, 100)}... (Search used: ${usedSearch})`
+    );
+    return { text: fullText, usedSearch };
   } catch (error) {
     console.error("[AI] Generation error:", error);
     throw new Error(`Failed to generate AI response: ${error}`);
@@ -69,9 +95,11 @@ export async function generateAIResponseStream(
 /**
  * Generate AI response without streaming (fallback)
  * @param userQuery - User's transcribed query
- * @returns Full AI response text
+ * @returns Object containing full AI response text and search usage flag
  */
-export async function generateAIResponse(userQuery: string): Promise<string> {
+export async function generateAIResponse(
+  userQuery: string
+): Promise<{ text: string; usedSearch: boolean }> {
   try {
     console.log(
       `[AI] Generating non-streaming response for query: ${userQuery.substring(0, 100)}...`
@@ -81,18 +109,28 @@ export async function generateAIResponse(userQuery: string): Promise<string> {
     // Get system prompt from utility
     const systemPrompt = getOrbitSystemPrompt();
 
+    // Configure Google Search grounding tool
+    const groundingTool = {
+      googleSearch: {},
+    };
+
     const response = await client.models.generateContent({
       model: "gemini-2.5-flash-lite",
       contents: userQuery,
       config: {
         systemInstruction: systemPrompt,
+        tools: [groundingTool],
       },
     });
 
     const text = response.text;
+    const usedSearch =
+      !!response.candidates?.[0]?.groundingMetadata?.groundingChunks;
 
-    console.log(`[AI] Response generated: ${text.substring(0, 100)}...`);
-    return text;
+    console.log(
+      `[AI] Response generated: ${text.substring(0, 100)}... (Search used: ${usedSearch})`
+    );
+    return { text, usedSearch };
   } catch (error) {
     console.error("[AI] Generation error:", error);
     throw new Error(`Failed to generate AI response: ${error}`);
@@ -103,17 +141,19 @@ export async function generateAIResponse(userQuery: string): Promise<string> {
  * Generate AI response with timeout
  * @param userQuery - User's transcribed query
  * @param onChunk - Callback for each chunk of text
+ * @param onSearchDetected - Optional callback when Google Search is detected
  * @param timeoutMs - Timeout in milliseconds
- * @returns Full AI response text
+ * @returns Object containing full AI response text and search usage flag
  */
 export async function generateAIResponseWithTimeout(
   userQuery: string,
   onChunk: (chunk: string) => void,
+  onSearchDetected?: () => void,
   timeoutMs: number = AI_TIMEOUT
-): Promise<string> {
+): Promise<{ text: string; usedSearch: boolean }> {
   return Promise.race([
-    generateAIResponseStream(userQuery, onChunk),
-    new Promise<string>((_, reject) =>
+    generateAIResponseStream(userQuery, onChunk, onSearchDetected),
+    new Promise<{ text: string; usedSearch: boolean }>((_, reject) =>
       setTimeout(() => reject(new Error("AI generation timeout")), timeoutMs)
     ),
   ]);
