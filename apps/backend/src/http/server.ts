@@ -1,8 +1,12 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { logger } from "hono/logger";
 import { WS_ALLOWED_ORIGINS } from "../config";
 
 const app = new Hono();
+
+// Logging middleware
+app.use('*', logger());
 
 // CORS middleware - allow frontend origins
 app.use("/*", cors({
@@ -32,6 +36,12 @@ app.get("/", (c) => c.json({
 app.get("/health", (c) => c.json({ 
   status: "healthy",
   uptime: process.uptime(),
+}));
+
+// Dedicated endpoint for ESP32 test
+app.get("/api/esp32", (c) => c.json({
+  message: "Hello from Orbit Backend! ESP32 is connected.",
+  timestamp: Date.now(),
 }));
 
 export default app;

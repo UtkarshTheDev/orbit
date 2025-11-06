@@ -67,7 +67,7 @@ void setup() {
   Serial.printf("[HTTPS] Attempting GET request to https://%s\n", host);
 
   HTTPClient http;
-  if (http.begin(client, host, httpsPort, "/")) { // HTTPS GET to the root path
+  if (http.begin(client, host, httpsPort, "/api/esp32")) { // HTTPS GET to the dedicated test path
     int httpCode = http.GET();
     if (httpCode > 0) {
       Serial.printf("[HTTPS] GET Response Code: %d\n", httpCode);
