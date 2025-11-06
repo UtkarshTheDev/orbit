@@ -7,6 +7,8 @@ import { useSessionStore } from "@/lib/sessionStore";
 import { LocationCard } from "./components/LocationCard";
 import { MobileStepNavigation } from "./components/MobileStepNavigation";
 import { QRDialog } from "./components/QRDialog";
+import { SearchBar } from "./components/SearchBar";
+import { ConfirmationOverlay } from "./components/ConfirmationOverlay";
 import { CAMPUS_LOCATIONS } from "./data/locations";
 import CampusNavigationMap from "./Map";
 import type { Location, MobileStep } from "./types";
@@ -26,6 +28,9 @@ export function LocationPicker() {
 		useState<Location | null>(null);
 	const [mobileStep, setMobileStep] = useState<MobileStep>("current");
 	const [isQRDialogOpen, setIsQRDialogOpen] = useState(false);
+	const [searchQuery, setSearchQuery] = useState("");
+	const [showConfirmation, setShowConfirmation] = useState(false);
+	const [confirmationMessage, setConfirmationMessage] = useState("");
 
 	// For tablet: selected location becomes the navigation destination
 	const [navigationDestination, setNavigationDestination] = useState<
@@ -67,10 +72,23 @@ export function LocationPicker() {
 	const handleMobileLocationSelect = (location: Location) => {
 		if (mobileStep === "current") {
 			setCurrentLocation(location);
-			setMobileStep("destination");
+			setConfirmationMessage("✓ Current Location Set");
+			setShowConfirmation(true);
+			// Auto-advance to destination step after confirmation
+			setTimeout(() => {
+				setShowConfirmation(false);
+				setMobileStep("destination");
+				setSearchQuery(""); // Clear search for next step
+			}, 1800);
 		} else if (mobileStep === "destination") {
 			setDestinationLocation(location);
-			setMobileStep("map");
+			setConfirmationMessage("Calculating Route...");
+			setShowConfirmation(true);
+			// Navigate to map after brief confirmation
+			setTimeout(() => {
+				setShowConfirmation(false);
+				setMobileStep("map");
+			}, 1800);
 		}
 	};
 
@@ -78,10 +96,29 @@ export function LocationPicker() {
 		if (mobileStep === "destination") {
 			setMobileStep("current");
 			setDestinationLocation(null);
+			setSearchQuery("");
 		} else if (mobileStep === "map") {
 			setMobileStep("destination");
 		}
 	};
+
+	const handleChangeCurrentLocation = () => {
+		setMobileStep("current");
+		setCurrentLocation(null);
+		setDestinationLocation(null);
+		setSearchQuery("");
+	};
+
+	// Filter locations based on search query
+	const filteredLocations = CAMPUS_LOCATIONS.filter((location) => {
+		if (!searchQuery) return true;
+		const query = searchQuery.toLowerCase();
+		return (
+			location.name.toLowerCase().includes(query) ||
+			location.address.toLowerCase().includes(query) ||
+			location.category.toLowerCase().includes(query)
+		);
+	});
 
 	const handleTabletLocationSelect = (location: Location) => {
 		setSelectedLocation(location);
@@ -176,53 +213,85 @@ export function LocationPicker() {
 				onClose={() => setIsQRDialogOpen(false)}
 			/>
 
-			<div className="min-h-screen p-4">
-				<MobileStepNavigation
-					mobileStep={mobileStep}
-					currentLocation={currentLocation}
-					onBack={handleMobileBack}
-				/>
+			<ConfirmationOverlay
+				show={showConfirmation}
+				message={confirmationMessage}
+				onComplete={() => setShowConfirmation(false)}
+			/>
 
-				<div className="grid gap-3">
-					{CAMPUS_LOCATIONS.map((location) => {
-						const isCurrentlySelected =
-							(mobileStep === "current" &&
-								currentLocation?.id === location.id) ||
-							(mobileStep === "destination" &&
-								destinationLocation?.id === location.id);
-						const isDisabled =
-							mobileStep === "destination" &&
-							currentLocation?.id === location.id;
+			<div className="min-h-screen">
+				<div className="p-4 pb-0">
+					<MobileStepNavigation
+						mobileStep={mobileStep}
+						currentLocation={currentLocation}
+						onBack={handleMobileBack}
+						onChangeCurrentLocation={handleChangeCurrentLocation}
+					/>
+				</div>
 
-						return (
-							<LocationCard
-								key={location.id}
-								location={location}
-								isSelected={isCurrentlySelected}
-								isDisabled={isDisabled}
-								onClick={handleMobileLocationSelect}
-								variant="mobile"
-							/>
-						);
-					})}
+				{/* Search Bar */}
+				{mobileStep !== "map" && (
+					<SearchBar
+						value={searchQuery}
+						onChange={setSearchQuery}
+						placeholder={
+							mobileStep === "current"
+								? "Search current location..."
+								: "Search destination..."
+						}
+					/>
+				)}
+
+				{/* Location Cards */}
+				<div className="px-4 pb-4">
+					<div className="grid gap-3">
+						{filteredLocations.length > 0 ? (
+							filteredLocations.map((location) => {
+								const isCurrentlySelected =
+									(mobileStep === "current" &&
+										currentLocation?.id === location.id) ||
+									(mobileStep === "destination" &&
+										destinationLocation?.id === location.id);
+								const isDisabled =
+									mobileStep === "destination" &&
+									currentLocation?.id === location.id;
+
+								return (
+									<LocationCard
+										key={location.id}
+										location={location}
+										isSelected={isCurrentlySelected}
+										isDisabled={isDisabled}
+										onClick={handleMobileLocationSelect}
+										variant="mobile"
+									/>
+								);
+							})
+						) : (
+							<div className="py-12 text-center">
+								<p className="font-sans text-slate-500">
+									No locations found matching "{searchQuery}"
+								</p>
+								<button
+									type="button"
+									onClick={() => setSearchQuery("")}
+									className="mt-2 font-sans text-sm text-blue-600 hover:underline"
+								>
+									Clear search
+								</button>
+							</div>
+						)}
+					</div>
 				</div>
 
 				{mobileStep === "map" && currentLocation && destinationLocation && (
-					<div className="fixed inset-0 bg-white">
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={handleMobileBack}
-							className="absolute left-4 top-4 z-10 bg-white/90 text-blue-600 shadow-lg backdrop-blur-sm hover:bg-white"
-						>
-							<ArrowLeft className="mr-1 h-4 w-4" />
-							Back
-						</Button>
-
-						{/* Actual Campus Map */}
+					<div className="fixed inset-0 bg-white z-0">
+						{/* Actual Campus Map with Back Button */}
 						<CampusNavigationMap
 							initialDestination={destinationLocation.id}
 							mobileStartLocation={currentLocation.id}
+							showBackButton={true}
+							onBack={handleMobileBack}
 						/>
 					</div>
 				)}

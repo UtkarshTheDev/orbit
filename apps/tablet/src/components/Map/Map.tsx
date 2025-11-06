@@ -14,17 +14,23 @@ import {
 import { ZoomControls } from './components/ZoomControls'
 import { RoomRenderer } from './components/RoomRenderer'
 import { PathRenderer } from './components/PathRenderer'
+import { Button } from '@/components/ui/button'
+import { ArrowLeft } from 'lucide-react'
 
 interface CampusNavigationMapProps {
   initialDestination?: string | null;
   mobileStartLocation?: string | null;
+  showBackButton?: boolean;
+  onBack?: () => void;
 }
 
 
 
 export default function CampusNavigationMap({ 
   initialDestination, 
-  mobileStartLocation 
+  mobileStartLocation,
+  showBackButton = false,
+  onBack
 }: CampusNavigationMapProps = {}) {
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null)
   const [startRoom, setStartRoom] = useState<Room | null>(null)
@@ -295,6 +301,20 @@ export default function CampusNavigationMap({
             <PathRenderer pathPoints={pathPoints} />
           </svg>
         </div>
+
+        {/* Back Button for Mobile */}
+        {showBackButton && onBack && (
+          <div className="absolute left-4 top-4 sm:left-6 sm:top-6 z-10">
+            <Button
+              size="default"
+              onClick={onBack}
+              className="bg-white/95 text-blue-600 shadow-2xl backdrop-blur-md hover:bg-white hover:shadow-2xl border-2 border-blue-300 font-semibold transition-all duration-200 active:scale-95 px-4 py-2 touch-manipulation"
+            >
+              <ArrowLeft className="mr-2 h-5 w-5" />
+              Change Route
+            </Button>
+          </div>
+        )}
 
         <ZoomControls
           onZoomIn={handleZoomIn}
