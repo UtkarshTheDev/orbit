@@ -7,6 +7,7 @@ type VoiceStage =
   | "uploading"
   | "analyzing"
   | "thinking"
+  | "searching"
   | "responding"
   | "done"
   | "error";
@@ -19,6 +20,7 @@ interface VoiceResponse {
   ttsAudio?: string;
   ttsDuration?: number;
   error?: string;
+  webSearchActive?: boolean;
 }
 
 interface UseVoiceWebSocketReturn {
@@ -62,6 +64,14 @@ export const useVoiceWebSocket = (): UseVoiceWebSocketReturn => {
           const stage = stageMap[msg.stage] || "idle";
           setResponse((prev) => ({ ...prev, stage }));
           console.log(`[VoiceWS] Status: ${msg.stage} -> ${stage}`);
+        } 
+        else if (msg.type === "web_search_active") {
+          setResponse((prev) => ({
+            ...prev,
+            stage: "searching",
+            webSearchActive: true,
+          }));
+          console.log(`[VoiceWS] Web search active: ${msg.message}`);
         } 
         else if (msg.type === "stt_done") {
           setResponse((prev) => ({
