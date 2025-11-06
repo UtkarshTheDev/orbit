@@ -34,6 +34,7 @@ function VoiceApp() {
   const [isAiSpeaking, setIsAiSpeaking] = useState(false);
   const [ariaLiveMessage, setAriaLiveMessage] = useState("");
   const [hasInteracted, setHasInteracted] = useState(false);
+  const [ttsError, setTtsError] = useState(false);
 
   // Real hooks for voice functionality
   const {
@@ -159,8 +160,10 @@ function VoiceApp() {
         })
         .catch((err) => {
           console.error("[VoiceApp] TTS playback error:", err);
-          setState("error");
-          setAriaLiveMessage("Failed to play audio response");
+          // Don't change state to error, just mark TTS as failed
+          setTtsError(true);
+          setAriaLiveMessage("Audio playback failed, but you can read the response");
+          // Keep the response text visible by staying in responding state
         });
 
       // Fallback timeout: Force transition to done after 30 seconds if audio doesn't end
@@ -179,8 +182,21 @@ function VoiceApp() {
 
     // Handle errors
     if (error) {
-      setState("error");
-      setAriaLiveMessage(error);
+      // Check if error is TTS-related and we already have AI response
+      const isTtsError = error.toLowerCase().includes('tts') || 
+                         error.toLowerCase().includes('speech') ||
+                         error.toLowerCase().includes('audio');
+      
+      if (isTtsError && aiText && state === "responding") {
+        // TTS failed but we have the text response - show error but keep text visible
+        console.log("[VoiceApp] TTS error detected, keeping response text visible");
+        setTtsError(true);
+        setAriaLiveMessage("Audio playback failed, but you can read the response");
+      } else {
+        // General error - show error state
+        setState("error");
+        setAriaLiveMessage(error);
+      }
     }
   }, [response, isPlaying, playAudio, userQuery]);
 
@@ -200,6 +216,7 @@ function VoiceApp() {
       setUserQuery("");
       setAriaLiveMessage("Listening to your voice");
       setHasInteracted(true);
+      setTtsError(false); // Reset TTS error flag
       resetResponse();
       playedAudioRef.current = null; // Reset played audio tracker
 
@@ -243,6 +260,7 @@ function VoiceApp() {
     setTranscript("");
     setUserQuery(question);
     setAriaLiveMessage(`Processing question: ${question}`);
+    setTtsError(false); // Reset TTS error flag
     resetResponse();
     playedAudioRef.current = null; // Reset played audio tracker
     stopAudio(); // Stop any currently playing audio
@@ -257,6 +275,7 @@ function VoiceApp() {
     setTranscript(previousTranscript);
     setUserQuery(previousUserQuery);
     setAriaLiveMessage("Ready to listen");
+    setTtsError(false); // Reset TTS error flag
     resetResponse();
     stopAudio();
   };
@@ -274,14 +293,13 @@ function VoiceApp() {
       <AnimatedGrid />
       <ScanLine />
 
-      <div
+      <output
         aria-atomic="true"
         aria-live="polite"
         className="sr-only"
-        role="status"
       >
         {ariaLiveMessage}
-      </div>
+      </output>
 
       <div
         className={`flex h-full w-full flex-col items-center transition-all duration-500 ease-in-out ${shouldCenterContent ? "justify-center" : "justify-start pt-8 md:pt-12"} relative z-10 px-6 md:px-12 lg:px-16`}
@@ -338,7 +356,37 @@ function VoiceApp() {
                 state === "analyzing" ||
                 state === "thinking") && <StatusText state={state} />}
 
-              {state === "responding" && !isAiSpeaking && (
+              {state === "responding" && ttsError && (
+                <div className="-translate-x-1/2 absolute bottom-8 left-1/2 z-20 transform">
+                  <div className="flex flex-col items-center gap-3">
+                    <p className="font-medium text-red-600 text-sm">Audio playback failed</p>
+                    <button
+                      className="rounded-lg bg-blue-500 px-6 py-2 font-medium font-orbitron text-white shadow-md transition-all hover:scale-105 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 active:scale-95"
+                      onClick={() => {
+                        console.log("[VoiceApp] Retry TTS button clicked");
+                        if (pendingDoneRef.current) {
+                          const { transcript: finalTranscript, query } =
+                            pendingDoneRef.current;
+                          setState("done");
+                          setPreviousTranscript(finalTranscript);
+                          setPreviousUserQuery(query);
+                          setAriaLiveMessage(
+                            "Response complete. Tap to start again"
+                          );
+                          pendingDoneRef.current = null;
+                        }
+                        setTtsError(false);
+                        stopAudio();
+                      }}
+                      type="button"
+                    >
+                      Continue
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {state === "responding" && !isAiSpeaking && !ttsError && (
                 <div className="-translate-x-1/2 absolute bottom-8 left-1/2 z-20 transform">
                   <button
                     className="rounded-lg bg-gray-600 px-4 py-2 font-medium text-sm text-white shadow-md transition-all hover:bg-gray-700"
