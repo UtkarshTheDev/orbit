@@ -68,6 +68,7 @@ void setup() {
 
   HTTPClient http;
   if (http.begin(client, host, httpsPort, "/api/esp32")) { // HTTPS GET to the dedicated test path
+    http.addHeader("User-Agent", "ESP32/1.0"); // Add User-Agent header
     int httpCode = http.GET();
     if (httpCode > 0) {
       Serial.printf("[HTTPS] GET Response Code: %d\n", httpCode);

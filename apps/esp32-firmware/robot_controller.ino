@@ -52,6 +52,7 @@ const char* ws_path = "/ws";                       // WebSocket endpoint path
 #define TILT_MIN 60
 #define TILT_MAX 120
 #define TILT_NEUTRAL 90
+#define TILT_SALUTE 60        // Tilt down to "salute" or "nod"
 
 // Head servo angles
 #define HEAD_MIN 30
@@ -184,6 +185,7 @@ float getMedianDistance();
 void onMessageCallback(WebsocketsMessage message);
 void onEventsCallback(WebsocketsEvent event, String data);
 void handleWebSocketMessage(const char *message);
+void performSalute();
 
 // ============================================ 
 // WEBSOCKET FUNCTIONS
@@ -383,6 +385,15 @@ void setupTiltServos() {
 
   tiltLeft.detach();
   tiltRight.detach();
+}
+
+// Perform a "salute" nod when motion is first detected
+void performSalute() {
+  Serial.println("Performing salute nod...");
+  moveTiltSmooth(TILT_SALUTE);
+  delay(1500); // Wait 1.5 seconds
+  moveTiltSmooth(TILT_NEUTRAL);
+  Serial.println("Salute complete.");
 }
 
 // ============================================ 
@@ -637,6 +648,8 @@ void loopPIR(unsigned long currentTime) {
       sendMotionDetected(); // Send WebSocket message
       // Reset head to neutral on motion detection
       moveHeadSmooth(HEAD_NEUTRAL);
+      // Perform salute on first detection
+      performSalute();
     }
   }
 
