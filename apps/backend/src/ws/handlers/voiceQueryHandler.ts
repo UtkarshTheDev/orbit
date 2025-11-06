@@ -180,6 +180,7 @@ export async function handleVoiceQuery(
 
     // Generate AI response with streaming
     let fullAiResponse = "";
+    let usedWebSearch = false;
     const aiResponse = await generateAIResponseWithTimeout(
       transcribedText,
       (chunk) => {
@@ -191,10 +192,22 @@ export async function handleVoiceQuery(
             final: false,
           })
         );
+      },
+      () => {
+        // Callback when Google Search is detected
+        console.log("[VoiceQuery] Google Search detected, notifying client");
+        ws.send(
+          JSON.stringify({
+            type: "web_search_active",
+            message: "Searching on internet...",
+          })
+        );
+        usedWebSearch = true;
       }
     );
 
-    fullAiResponse = aiResponse;
+    fullAiResponse = aiResponse.text;
+    usedWebSearch = aiResponse.usedSearch;
 
     // Stage 7: AI done
     ws.send(
