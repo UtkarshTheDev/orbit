@@ -12,11 +12,19 @@ interface HomeProps {
 export default function Home({ onBack, onNavigateToVoice }: HomeProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
   const { sendTextQuery, response, resetResponse } = useVoiceWebSocket();
 
   // Handle WebSocket response updates
   useEffect(() => {
-    const { stage, aiText, aiTextChunk, error } = response;
+    const { stage, aiText, aiTextChunk, error, webSearchActive } = response;
+
+    // Update searching state
+    if (stage === "searching" || webSearchActive) {
+      setIsSearching(true);
+    } else if (stage === "thinking" || stage === "responding") {
+      setIsSearching(false);
+    }
 
     if (error) {
       console.error("[Home] WebSocket error:", error);
@@ -112,6 +120,7 @@ export default function Home({ onBack, onNavigateToVoice }: HomeProps) {
         onSend={handleSend}
         onTalkClick={handleTalkClick}
         onError={(error) => console.error("Chat error:", error)}
+        isSearching={isSearching}
       />
     </div>
   );

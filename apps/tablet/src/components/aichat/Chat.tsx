@@ -19,6 +19,7 @@ export interface OrbitChatProps {
   onSend: (text: string) => Promise<void>;
   onTalkClick?: () => void;
   onError?: (error: Error) => void;
+  isSearching?: boolean;
 }
 
 function MarkdownContent({ content }: { content: string }) {
@@ -173,6 +174,7 @@ export function OrbitChat({
   onSend,
   onTalkClick,
   onError,
+  isSearching = false,
 }: OrbitChatProps) {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -332,7 +334,9 @@ export function OrbitChat({
                             <span className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:150ms]"></span>
                             <span className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:300ms]"></span>
                           </div>
-                          <span className="text-sm font-medium text-muted-foreground">Thinking...</span>
+                          <span className="text-sm font-medium text-muted-foreground">
+                            {isSearching ? "Searching on internet..." : "Thinking..."}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -364,7 +368,9 @@ export function OrbitChat({
                         <span className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:150ms]"></span>
                         <span className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:300ms]"></span>
                       </div>
-                      <span className="text-sm font-medium text-muted-foreground">Thinking...</span>
+                      <span className="text-sm font-medium text-muted-foreground">
+                        {isSearching ? "Searching on internet..." : "Thinking..."}
+                      </span>
                     </div>
                   </div>
                 </div>
