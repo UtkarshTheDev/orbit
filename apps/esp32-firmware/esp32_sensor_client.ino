@@ -1,7 +1,7 @@
-// MIGRATED TO ArduinoWebsockets by Gil Maimon for improved stability and debugging.
+// WebSocket implementation updated for stability, using WebSocketsClient library.
 
 #include <WiFi.h>
-#include <ArduinoWebsockets.h>
+#include <WebSocketsClient.h>
 #include <ArduinoJson.h>
 
 // ===========================
@@ -29,7 +29,7 @@ const int ECHO_PIN = 13;          // Ultrasonic sensor echo pin
 // ===========================
 // Edit these values to tune behavior without changing code logic.
 const unsigned long SENSOR_READ_INTERVAL_MS = 100;   // Sensor loop period
-const uint8_t MEDIAN_SAMPLES_PER_BURST = 5;          // Samples per burst for median
+const uint8_t MEDIAN_SAMPLES_PER_BURST = 6;          // Samples per burst for median
 const unsigned long BURST_SAMPLE_DELAY_US = 5000;    // Delay between burst samples
 
 const float MIN_DISTANCE_CM = 2.0;                   // Plausible min range
@@ -59,8 +59,7 @@ const unsigned long RECONNECT_INTERVAL = 5000;             // Reconnect attempt 
 // ===========================
 // Global Variables
 // ===========================
-using namespace websockets;
-WebsocketsClient client;
+WebSocketsClient webSocket;
 bool isConnected = false;
 String clientId = "";
 
@@ -87,41 +86,47 @@ unsigned long nearExitStartTime = 0;      // when we first read distance >= NEAR
 unsigned long lastBackendPingTime = 0;
 
 // Forward declarations for callbacks
-void onMessageCallback(WebsocketsMessage message);
-void onEventsCallback(WebsocketsEvent event, String data);
 void handleWebSocketMessage(const char* message);
 void sendPong();
 
 // ===========================
 // WebSocket Event Handler
 // ===========================
-void onMessageCallback(WebsocketsMessage message) {
-    Serial.print("[WS] Message received: ");
-    Serial.println(message.data());
-    handleWebSocketMessage(message.c_str());
-}
-
-void onEventsCallback(WebsocketsEvent event, String data) {
-    if (event == WebsocketsEvent::ConnectionOpened) {
-        Serial.println("[WS] Connection Opened");
-        isConnected = true;
-        // Send identify message
+void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
+  switch(type) {
+    case WStype_DISCONNECTED:
+      Serial.println("[WSc] Disconnected!");
+      isConnected = false;
+      clientId = "";
+      break;
+    case WStype_CONNECTED:
+      Serial.printf("[WSc] Connected to url: %s\n", payload);
+      isConnected = true;
+      // Send identify message
+      {
         StaticJsonDocument<200> identifyDoc;
         identifyDoc["type"] = "identify";
         identifyDoc["role"] = "esp32_sensor";
         String identifyMsg;
         serializeJson(identifyDoc, identifyMsg);
-        client.send(identifyMsg);
+        webSocket.sendTXT(identifyMsg);
         Serial.println("[WS] Sent identification as esp32_sensor");
-    } else if (event == WebsocketsEvent::ConnectionClosed) {
-        Serial.printf("[WS] Connection Closed. Reason: %s\n", data.c_str());
-        isConnected = false;
-        clientId = "";
-    } else if (event == WebsocketsEvent::GotPing) {
-        Serial.println("[WS] Received WebSocket PING frame");
-    } else if (event == WebsocketsEvent::GotPong) {
-        Serial.println("[WS] Received WebSocket PONG frame");
-    }
+      }
+      break;
+    case WStype_TEXT:
+      Serial.printf("[WSc] Received: %s\n", payload);
+      handleWebSocketMessage((const char*)payload);
+      break;
+    case WStype_ERROR:
+      Serial.println("[WSc] Error");
+      break;
+    case WStype_PING:
+      Serial.println("[WSc] Got ping");
+      break;
+    case WStype_PONG:
+      Serial.println("[WSc] Got pong");
+      break;
+  }
 }
 
 // ===========================
@@ -132,12 +137,9 @@ void sendMotionDetected() {
 
   StaticJsonDocument<200> doc;
   doc["type"] = "motion_detected";
-  doc["timestamp"] = millis();
-  doc["sensor"] = "PIR";
-
   String jsonString;
   serializeJson(doc, jsonString);
-  client.send(jsonString);
+  webSocket.sendTXT(jsonString);
 
   Serial.println("[SENSOR] Sent: Motion detected");
 }
@@ -166,7 +168,7 @@ void sendUserState(UserState state, float distance) {
 
   String jsonString;
   serializeJson(doc, jsonString);
-  client.send(jsonString);
+  webSocket.sendTXT(jsonString);
 
   Serial.printf("[SENSOR] Sent: %s (distance: %.2f cm)\n",
                 state == STATE_PASSED ? "User passed" : "User arrived",
@@ -237,7 +239,7 @@ void sendPong() {
 
   String message;
   serializeJson(doc, message);
-  client.send(message);
+  webSocket.sendTXT(message);
 
   Serial.println("[APP] Sent application-level pong to backend");
 }
@@ -430,22 +432,13 @@ void setup() {
   }
 
   // Configure WebSocket
-  client.onMessage(onMessageCallback);
-  client.onEvent(onEventsCallback);
-
   // The library handles SSL/WSS automatically if the port is 443
   Serial.printf("[WS] Attempting to connect to wss://%s:%d%s\n", ws_host, ws_port, ws_path);
   
-  // Temporarily disable SSL certificate validation for debugging
-  client.setInsecure();
-  
-  bool connected = client.connect(ws_host, ws_port, ws_path);
-  
-  if(connected) {
-    Serial.println("[WS] Connection initiated successfully.");
-  } else {
-    Serial.println("[WS] Connection failed to initiate! Will retry in the main loop.");
-  }
+  // Start WebSocket connection
+  webSocket.beginSSL(ws_host, ws_port, ws_path);
+  webSocket.onEvent(webSocketEvent);
+  webSocket.setReconnectInterval(5000); // try to reconnect every 5s
 
   Serial.println("[SETUP] Complete! Starting main loop...\n");
 }
@@ -454,31 +447,7 @@ void setup() {
 // Main Loop
 // ===========================
 void loop() {
-  static unsigned long lastReconnectAttempt = 0;
-
-  if (client.available()) {
-    // If connected, poll for new messages
-    client.poll();
-  } else {
-    // If disconnected, attempt to reconnect periodically
-    unsigned long now = millis();
-    if (now - lastReconnectAttempt > RECONNECT_INTERVAL) {
-      lastReconnectAttempt = now;
-      
-      // First, ensure WiFi is still connected.
-      if (WiFi.status() != WL_CONNECTED) {
-        Serial.println("[WiFi] Connection lost! Attempting to reconnect...");
-        WiFi.reconnect();
-      } else {
-        // If WiFi is OK, try to reconnect WebSocket
-        Serial.println("[WS] Disconnected. Attempting to reconnect WebSocket...");
-        bool reconnected = client.connect(ws_host, ws_port, ws_path);
-        if (!reconnected) {
-          Serial.println("[WS] Reconnection attempt failed.");
-        }
-      }
-    }
-  }
+  webSocket.loop();
 
   // Process sensor data only when fully connected
   if (isConnected) {

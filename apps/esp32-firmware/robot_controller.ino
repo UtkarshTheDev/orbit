@@ -8,11 +8,11 @@
 // - Head scans randomly when idle
 // - Dual tilt servos with opposite mounting support
 //
-// MIGRATED TO ArduinoWebsockets by Gil Maimon
+// WebSocket implementation updated for stability, using WebSocketsClient library.
 
 #include <ESP32Servo.h>
 #include <WiFi.h>
-#include <ArduinoWebsockets.h>
+#include <WebSocketsClient.h>
 #include <ArduinoJson.h>
 
 // ============================================ 
@@ -87,8 +87,7 @@ Servo headServo;
 // ============================================ 
 // WEBSOCKET & NETWORKING GLOBALS
 // ============================================ 
-using namespace websockets;
-WebsocketsClient client;
+WebSocketsClient webSocket;
 bool isConnected = false;
 String clientId = "";
 
@@ -182,8 +181,6 @@ void loopRandomHead(unsigned long currentTime);
 float measureDistanceReal();
 float measureDistanceSimulated(unsigned long currentTime);
 float getMedianDistance();
-void onMessageCallback(WebsocketsMessage message);
-void onEventsCallback(WebsocketsEvent event, String data);
 void handleWebSocketMessage(const char *message);
 void performSalute();
 
@@ -191,35 +188,41 @@ void performSalute();
 // WEBSOCKET FUNCTIONS
 // ============================================ 
 
-void onMessageCallback(WebsocketsMessage message) {
-    Serial.print("[WS] Received: ");
-    Serial.println(message.data());
-    handleWebSocketMessage(message.c_str());
-}
-
-void onEventsCallback(WebsocketsEvent event, String data) {
-    if (event == WebsocketsEvent::ConnectionOpened) {
-        Serial.println("[WS] Connected to server");
-        isConnected = true;
-
-        // Send identify message to register as ESP32 sensor
+void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
+  switch(type) {
+    case WStype_DISCONNECTED:
+      Serial.println("[WSc] Disconnected!");
+      isConnected = false;
+      clientId = "";
+      break;
+    case WStype_CONNECTED:
+      Serial.printf("[WSc] Connected to url: %s\n", payload);
+      isConnected = true;
+      // Send identify message
+      {
         StaticJsonDocument<200> identifyDoc;
         identifyDoc["type"] = "identify";
         identifyDoc["role"] = "esp32_sensor";
-
         String identifyMsg;
         serializeJson(identifyDoc, identifyMsg);
-        client.send(identifyMsg);
+        webSocket.sendTXT(identifyMsg);
         Serial.println("[WS] Sent identification as esp32_sensor");
-    } else if (event == WebsocketsEvent::ConnectionClosed) {
-        Serial.println("[WS] Disconnected from server");
-        isConnected = false;
-        clientId = "";
-    } else if (event == WebsocketsEvent::GotPing) {
-        Serial.println("[WS] Received ping");
-    } else if (event == WebsocketsEvent::GotPong) {
-        Serial.println("[WS] Received pong");
-    }
+      }
+      break;
+    case WStype_TEXT:
+      Serial.printf("[WSc] Received: %s\n", payload);
+      handleWebSocketMessage((const char*)payload);
+      break;
+    case WStype_ERROR:
+      Serial.println("[WSc] Error");
+      break;
+    case WStype_PING:
+      Serial.println("[WSc] Got ping");
+      break;
+    case WStype_PONG:
+      Serial.println("[WSc] Got pong");
+      break;
+  }
 }
 
 void handleWebSocketMessage(const char *message)
@@ -257,7 +260,7 @@ void sendMotionDetected()
   doc["sensor"] = "PIR";
   String jsonString;
   serializeJson(doc, jsonString);
-  client.send(jsonString);
+  webSocket.sendTXT(jsonString);
   Serial.println("[WS] Sent: Motion detected");
 }
 
@@ -287,7 +290,7 @@ void sendWsUserState(WsUserState state, float distance)
   doc["sensor"] = "ultrasonic";
   String jsonString;
   serializeJson(doc, jsonString);
-  client.send(jsonString);
+  webSocket.sendTXT(jsonString);
   Serial.printf("[WS] Sent: %s (distance: %.2f cm)\n",
                 state == WS_STATE_PASSED ? "User passed" : "User arrived",
                 distance);
@@ -584,19 +587,10 @@ void setup() {
   }
 
   // Setup WebSocket callbacks
-  client.onMessage(onMessageCallback);
-  client.onEvent(onEventsCallback);
-
-  // The library handles SSL/WSS automatically if the port is 443
   Serial.printf("[WS] Connecting to %s:%d%s\n", ws_host, ws_port, ws_path);
-  bool connected = client.connect(ws_host, ws_port, ws_path);
-  if(connected) {
-    Serial.println("[WS] Connection initiated successfully.");
-  } else {
-    Serial.println("[WS] Connection failed to initiate!");
-  }
-
-  // This library handles ping/pong automatically. No need to set an interval.
+  webSocket.beginSSL(ws_host, ws_port, ws_path);
+  webSocket.onEvent(webSocketEvent);
+  webSocket.setReconnectInterval(5000); // try to reconnect every 5s
 
   Serial.println("\nState: IDLE - Waiting for motion\n");
 
@@ -609,16 +603,7 @@ void setup() {
 void loop() {
   unsigned long currentTime = millis();
   
-  // The poll() function must be called frequently to process incoming messages
-  if(isConnected) {
-    client.poll();
-  } else {
-    // Attempt to reconnect if disconnected
-    if (WiFi.status() == WL_CONNECTED && !client.available()) {
-        Serial.println("[WS] Reconnecting...");
-        client.connect(ws_host, ws_port, ws_path);
-    }
-  }
+  webSocket.loop();
 
   // Handle serial commands for testing
   handleSerialCommands();
