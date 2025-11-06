@@ -3,23 +3,34 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
-import type { Room } from './types'
+import type { Room, Location } from './types'
 import { rooms, roomDoors } from './constants'
 import { 
   findGridPath, 
   simplifyPath, 
   snapToCenterlines, 
-  enforceOrthogonalAlignment 
+  enforceOrthogonalAlignment,
+  getRoomCenter 
 } from './utils/pathfinding'
 import { ZoomControls } from './components/ZoomControls'
 import { RoomRenderer } from './components/RoomRenderer'
 import { PathRenderer } from './components/PathRenderer'
 
+interface CampusNavigationMapProps {
+  initialDestination?: string | null;
+  showLocationDetails?: Location | null;
+  mobileStartLocation?: string | null;
+}
 
 
-export default function CampusNavigationMap() {
+
+export default function CampusNavigationMap({ 
+  initialDestination, 
+  showLocationDetails,
+  mobileStartLocation 
+}: CampusNavigationMapProps = {}) {
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null)
-  const [startRoom, setStartRoom] = useState<Room | null>(() => rooms.find((r) => r.id === "entry") || null)
+  const [startRoom, setStartRoom] = useState<Room | null>(null)
   const [endRoom, setEndRoom] = useState<Room | null>(null)
   const [pathPoints, setPathPoints] = useState<{ x: number; y: number }[]>([])
   const [zoom, setZoom] = useState(1)
@@ -51,6 +62,30 @@ export default function CampusNavigationMap() {
     window.addEventListener("resize", handleResize)
     return () => window.removeEventListener("resize", handleResize)
   }, [])
+
+  // Handle automatic navigation when initialDestination is provided
+  useEffect(() => {
+    if (initialDestination) {
+      const destinationRoom = rooms.find(r => r.id === initialDestination);
+      if (destinationRoom) {
+        // Set custom start location for mobile, or default to Gate No. 1 for tablets
+        if (mobileStartLocation) {
+          const startLocationRoom = rooms.find(r => r.id === mobileStartLocation);
+          if (startLocationRoom) {
+            setStartRoom(startLocationRoom);
+          }
+        } else {
+          // Default to Gate No. 1 only if no custom start location
+          const defaultStart = rooms.find(r => r.id === "entry");
+          if (defaultStart) {
+            setStartRoom(defaultStart);
+          }
+        }
+        // Trigger navigation to destination
+        handleRoomClick(destinationRoom);
+      }
+    }
+  }, [initialDestination, mobileStartLocation])
 
   const handleRoomClick = (room: Room) => {
     if (room.type === "corridor" || room.type === "outdoor") return
@@ -107,15 +142,15 @@ export default function CampusNavigationMap() {
     setSelectedRoom(room)
     setEndRoom(room)
 
-    // Always use Entry as start point
-    const entryRoom = rooms.find((r) => r.id === "entry")
-    if (!entryRoom) return
+    // Use current start room (set by mobile/tablet logic), or default to Entry
+    const currentStartRoom = startRoom || rooms.find((r) => r.id === "entry")
+    if (!currentStartRoom) return
 
-    const startDoor = roomDoors[entryRoom.id]
+    const startDoor = roomDoors[currentStartRoom.id]
     const endDoor = roomDoors[room.id]
 
     if (startDoor && endDoor) {
-      console.log("[v0] Calculating path from Entry to", room.name)
+      console.log("[v0] Calculating path from", currentStartRoom.name, "to", room.name)
       console.log("[v0] Start door:", startDoor)
       console.log("[v0] End door:", endDoor)
 
@@ -136,8 +171,11 @@ export default function CampusNavigationMap() {
   }
 
   const handleClearNavigation = () => {
-    const entryRoom = rooms.find((r) => r.id === "entry")
-    setStartRoom(entryRoom || null)
+    // Reset to default start room (entry) only if no mobile start location is set
+    if (!mobileStartLocation) {
+      const entryRoom = rooms.find((r) => r.id === "entry")
+      setStartRoom(entryRoom || null)
+    }
     setEndRoom(null)
     setPathPoints([])
     setSelectedRoom(null)

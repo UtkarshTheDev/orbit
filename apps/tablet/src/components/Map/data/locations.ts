@@ -1,89 +1,109 @@
 import type { Location } from '../types';
+import { rooms } from '../constants';
 
-// External locations data for the Selection component
-export const DUMMY_LOCATIONS: Location[] = [
-  {
-    id: "1",
-    name: "Tech Hub Central",
-    address: "123 Innovation Drive",
-    coordinates: { lat: 37.7749, lng: -122.4194 },
-    category: "Office",
-  },
-  {
-    id: "2",
-    name: "Quantum Labs",
-    address: "456 Science Blvd",
-    coordinates: { lat: 37.7849, lng: -122.4094 },
-    category: "Research",
-  },
-  {
-    id: "3",
-    name: "Nexus Tower",
-    address: "789 Future Street",
-    coordinates: { lat: 37.7649, lng: -122.4294 },
-    category: "Office",
-  },
-  {
-    id: "4",
-    name: "Cyber Cafe District",
-    address: "321 Digital Avenue",
-    coordinates: { lat: 37.7949, lng: -122.3994 },
-    category: "Cafe",
-  },
-  {
-    id: "5",
-    name: "Innovation Park",
-    address: "654 Tech Lane",
-    coordinates: { lat: 37.7549, lng: -122.4394 },
-    category: "Park",
-  },
-  {
-    id: "6",
-    name: "Data Center Alpha",
-    address: "987 Cloud Road",
-    coordinates: { lat: 37.8049, lng: -122.3894 },
-    category: "Data Center",
-  },
-  {
-    id: "7",
-    name: "Virtual Plaza",
-    address: "147 Metaverse Way",
-    coordinates: { lat: 37.7449, lng: -122.4494 },
-    category: "Shopping",
-  },
-  {
-    id: "8",
-    name: "AI Research Institute",
-    address: "258 Neural Network Dr",
-    coordinates: { lat: 37.8149, lng: -122.3794 },
-    category: "Research",
-  },
-  {
-    id: "9",
-    name: "Hologram Studios",
-    address: "369 Projection Blvd",
-    coordinates: { lat: 37.7349, lng: -122.4594 },
-    category: "Studio",
-  },
-  {
-    id: "10",
-    name: "Quantum Bistro",
-    address: "741 Fusion Street",
-    coordinates: { lat: 37.8249, lng: -122.3694 },
-    category: "Restaurant",
-  },
-  {
-    id: "11",
-    name: "Neon Gardens",
-    address: "852 Light Avenue",
-    coordinates: { lat: 37.7249, lng: -122.4694 },
-    category: "Park",
-  },
-  {
-    id: "12",
-    name: "Cyber Security HQ",
-    address: "963 Firewall Lane",
-    coordinates: { lat: 37.8349, lng: -122.3594 },
-    category: "Office",
-  },
-];
+// Create campus locations from actual room data
+const createCampusLocations = (): Location[] => {
+  const campusLocations: Location[] = [];
+
+  // Event/Classroom locations (rooms with specific subjects)
+  const eventRooms = [
+    'room1', 'room2', 'room3', // Craft, EVS, Maths
+    'room4', 'room5', 'room6', // Craft, EVS, Maths/Science  
+    'room10', // Maths
+    'sports-room' // Science
+  ];
+
+  eventRooms.forEach(roomId => {
+    const room = rooms.find(r => r.id === roomId);
+    if (room) {
+      const subjects = room.subjects?.map(s => s.name).join(', ') || '';
+      // Use subjects as main title, room name as subtitle
+      campusLocations.push({
+        id: room.id,
+        name: subjects || room.name, // Main title: subjects
+        address: room.name, // Subtitle: room number/name
+        coordinates: { 
+          lat: room.x + room.width/2, 
+          lng: room.y + room.height/2 
+        },
+        category: "Events"
+      });
+    }
+  });
+
+  // Facility locations (administrative and utility areas)
+  const facilityRooms = [
+    'principal',
+    'office-reception', 
+    'drinking-water-boys',
+    'drinking-water-girls'
+  ];
+
+  facilityRooms.forEach(roomId => {
+    const room = rooms.find(r => r.id === roomId);
+    if (room) {
+      campusLocations.push({
+        id: room.id,
+        name: room.name,
+        address: `${room.type.charAt(0).toUpperCase() + room.type.slice(1)} Area`,
+        coordinates: { 
+          lat: room.x + room.width/2, 
+          lng: room.y + room.height/2 
+        },
+        category: "Facilities"
+      });
+    }
+  });
+
+  // Access Point locations (entry/exit gates)
+  const accessRooms = [
+    'entry', // Gate No. 1 / Entry
+    'gate2', // Gate No. 2 / Exit
+    'gate3', // Gate No. 3
+    'gate4', // Gate No. 4
+    'entry-left', // Exit
+    'entry-right' // Entry
+  ];
+
+  accessRooms.forEach(roomId => {
+    const room = rooms.find(r => r.id === roomId);
+    if (room) {
+      campusLocations.push({
+        id: room.id,
+        name: room.name,
+        address: 'Campus Access Point',
+        coordinates: { 
+          lat: room.x + room.width/2, 
+          lng: room.y + room.height/2 
+        },
+        category: "Access Points"
+      });
+    }
+  });
+
+  // Stairs locations (navigation helpers)
+  const stairRooms = ['stairs-left', 'stairs-right'];
+  
+  stairRooms.forEach(roomId => {
+    const room = rooms.find(r => r.id === roomId);
+    if (room) {
+      campusLocations.push({
+        id: room.id,
+        name: room.name,
+        address: 'Navigation Helper',
+        coordinates: { 
+          lat: room.x + room.width/2, 
+          lng: room.y + room.height/2 
+        },
+        category: "Navigation"
+      });
+    }
+  });
+
+  return campusLocations;
+};
+
+export const CAMPUS_LOCATIONS = createCampusLocations();
+
+// Keep some dummy external locations for testing (optional)
+export const DUMMY_LOCATIONS: Location[] = CAMPUS_LOCATIONS;

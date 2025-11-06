@@ -5,12 +5,8 @@ import { CampusNavigationMap, LocationPicker } from "@/components/Map";
 function MapPage() {
   const isTablet = useSessionStore((s) => s.isTablet);
   
-  // Show appropriate Map component based on device type
-  if (isTablet) {
-    return <CampusNavigationMap />;
-  } else {
-    return <LocationPicker />;
-  }
+  // LocationPicker handles both tablet (sidebar + map) and mobile (3-step flow) layouts
+  return <LocationPicker />;
 }
 
 export const Route = createFileRoute("/map/")({
