@@ -114,7 +114,7 @@ void onEventsCallback(WebsocketsEvent event, String data) {
         client.send(identifyMsg);
         Serial.println("[WS] Sent identification as esp32_sensor");
     } else if (event == WebsocketsEvent::ConnectionClosed) {
-        Serial.println("[WS] Connection Closed");
+        Serial.printf("[WS] Connection Closed. Reason: %s\n", data.c_str());
         isConnected = false;
         clientId = "";
     } else if (event == WebsocketsEvent::GotPing) {
@@ -435,6 +435,10 @@ void setup() {
 
   // The library handles SSL/WSS automatically if the port is 443
   Serial.printf("[WS] Attempting to connect to wss://%s:%d%s\n", ws_host, ws_port, ws_path);
+  
+  // Temporarily disable SSL certificate validation for debugging
+  client.setInsecure();
+  
   bool connected = client.connect(ws_host, ws_port, ws_path);
   
   if(connected) {

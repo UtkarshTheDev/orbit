@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PolaroidIndexRouteImport } from './routes/polaroid/index'
+import { Route as MapIndexRouteImport } from './routes/map/index'
 import { Route as ViewerIdRouteImport } from './routes/viewer/$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -23,6 +24,11 @@ const PolaroidIndexRoute = PolaroidIndexRouteImport.update({
   path: '/polaroid/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MapIndexRoute = MapIndexRouteImport.update({
+  id: '/map/',
+  path: '/map/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ViewerIdRoute = ViewerIdRouteImport.update({
   id: '/viewer/$id',
   path: '/viewer/$id',
@@ -32,30 +38,34 @@ const ViewerIdRoute = ViewerIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/viewer/$id': typeof ViewerIdRoute
+  '/map': typeof MapIndexRoute
   '/polaroid': typeof PolaroidIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/viewer/$id': typeof ViewerIdRoute
+  '/map': typeof MapIndexRoute
   '/polaroid': typeof PolaroidIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/viewer/$id': typeof ViewerIdRoute
+  '/map/': typeof MapIndexRoute
   '/polaroid/': typeof PolaroidIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/viewer/$id' | '/polaroid'
+  fullPaths: '/' | '/viewer/$id' | '/map' | '/polaroid'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/viewer/$id' | '/polaroid'
-  id: '__root__' | '/' | '/viewer/$id' | '/polaroid/'
+  to: '/' | '/viewer/$id' | '/map' | '/polaroid'
+  id: '__root__' | '/' | '/viewer/$id' | '/map/' | '/polaroid/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ViewerIdRoute: typeof ViewerIdRoute
+  MapIndexRoute: typeof MapIndexRoute
   PolaroidIndexRoute: typeof PolaroidIndexRoute
 }
 
@@ -75,6 +85,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PolaroidIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/map/': {
+      id: '/map/'
+      path: '/map'
+      fullPath: '/map'
+      preLoaderRoute: typeof MapIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/viewer/$id': {
       id: '/viewer/$id'
       path: '/viewer/$id'
@@ -88,6 +105,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ViewerIdRoute: ViewerIdRoute,
+  MapIndexRoute: MapIndexRoute,
   PolaroidIndexRoute: PolaroidIndexRoute,
 }
 export const routeTree = rootRouteImport

@@ -1,6 +1,7 @@
 ﻿import { motion, AnimatePresence } from "motion/react";
 import { Box, Camera, MapPin, MessageCircle, ArrowLeft } from "lucide-react";
 import { useState, useEffect} from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { FeatureButton } from "./ui/FeatureButton";
 import { InteractionBar } from "./interaction/InteractionBar";
 import RobotHead from "./robot/RobotHead";
@@ -16,6 +17,7 @@ type OrbitMainProps = {
 export function OrbitMain({ skipWelcomeAudio = false }: OrbitMainProps) {
 	const [inputMode, setInputMode] = useState<"voice" | "text">("voice");
 	const [activeView, setActiveView] = useState<"main" | "photobooth" | "models" | "voice" | "home">("main");
+	const navigate = useNavigate();
 
 	const features = [
 		{
@@ -45,6 +47,9 @@ export function OrbitMain({ skipWelcomeAudio = false }: OrbitMainProps) {
 	];
 
 	const handleFeatureClick = (feature: string) => {
+		if (feature === "Find a Room") {
+			navigate({ to: "/map" });
+		}
 		if (feature === "Instant Polaroid") {
 			setActiveView("photobooth");
 		}
