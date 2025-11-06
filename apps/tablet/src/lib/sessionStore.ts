@@ -14,6 +14,10 @@ type SessionState = {
 	aiEditSessionId: string | null;
 	aiEditImage: string | null;
 	aiEditCurrentImage: string | null;
+	showGreeting: boolean;
+	showRobotFace: boolean;
+	userPresent: boolean;
+	lastActivityTime: number;
 	ws: WebSocket | null;
 	wsReady: boolean;
 	wsReconnecting: boolean;
@@ -29,6 +33,10 @@ type SessionState = {
 	setAiEditSessionId: (val: string | null) => void;
 	setAiEditImage: (val: string | null) => void;
 	setAiEditCurrentImage: (val: string | null) => void;
+	setShowGreeting: (val: boolean) => void;
+	setShowRobotFace: (val: boolean) => void;
+	setUserPresent: (val: boolean) => void;
+	updateActivity: () => void;
 };
 
 // Connection configuration
@@ -128,6 +136,10 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 	aiEditSessionId: null,
 	aiEditImage: null,
 	aiEditCurrentImage: null,
+	showGreeting: false,
+	showRobotFace: true,
+	userPresent: false,
+	lastActivityTime: Date.now(),
 	ws: null,
 	wsReady: false,
 	wsReconnecting: false,
@@ -308,6 +320,38 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 								showMainApp: true,
 							});
 						}
+						if (msg.type === "user_passed" && get().isTablet) {
+							console.log("[Frontend] User passed detected - showing greeting");
+							// Immediately show greeting animation regardless of current state
+							set({
+								showGreeting: true,
+								showMainApp: false,
+								showRobotFace: false,
+								userPresent: true,
+								lastActivityTime: Date.now(),
+							});
+						}
+						if (msg.type === "user_arrived" && get().isTablet) {
+							console.log("[Frontend] User arrived - preparing to show main app");
+							const state = get();
+							
+							// Update activity and user presence
+							set({
+								userPresent: true,
+								lastActivityTime: Date.now(),
+							});
+							
+							// If greeting is playing, it will handle transition on completion
+							// If OrbitMain is already active, do nothing (avoid re-render)
+							if (!state.showGreeting && !state.showMainApp) {
+								// Show OrbitMain directly if no greeting is playing
+								set({
+									showMainApp: true,
+									showGreeting: false,
+									showRobotFace: false,
+								});
+							}
+						}
 					} catch {
 						// ignore non-JSON
 					}
@@ -415,5 +459,17 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 	},
 	setAiEditCurrentImage: (val) => {
 		set({ aiEditCurrentImage: val });
+	},
+	setShowGreeting: (val) => {
+		set({ showGreeting: val });
+	},
+	setShowRobotFace: (val) => {
+		set({ showRobotFace: val });
+	},
+	setUserPresent: (val) => {
+		set({ userPresent: val });
+	},
+	updateActivity: () => {
+		set({ lastActivityTime: Date.now() });
 	},
 }));

@@ -1,5 +1,5 @@
 import { AnimatePresence } from "motion/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import OrbitGreeting from "@/components/greeting/GreetingAnimation";
 import RobotFace from "@/components/robot/RobotFace";
 import Background from "@/components/ui/Background";
@@ -8,94 +8,200 @@ import AIImageEditor from "./components/ImageEditor/Editor";
 import { useSessionStore } from "./lib/sessionStore";
 import { Toaster } from "sonner";
 
+const IDLE_TIMEOUT = 120000; // 2 minutes
+const USER_AWAY_TIMEOUT = 3000; // 3 seconds after user_passed
+
 export default function Home() {
   const [isDisappearing, setIsDisappearing] = useState(false);
-  const [showGreeting, setShowGreeting] = useState(false);
-  const [showMainApp, setShowMainApp] = useState(false);
+  const [pendingUserArrived, setPendingUserArrived] = useState(false);
+  const userAwayTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Session state: isTablet + photo booth mode + AI editing
+  // Session state: isTablet + photo booth mode + AI editing + user presence
   const connectWs = useSessionStore((s) => s.connectWs);
   const isTablet = useSessionStore((s) => s.isTablet);
   const photoBoothActive = useSessionStore((s) => s.photoBoothActive);
   const showMainAppFromStore = useSessionStore((s) => s.showMainApp);
   const isRetakeRequested = useSessionStore((s) => s.isRetakeRequested);
   const aiEditActive = useSessionStore((s) => s.aiEditActive);
+  const showGreeting = useSessionStore((s) => s.showGreeting);
+  const showRobotFace = useSessionStore((s) => s.showRobotFace);
+  const userPresent = useSessionStore((s) => s.userPresent);
+  const lastActivityTime = useSessionStore((s) => s.lastActivityTime);
+  const setShowGreeting = useSessionStore((s) => s.setShowGreeting);
+  const setShowMainApp = useSessionStore((s) => s.setShowMainApp);
+  const setShowRobotFace = useSessionStore((s) => s.setShowRobotFace);
+  const setUserPresent = useSessionStore((s) => s.setUserPresent);
+  const updateActivity = useSessionStore((s) => s.updateActivity);
 
   useEffect(() => {
     connectWs();
   }, [connectWs]);
+
+  // Handle greeting animation completion
+  const handleGreetingComplete = () => {
+    console.log("[App] Greeting animation completed");
+    setShowGreeting(false);
+    
+    // Check if user_arrived was received during greeting
+    if (pendingUserArrived || userPresent) {
+      console.log("[App] Transitioning to OrbitMain after greeting");
+      setShowMainApp(true);
+      setShowRobotFace(false);
+      setPendingUserArrived(false);
+    } else {
+      // No user arrived, show robot face
+      console.log("[App] No user arrived, showing RobotFace");
+      setShowRobotFace(true);
+    }
+  };
+
+  // Handle user_passed event - schedule RobotFace after delay
+  useEffect(() => {
+    if (showGreeting && !userPresent) {
+      // User moved away while greeting is playing
+      if (userAwayTimerRef.current) {
+        clearTimeout(userAwayTimerRef.current);
+      }
+      userAwayTimerRef.current = setTimeout(() => {
+        console.log("[App] User away timeout - will show RobotFace after greeting");
+        setPendingUserArrived(false);
+      }, USER_AWAY_TIMEOUT);
+    }
+    
+    return () => {
+      if (userAwayTimerRef.current) {
+        clearTimeout(userAwayTimerRef.current);
+      }
+    };
+  }, [showGreeting, userPresent]);
+
+  // Handle user_arrived event during greeting
+  useEffect(() => {
+    if (showGreeting && userPresent) {
+      console.log("[App] User arrived during greeting - will transition to OrbitMain after completion");
+      setPendingUserArrived(true);
+      if (userAwayTimerRef.current) {
+        clearTimeout(userAwayTimerRef.current);
+      }
+    }
+  }, [showGreeting, userPresent]);
+
+  // Idle timeout - show RobotFace after 2 minutes of inactivity
+  useEffect(() => {
+    if (!isTablet) return;
+    
+    const checkIdle = () => {
+      const now = Date.now();
+      const timeSinceActivity = now - lastActivityTime;
+      
+      if (timeSinceActivity >= IDLE_TIMEOUT && (showMainAppFromStore || showGreeting)) {
+        console.log("[App] Idle timeout reached - showing RobotFace");
+        setShowMainApp(false);
+        setShowGreeting(false);
+        setShowRobotFace(true);
+        setUserPresent(false);
+      }
+    };
+    
+    // Check every 10 seconds
+    idleTimerRef.current = setInterval(checkIdle, 10000);
+    
+    return () => {
+      if (idleTimerRef.current) {
+        clearInterval(idleTimerRef.current);
+      }
+    };
+  }, [isTablet, lastActivityTime, showMainAppFromStore, showGreeting, setShowMainApp, setShowGreeting, setShowRobotFace, setUserPresent]);
+
+  // Track user interactions to update activity time
+  useEffect(() => {
+    if (!isTablet) return;
+    
+    const handleInteraction = () => {
+      updateActivity();
+    };
+    
+    window.addEventListener('click', handleInteraction);
+    window.addEventListener('touchstart', handleInteraction);
+    window.addEventListener('keydown', handleInteraction);
+    
+    return () => {
+      window.removeEventListener('click', handleInteraction);
+      window.removeEventListener('touchstart', handleInteraction);
+      window.removeEventListener('keydown', handleInteraction);
+    };
+  }, [isTablet, updateActivity]);
 
   const handleClick = () => {
     if (!isDisappearing) {
       setIsDisappearing(true);
       setTimeout(() => {
         setShowGreeting(true);
+        setShowRobotFace(false);
       }, 2000);
     }
   };
 
-  // Tablet: AI Image Editor (highest priority)
-  if (isTablet && aiEditActive) {
+  // For non-tablet (phone) mode - original behavior
+  if (!isTablet) {
     return (
-      <main className="relative flex h-screen w-full items-center justify-center overflow-hidden text-foreground">
-        <Background />
-        <div className="relative z-20 h-full w-full flex items-center justify-center">
-          <AIImageEditor />
-        </div>
-        <Toaster position="top-center" richColors />
-      </main>
-    );
-  }
-  
-  // Tablet should always display specialized robotface in booth mode OR when retake is requested
-  if (isTablet && (photoBoothActive || isRetakeRequested)) {
-    return (
-      <main className="relative flex h-screen w-full items-center justify-center overflow-hidden text-foreground">
+      <button
+        type="button"
+        className="relative flex h-screen w-full cursor-pointer items-center justify-center overflow-hidden text-foreground border-0 p-0 bg-transparent"
+        onClick={handleClick}
+        onKeyDown={(e) => e.key === "Enter" && handleClick()}
+      >
         <Background />
         <div className="relative z-20 h-full w-full">
-          <RobotFace isPhotoBooth isRetake={isRetakeRequested} />
+          {!(showGreeting || showMainAppFromStore) && (
+            <RobotFace isDisappearing={isDisappearing} />
+          )}
+          <AnimatePresence mode="wait">
+            {showGreeting && (
+              <OrbitGreeting onComplete={handleGreetingComplete} />
+            )}
+          </AnimatePresence>
+          {!showGreeting && showMainAppFromStore && <OrbitMain />}
         </div>
         <Toaster position="top-center" richColors />
-      </main>
-    );
-  }
-  // Tablet should show OrbitMain after photo session completes (and no retake requested)
-  if (isTablet && showMainAppFromStore && !isRetakeRequested) {
-    return (
-      <main className="relative flex h-screen w-full items-center justify-center overflow-hidden text-foreground">
-        <Background />
-        <div className="relative z-20 h-full w-full">
-          <OrbitMain skipWelcomeAudio />
-        </div>
-        <Toaster position="top-center" richColors />
-      </main>
+      </button>
     );
   }
 
+  // Tablet mode - handle all state transitions with priority order
   return (
-    <main
-      className="relative flex h-screen w-full cursor-pointer items-center justify-center overflow-hidden text-foreground"
-      onClick={handleClick}
-      onKeyDown={(e) => e.key === "Enter" && handleClick()}
-      role="button"
-      tabIndex={0}
-    >
+    <main className="relative flex h-screen w-full items-center justify-center overflow-hidden text-foreground">
       <Background />
       <div className="relative z-20 h-full w-full">
-        {!(showGreeting || showMainApp) && (
-          <RobotFace isDisappearing={isDisappearing} />
-        )}
         <AnimatePresence mode="wait">
-          {showGreeting && (
-            <OrbitGreeting
-              onComplete={() => {
-                setShowGreeting(false);
-                setShowMainApp(true);
-              }}
-            />
+          {/* Priority 1: AI Image Editor */}
+          {aiEditActive && (
+            <div key="ai-editor" className="h-full w-full flex items-center justify-center">
+              <AIImageEditor />
+            </div>
+          )}
+          
+          {/* Priority 2: Photo booth mode */}
+          {!aiEditActive && (photoBoothActive || isRetakeRequested) && (
+            <RobotFace key="photobooth" isPhotoBooth isRetake={isRetakeRequested} />
+          )}
+          
+          {/* Priority 3: Greeting animation */}
+          {!aiEditActive && !photoBoothActive && !isRetakeRequested && showGreeting && (
+            <OrbitGreeting key="greeting" onComplete={handleGreetingComplete} />
+          )}
+          
+          {/* Priority 4: Main app */}
+          {!aiEditActive && !photoBoothActive && !isRetakeRequested && !showGreeting && showMainAppFromStore && (
+            <OrbitMain key="main" skipWelcomeAudio />
+          )}
+          
+          {/* Priority 5: Robot face (idle state) */}
+          {!aiEditActive && !photoBoothActive && !isRetakeRequested && !showGreeting && !showMainAppFromStore && showRobotFace && (
+            <RobotFace key="robot" />
           )}
         </AnimatePresence>
-        {!showGreeting && showMainApp && <OrbitMain />}
       </div>
       <Toaster position="top-center" richColors />
     </main>
