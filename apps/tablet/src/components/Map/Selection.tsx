@@ -1,14 +1,14 @@
 "use client";
 
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useSessionStore } from "@/lib/sessionStore";
+import { ConfirmationOverlay } from "./components/ConfirmationOverlay";
 import { LocationCard } from "./components/LocationCard";
 import { MobileStepNavigation } from "./components/MobileStepNavigation";
 import { QRDialog } from "./components/QRDialog";
 import { SearchBar } from "./components/SearchBar";
-import { ConfirmationOverlay } from "./components/ConfirmationOverlay";
 import { CAMPUS_LOCATIONS } from "./data/locations";
 import CampusNavigationMap from "./Map";
 import type { Location, MobileStep } from "./types";
@@ -40,11 +40,13 @@ export function LocationPicker() {
 	// Phase 2: Check URL query parameters for destination on mount
 	useEffect(() => {
 		const urlParams = new URLSearchParams(window.location.search);
-		const destinationParam = urlParams.get('destination');
-		
+		const destinationParam = urlParams.get("destination");
+
 		if (destinationParam) {
 			// Find the location by ID
-			const location = CAMPUS_LOCATIONS.find(loc => loc.id === destinationParam);
+			const location = CAMPUS_LOCATIONS.find(
+				(loc) => loc.id === destinationParam,
+			);
 			if (location) {
 				if (isTablet) {
 					// Tablet: auto-select the destination
@@ -52,11 +54,13 @@ export function LocationPicker() {
 					setNavigationDestination(location.id);
 				} else {
 					// Mobile: set as destination and skip to map view
-					const gateLocation = CAMPUS_LOCATIONS.find(loc => loc.id === 'entry');
+					const gateLocation = CAMPUS_LOCATIONS.find(
+						(loc) => loc.id === "entry",
+					);
 					if (gateLocation) {
 						setCurrentLocation(gateLocation);
 						setDestinationLocation(location);
-						setMobileStep('map');
+						setMobileStep("map");
 					}
 				}
 			}
@@ -139,9 +143,7 @@ export function LocationPicker() {
 
 				{/* Left Side - Campus Map */}
 				<div className="flex-1 h-full bg-slate-100 relative">
-					<CampusNavigationMap
-						initialDestination={navigationDestination}
-					/>
+					<CampusNavigationMap initialDestination={navigationDestination} />
 				</div>
 
 				{/* Right Sidebar - Location List */}
@@ -158,7 +160,7 @@ export function LocationPicker() {
 									Select a location to navigate from Gate No. 1
 								</p>
 							</div>
-							
+
 							{/* View Map in Phone Button */}
 							<Button
 								onClick={() => setIsQRDialogOpen(true)}
@@ -179,9 +181,10 @@ export function LocationPicker() {
 
 								return (
 									<div key={category} className="mb-7">
-																			<h3 className="mb-4 font-sans text-sm font-bold text-gray-600 uppercase tracking-wider">
-																				{category}
-																			</h3>										<div className="space-y-3">
+										<h3 className="mb-4 font-sans text-sm font-bold text-gray-600 uppercase tracking-wider">
+											{category}
+										</h3>{" "}
+										<div className="space-y-3">
 											{categoryLocations.map((location) => (
 												<LocationCard
 													key={location.id}
