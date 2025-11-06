@@ -19,6 +19,7 @@ type AppState =
   | "uploading"
   | "analyzing"
   | "thinking"
+  | "searching"
   | "responding"
   | "done"
   | "error";
@@ -333,6 +334,7 @@ function VoiceApp() {
                 {(state === "uploading" ||
                   state === "analyzing" ||
                   state === "thinking" ||
+                  state === "searching" ||
                   state === "responding") && (
                   <BarVisualizer
                     barCount={30}
@@ -345,7 +347,9 @@ function VoiceApp() {
                         ? "speaking"
                         : state === "uploading"
                           ? "analyzing"
-                          : state
+                          : state === "searching"
+                            ? "thinking"
+                            : state
                     }
                   />
                 )}
@@ -354,7 +358,8 @@ function VoiceApp() {
               {(state === "listening" ||
                 state === "uploading" ||
                 state === "analyzing" ||
-                state === "thinking") && <StatusText state={state} />}
+                state === "thinking" ||
+                state === "searching") && <StatusText state={state} />}
 
               {state === "responding" && ttsError && (
                 <div className="-translate-x-1/2 absolute bottom-8 left-1/2 z-20 transform">
@@ -497,6 +502,7 @@ function VoiceApp() {
           {(state === "uploading" ||
             state === "analyzing" ||
             state === "thinking" ||
+            state === "searching" ||
             state === "responding" ||
             state === "done") && (
             <div className="flex w-full animate-slide-up justify-center transition-opacity duration-300">

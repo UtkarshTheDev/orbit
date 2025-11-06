@@ -48,6 +48,20 @@ const StatusText = ({ state }: StatusTextProps) => {
 						</span>
 					</span>
 				);
+			case "searching":
+				return (
+					<span className="flex items-center gap-2">
+						<ShimmeringText
+							text="Searching on internet"
+							className="text-blue-500"
+						/>
+						<span className="flex gap-0.5">
+							<span className="dot-pulse-1">•</span>
+							<span className="dot-pulse-2">•</span>
+							<span className="dot-pulse-3">•</span>
+						</span>
+					</span>
+				);
 			default:
 				return null;
 		}
