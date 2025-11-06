@@ -33,6 +33,32 @@ export function LocationPicker() {
 		string | null
 	>(null);
 
+	// Phase 2: Check URL query parameters for destination on mount
+	useEffect(() => {
+		const urlParams = new URLSearchParams(window.location.search);
+		const destinationParam = urlParams.get('destination');
+		
+		if (destinationParam) {
+			// Find the location by ID
+			const location = CAMPUS_LOCATIONS.find(loc => loc.id === destinationParam);
+			if (location) {
+				if (isTablet) {
+					// Tablet: auto-select the destination
+					setSelectedLocation(location);
+					setNavigationDestination(location.id);
+				} else {
+					// Mobile: set as destination and skip to map view
+					const gateLocation = CAMPUS_LOCATIONS.find(loc => loc.id === 'entry');
+					if (gateLocation) {
+						setCurrentLocation(gateLocation);
+						setDestinationLocation(location);
+						setMobileStep('map');
+					}
+				}
+			}
+		}
+	}, [isTablet]);
+
 	// Debug tablet detection
 	console.log("LocationPicker - sessionIsTablet:", sessionIsTablet);
 	console.log("LocationPicker - urlIsTablet:", urlIsTablet);
