@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ExternalLink, MapPin, Navigation } from "lucide-react";
+import { ArrowLeft, ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -105,7 +105,6 @@ export function LocationPicker() {
 				<div className="flex-1 h-full bg-slate-100 relative">
 					<CampusNavigationMap
 						initialDestination={navigationDestination}
-						showLocationDetails={selectedLocation}
 					/>
 				</div>
 
@@ -256,7 +255,6 @@ export function LocationPicker() {
 						<CampusNavigationMap
 							initialDestination={destinationLocation.id}
 							mobileStartLocation={currentLocation.id}
-							showLocationDetails={destinationLocation}
 						/>
 					</div>
 				)}

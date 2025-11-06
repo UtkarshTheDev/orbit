@@ -1,5 +1,5 @@
 import type { GridNode } from '../types';
-import { rooms, roomConnections, roomDoors, GRID_SIZE, GRID_WIDTH, GRID_HEIGHT } from '../constants';
+import { rooms, roomConnections, GRID_SIZE, GRID_WIDTH, GRID_HEIGHT } from '../constants';
 
 // Pathfinding utilities
 

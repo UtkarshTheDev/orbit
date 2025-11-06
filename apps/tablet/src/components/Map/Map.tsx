@@ -3,14 +3,13 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
-import type { Room, Location } from './types'
+import type { Room } from './types'
 import { rooms, roomDoors } from './constants'
 import { 
   findGridPath, 
   simplifyPath, 
   snapToCenterlines, 
-  enforceOrthogonalAlignment,
-  getRoomCenter 
+  enforceOrthogonalAlignment
 } from './utils/pathfinding'
 import { ZoomControls } from './components/ZoomControls'
 import { RoomRenderer } from './components/RoomRenderer'
@@ -18,7 +17,6 @@ import { PathRenderer } from './components/PathRenderer'
 
 interface CampusNavigationMapProps {
   initialDestination?: string | null;
-  showLocationDetails?: Location | null;
   mobileStartLocation?: string | null;
 }
 
@@ -26,7 +24,6 @@ interface CampusNavigationMapProps {
 
 export default function CampusNavigationMap({ 
   initialDestination, 
-  showLocationDetails,
   mobileStartLocation 
 }: CampusNavigationMapProps = {}) {
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null)
@@ -168,17 +165,6 @@ export default function CampusNavigationMap({
 
       setPathPoints(aligned)
     }
-  }
-
-  const handleClearNavigation = () => {
-    // Reset to default start room (entry) only if no mobile start location is set
-    if (!mobileStartLocation) {
-      const entryRoom = rooms.find((r) => r.id === "entry")
-      setStartRoom(entryRoom || null)
-    }
-    setEndRoom(null)
-    setPathPoints([])
-    setSelectedRoom(null)
   }
 
   const handleZoomIn = () => setZoom((prev) => Math.min(prev + 0.2, 2))
