@@ -3,7 +3,6 @@
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { useSessionStore } from "@/lib/sessionStore";
 import { LocationCard } from "./components/LocationCard";
 import { MobileStepNavigation } from "./components/MobileStepNavigation";
@@ -219,37 +218,6 @@ export function LocationPicker() {
 							<ArrowLeft className="mr-1 h-4 w-4" />
 							Back
 						</Button>
-
-						{/* Mobile Navigation Info Bar */}
-						<div className="absolute top-4 left-16 right-4 z-10">
-							<Card className="bg-white/95 backdrop-blur-sm border-blue-200/50 p-3 shadow-lg">
-								<div className="flex items-center justify-between">
-									<div className="flex items-center gap-2">
-										<div className="flex items-center gap-1">
-											<div className="w-2 h-2 bg-green-500 rounded-full"></div>
-											<span className="text-xs text-slate-600">
-												{currentLocation.name}
-											</span>
-										</div>
-										<span className="text-slate-400">→</span>
-										<div className="flex items-center gap-1">
-											<div className="w-2 h-2 bg-red-500 rounded-full"></div>
-											<span className="text-xs text-slate-600">
-												{destinationLocation.name}
-											</span>
-										</div>
-									</div>
-									<Button
-										variant="ghost"
-										size="sm"
-										onClick={() => setIsQRDialogOpen(true)}
-										className="text-blue-600 hover:bg-blue-50 p-1 h-auto"
-									>
-										<ExternalLink className="h-3 w-3" />
-									</Button>
-								</div>
-							</Card>
-						</div>
 
 						{/* Actual Campus Map */}
 						<CampusNavigationMap

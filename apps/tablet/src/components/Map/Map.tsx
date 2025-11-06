@@ -65,21 +65,37 @@ export default function CampusNavigationMap({
     if (initialDestination) {
       const destinationRoom = rooms.find(r => r.id === initialDestination);
       if (destinationRoom) {
-        // Set custom start location for mobile, or default to Gate No. 1 for tablets
+        // Determine start location
+        let startLocationRoom: Room | null = null;
+        
         if (mobileStartLocation) {
-          const startLocationRoom = rooms.find(r => r.id === mobileStartLocation);
-          if (startLocationRoom) {
-            setStartRoom(startLocationRoom);
-          }
+          // Use custom start location for mobile
+          startLocationRoom = rooms.find(r => r.id === mobileStartLocation) || null;
         } else {
-          // Default to Gate No. 1 only if no custom start location
-          const defaultStart = rooms.find(r => r.id === "entry");
-          if (defaultStart) {
-            setStartRoom(defaultStart);
+          // Default to Gate No. 1 for tablets
+          startLocationRoom = rooms.find(r => r.id === "entry") || null;
+        }
+        
+        if (startLocationRoom) {
+          setStartRoom(startLocationRoom);
+          setSelectedRoom(destinationRoom);
+          setEndRoom(destinationRoom);
+          
+          // Calculate path directly here to ensure startRoom is set
+          const startDoor = roomDoors[startLocationRoom.id];
+          const endDoor = roomDoors[destinationRoom.id];
+          
+          if (startDoor && endDoor) {
+            console.log("[v0] Auto-navigation from", startLocationRoom.name, "to", destinationRoom.name);
+            
+            const gridPath = findGridPath(startDoor.x, startDoor.y, endDoor.x, endDoor.y);
+            const simplified = simplifyPath(gridPath);
+            const centered = snapToCenterlines(simplified);
+            const aligned = enforceOrthogonalAlignment(centered);
+            
+            setPathPoints(aligned);
           }
         }
-        // Trigger navigation to destination
-        handleRoomClick(destinationRoom);
       }
     }
   }, [initialDestination, mobileStartLocation])
