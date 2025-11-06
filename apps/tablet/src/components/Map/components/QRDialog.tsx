@@ -1,8 +1,7 @@
 import type React from "react";
-import { useEffect, useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { X, QrCode, Loader2 } from "lucide-react";
-import { generateNavigationQR, getNavigationUrl } from "@/lib/qrGenerator";
+import { X, QrCode } from "lucide-react";
+import QRCode from "react-qr-code";
 
 interface QRDialogProps {
   isOpen: boolean;
@@ -11,40 +10,24 @@ interface QRDialogProps {
   destinationName?: string;
 }
 
+const PRODUCTION_BASE_URL = 'https://orbit-robo.vercel.app';
+
+export function getNavigationUrl(
+  destinationId: string,
+  baseUrl?: string
+): string {
+  const url = baseUrl || PRODUCTION_BASE_URL;
+  return `${url}/map?destination=${encodeURIComponent(destinationId)}`;
+}
+
 export const QRDialog: React.FC<QRDialogProps> = ({ 
   isOpen, 
   onClose, 
   destinationId,
   destinationName 
 }) => {
-  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Generate QR code when dialog opens with a destination
-  useEffect(() => {
-    if (isOpen && destinationId) {
-      setIsGenerating(true);
-      setError(null);
-      
-      generateNavigationQR(destinationId)
-        .then((dataUrl) => {
-          setQrCodeUrl(dataUrl);
-          setIsGenerating(false);
-        })
-        .catch((err) => {
-          console.error('[QRDialog] Failed to generate QR:', err);
-          setError('Failed to generate QR code');
-          setIsGenerating(false);
-        });
-    } else if (!isOpen) {
-      // Reset when dialog closes
-      setQrCodeUrl(null);
-      setError(null);
-    }
-  }, [isOpen, destinationId]);
-
   const navigationUrl = destinationId ? getNavigationUrl(destinationId) : '';
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-sm border-2 border-blue-200/50 bg-white/95 p-0 backdrop-blur-xl">
@@ -70,22 +53,17 @@ export const QRDialog: React.FC<QRDialogProps> = ({
 
           <div className="mb-6 flex justify-center">
             <div className="rounded-2xl border-2 border-blue-200/50 bg-white p-4 shadow-lg shadow-blue-200/30">
-              <div className="h-48 w-48 rounded-xl bg-gradient-to-br from-slate-100 to-slate-50 p-4 ring-1 ring-slate-200 flex items-center justify-center">
-                {isGenerating ? (
-                  <div className="flex flex-col items-center gap-3">
-                    <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-                    <p className="text-xs text-slate-500">Generating QR...</p>
+              <div className="h-48 w-48 rounded-xl bg-gradient-to-br from-slate-100 to-slate-50 p-2 ring-1 ring-slate-200 flex items-center justify-center">
+                {destinationId ? (
+                  <div style={{ height: "auto", margin: "0 auto", maxWidth: "100%", width: "100%" }}>
+                    <QRCode
+                      size={256}
+                      style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                      value={navigationUrl}
+                      viewBox={`0 0 256 256`}
+                      fgColor="#1e40af"
+                    />
                   </div>
-                ) : error ? (
-                  <div className="text-center">
-                    <p className="text-sm text-red-600">{error}</p>
-                  </div>
-                ) : qrCodeUrl ? (
-                  <img
-                    src={qrCodeUrl}
-                    alt="Navigation QR Code"
-                    className="h-full w-full object-contain"
-                  />
                 ) : (
                   <div className="text-center">
                     <p className="text-sm text-slate-500">Select a destination first</p>
