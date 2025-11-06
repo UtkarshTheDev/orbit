@@ -71,11 +71,11 @@ export function InteractionBar({
       <div className="flex flex-1 items-center gap-3 rounded-3xl border-2 border-gray-300 bg-white p-2.5 transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] focus-within:border-blue-500 focus-within:shadow-blue-500/20 focus-within:shadow-lg md:p-3.5">
         <input
           autoFocus
-          className="flex-1 bg-transparent font-outfit text-base text-gray-900 outline-none placeholder:text-gray-400 md:text-lg"
+          className="flex-1 bg-transparent font-sans text-base text-gray-900 outline-none placeholder:text-gray-400 md:text-lg"
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
           placeholder="Ask Anything to Orbit"
-          style={{ fontFamily: "var(--font-outfit)" }}
+          style={{ fontFamily: "var(--font-sans)" }}
           type="text"
           value={inputValue}
         />

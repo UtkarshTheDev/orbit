@@ -97,6 +97,8 @@ export function LocationPicker() {
 				<QRDialog
 					isOpen={isQRDialogOpen}
 					onClose={() => setIsQRDialogOpen(false)}
+					destinationId={selectedLocation?.id || null}
+					destinationName={selectedLocation?.name}
 				/>
 
 				{/* Left Side - Campus Map */}
