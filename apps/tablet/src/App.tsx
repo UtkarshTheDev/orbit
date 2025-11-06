@@ -14,8 +14,8 @@ const USER_AWAY_TIMEOUT = 3000; // 3 seconds after user_passed
 export default function Home() {
   const [isDisappearing, setIsDisappearing] = useState(false);
   const [pendingUserArrived, setPendingUserArrived] = useState(false);
-  const userAwayTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const userAwayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const idleTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Session state: isTablet + photo booth mode + AI editing + user presence
   const connectWs = useSessionStore((s) => s.connectWs);
@@ -43,17 +43,12 @@ export default function Home() {
     console.log("[App] Greeting animation completed");
     setShowGreeting(false);
     
-    // Check if user_arrived was received during greeting
-    if (pendingUserArrived || userPresent) {
-      console.log("[App] Transitioning to OrbitMain after greeting");
-      setShowMainApp(true);
-      setShowRobotFace(false);
-      setPendingUserArrived(false);
-    } else {
-      // No user arrived, show robot face
-      console.log("[App] No user arrived, showing RobotFace");
-      setShowRobotFace(true);
-    }
+    // Always show OrbitMain after greeting completes
+    // (whether triggered manually or by backend event)
+    console.log("[App] Transitioning to OrbitMain after greeting");
+    setShowMainApp(true);
+    setShowRobotFace(false);
+    setPendingUserArrived(false);
   };
 
   // Handle user_passed event - schedule RobotFace after delay
@@ -187,9 +182,18 @@ export default function Home() {
             <RobotFace key="photobooth" isPhotoBooth isRetake={isRetakeRequested} />
           )}
           
-          {/* Priority 3: Greeting animation */}
+          {/* Priority 3: Greeting animation - clickable to skip */}
           {!aiEditActive && !photoBoothActive && !isRetakeRequested && showGreeting && (
-            <OrbitGreeting key="greeting" onComplete={handleGreetingComplete} />
+            <div
+              key="greeting"
+              className="h-full w-full cursor-pointer"
+              onClick={handleGreetingComplete}
+              onKeyDown={(e) => e.key === "Enter" && handleGreetingComplete()}
+              role="button"
+              tabIndex={0}
+            >
+              <OrbitGreeting onComplete={handleGreetingComplete} />
+            </div>
           )}
           
           {/* Priority 4: Main app */}
@@ -197,9 +201,18 @@ export default function Home() {
             <OrbitMain key="main" skipWelcomeAudio />
           )}
           
-          {/* Priority 5: Robot face (idle state) */}
+          {/* Priority 5: Robot face (idle state) - clickable to start greeting */}
           {!aiEditActive && !photoBoothActive && !isRetakeRequested && !showGreeting && !showMainAppFromStore && showRobotFace && (
-            <RobotFace key="robot" />
+            <div
+              key="robot"
+              className="h-full w-full cursor-pointer"
+              onClick={handleClick}
+              onKeyDown={(e) => e.key === "Enter" && handleClick()}
+              role="button"
+              tabIndex={0}
+            >
+              <RobotFace isDisappearing={isDisappearing} />
+            </div>
           )}
         </AnimatePresence>
       </div>
