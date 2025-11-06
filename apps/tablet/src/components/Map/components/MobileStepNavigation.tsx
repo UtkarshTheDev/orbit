@@ -53,7 +53,7 @@ export const MobileStepNavigation: React.FC<MobileStepNavigationProps> = ({
 
       {mobileStep === "destination" && currentLocation && (
         <Card className="mb-4 border-2 border-blue-300 bg-blue-50/50 p-3">
-          <p className="mb-1 text-xs text-slate-600">Starting from:</p>
+          <p className="mb-1 font-sans text-xs text-slate-600">Starting from:</p>
           <p className="font-orbitron text-sm font-semibold text-blue-700">
             {currentLocation.name}
           </p>

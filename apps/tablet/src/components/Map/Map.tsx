@@ -255,7 +255,7 @@ export default function CampusNavigationMap({
 
 
   return (
-    <div className="fixed inset-0 w-screen h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       <div
         className={cn(
           "relative w-full h-full bg-gradient-to-br from-slate-100 via-white to-blue-50",
