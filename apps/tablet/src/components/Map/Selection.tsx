@@ -116,10 +116,10 @@ export function LocationPicker() {
 						<div className="mb-8">
 							{/* Title */}
 							<div className="mb-6">
-								<h1 className="font-orbitron text-2xl font-bold text-slate-900 tracking-tight">
+								<h1 className="font-orbitron text-3xl font-bold text-slate-900 tracking-tight">
 									Campus Navigation
 								</h1>
-								<p className="font-sans text-base text-slate-600 mt-3 leading-relaxed">
+								<p className="font-sans text-base text-gray-500 mt-2 leading-relaxed">
 									Select a location to navigate from Gate No. 1
 								</p>
 							</div>
@@ -144,10 +144,9 @@ export function LocationPicker() {
 
 								return (
 									<div key={category} className="mb-7">
-										<h3 className="mb-4 font-orbitron text-sm font-bold text-slate-700 uppercase tracking-wider">
-											{category}
-										</h3>
-										<div className="space-y-3">
+																			<h3 className="mb-4 font-sans text-sm font-bold text-gray-600 uppercase tracking-wider">
+																				{category}
+																			</h3>										<div className="space-y-3">
 											{categoryLocations.map((location) => (
 												<LocationCard
 													key={location.id}
