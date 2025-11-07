@@ -40,6 +40,7 @@ import {
 import { handleTextQuery } from "./handlers/textQueryHandler";
 import { handleVoiceQuery } from "./handlers/voiceQueryHandler";
 import { addToQueue, removeFromQueue } from "./polaroidQueue";
+import { streamingManager } from "./streamingManager";
 
 export function handleMessage(
   ws: WSConnection,
@@ -204,6 +205,28 @@ export function handleMessage(
             error
           );
         });
+        break;
+      case "stream_retransmit":
+        // Handle chunk retransmission request
+        if (msg.sessionId && typeof msg.sequence === "number") {
+          console.log(
+            `[Backend] Client ${ws.id} requested retransmit: session=${msg.sessionId}, seq=${msg.sequence}`
+          );
+          const success = streamingManager.retransmitChunk(
+            ws,
+            msg.sessionId,
+            msg.sequence
+          );
+          if (!success) {
+            console.warn(
+              `[Backend] Failed to retransmit chunk for ${ws.id}`
+            );
+          }
+        } else {
+          console.warn(
+            `[Backend] Invalid retransmit request from ${ws.id}`
+          );
+        }
         break;
       default:
         console.log(

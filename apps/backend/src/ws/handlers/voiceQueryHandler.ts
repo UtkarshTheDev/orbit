@@ -27,6 +27,7 @@ import {
   writeTempFile,
 } from "../../utils/fileUtils";
 import type { WSConnection } from "../connection";
+import { streamingManager } from "../streamingManager";
 
 type VoiceQueryMessage = {
   type: "voice_query";
@@ -178,20 +179,18 @@ export async function handleVoiceQuery(
     // Stage 6: Thinking
     sendStatus(ws, "thinking", "Thinking about your query...");
 
+    // Create streaming session
+    const streamSession = streamingManager.createSession(id);
+    streamingManager.sendStreamStart(ws, streamSession);
+
     // Generate AI response with streaming
     let fullAiResponse = "";
-    let usedWebSearch = false;
+    const bufferedSender = streamingManager.createBufferedSender(ws, streamSession);
+
     const aiResponse = await generateAIResponseWithTimeout(
       transcribedText,
       (chunk) => {
-        // Send streaming chunk
-        ws.send(
-          JSON.stringify({
-            type: "ai_stream",
-            chunk,
-            final: false,
-          })
-        );
+        bufferedSender.sendChunk(chunk);
       },
       () => {
         // Callback when Google Search is detected
@@ -202,20 +201,21 @@ export async function handleVoiceQuery(
             message: "Searching on internet...",
           })
         );
-        usedWebSearch = true;
       }
     );
 
-    fullAiResponse = aiResponse.text;
-    usedWebSearch = aiResponse.usedSearch;
+    // Flush any remaining buffered content
+    bufferedSender.flush();
 
-    // Stage 7: AI done
-    ws.send(
-      JSON.stringify({
-        type: "ai_done",
-        text: fullAiResponse,
-      })
-    );
+    fullAiResponse = aiResponse.text;
+
+    // Send stream end with completion marker
+    streamingManager.sendStreamEnd(ws, streamSession, fullAiResponse);
+
+    // Cleanup session after a delay
+    setTimeout(() => {
+      streamingManager.cleanupSession(streamSession.sessionId);
+    }, 5000);
 
     console.log(
       `[VoiceQuery] AI response: ${fullAiResponse.substring(0, 100)}...`
