@@ -48,11 +48,11 @@ export default function CampusNavigationMap({
     const handleResize = () => {
       const width = window.innerWidth
       if (width < 640) {
-        // Mobile: zoom out to fit entire map
-        setZoom(0.5)
+        // Mobile: larger zoom for better visibility
+        setZoom(0.85)
       } else if (width < 1024) {
-        // Tablet: slight zoom out
-        setZoom(0.7)
+        // Tablet: moderate zoom
+        setZoom(0.9)
       } else {
         // Desktop: default zoom
         setZoom(1)
@@ -194,9 +194,9 @@ export default function CampusNavigationMap({
   const handleResetView = () => {
     const width = window.innerWidth
     if (width < 640) {
-      setZoom(0.5)
+      setZoom(0.85)
     } else if (width < 1024) {
-      setZoom(0.7)
+      setZoom(0.9)
     } else {
       setZoom(1)
     }
