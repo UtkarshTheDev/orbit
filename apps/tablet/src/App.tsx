@@ -13,7 +13,6 @@ const USER_AWAY_TIMEOUT = 3000; // 3 seconds after user_passed
 
 export default function Home() {
   const [isDisappearing, setIsDisappearing] = useState(false);
-  const [pendingUserArrived, setPendingUserArrived] = useState(false);
   const userAwayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const idleTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -48,7 +47,6 @@ export default function Home() {
     console.log("[App] Transitioning to OrbitMain after greeting");
     setShowMainApp(true);
     setShowRobotFace(false);
-    setPendingUserArrived(false);
   };
 
   // Handle user_passed event - schedule RobotFace after delay
@@ -60,7 +58,6 @@ export default function Home() {
       }
       userAwayTimerRef.current = setTimeout(() => {
         console.log("[App] User away timeout - will show RobotFace after greeting");
-        setPendingUserArrived(false);
       }, USER_AWAY_TIMEOUT);
     }
     
@@ -75,7 +72,6 @@ export default function Home() {
   useEffect(() => {
     if (showGreeting && userPresent) {
       console.log("[App] User arrived during greeting - will transition to OrbitMain after completion");
-      setPendingUserArrived(true);
       if (userAwayTimerRef.current) {
         clearTimeout(userAwayTimerRef.current);
       }
