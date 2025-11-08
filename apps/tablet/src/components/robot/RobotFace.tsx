@@ -13,11 +13,13 @@ export default function RobotFace({
   onAnimationComplete,
   isPhotoBooth = false,
   isRetake = false,
+  skipExitAnimation = false,
 }: {
   isDisappearing?: boolean;
   onAnimationComplete?: () => void;
   isPhotoBooth?: boolean;
   isRetake?: boolean;
+  skipExitAnimation?: boolean;
 }) {
   const faceRef = useRef<HTMLDivElement>(null);
   const isMountedRef = useRef(true);
@@ -141,6 +143,17 @@ export default function RobotFace({
   useEffect(() => {
     if (!isDisappearing) return;
 
+    // Skip exit animation if requested (e.g., when coming from idle timeout)
+    if (skipExitAnimation) {
+      // Keep the face animated but don't play exit animation
+      // Just call onAnimationComplete immediately if provided
+      if (onAnimationComplete) {
+        const timer = setTimeout(onAnimationComplete, 100);
+        return () => clearTimeout(timer);
+      }
+      return;
+    }
+
     // Phase 1: Slow blink
     setAnimationPhase("blinking");
     setForceSlowBlink(true);
@@ -151,7 +164,7 @@ export default function RobotFace({
     }, 800);
 
     return () => clearTimeout(fadeTimer);
-  }, [isDisappearing]);
+  }, [isDisappearing, skipExitAnimation, onAnimationComplete]);
 
   useEffect(() => {
     const handler = (e: MouseEvent | TouchEvent) => {

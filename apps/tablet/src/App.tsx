@@ -13,6 +13,7 @@ const USER_AWAY_TIMEOUT = 3000; // 3 seconds after user_passed
 
 export default function Home() {
   const [isDisappearing, setIsDisappearing] = useState(false);
+  const [isFromIdleTimeout, setIsFromIdleTimeout] = useState(false);
   const userAwayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const idleTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -61,12 +62,17 @@ export default function Home() {
       }, USER_AWAY_TIMEOUT);
     }
     
+    // Reset idle timeout flag when greeting starts (from WebSocket event)
+    if (showGreeting && isFromIdleTimeout) {
+      setIsFromIdleTimeout(false);
+    }
+    
     return () => {
       if (userAwayTimerRef.current) {
         clearTimeout(userAwayTimerRef.current);
       }
     };
-  }, [showGreeting, userPresent]);
+  }, [showGreeting, userPresent, isFromIdleTimeout]);
 
   // Handle user_arrived event during greeting
   useEffect(() => {
@@ -92,6 +98,7 @@ export default function Home() {
         setShowGreeting(false);
         setShowRobotFace(true);
         setUserPresent(false);
+        setIsFromIdleTimeout(true);
       }
     };
     
@@ -127,10 +134,13 @@ export default function Home() {
   const handleClick = () => {
     if (!isDisappearing) {
       setIsDisappearing(true);
+      // If coming from idle timeout, skip the exit animation delay
+      const delay = isFromIdleTimeout ? 0 : 2000;
       setTimeout(() => {
         setShowGreeting(true);
         setShowRobotFace(false);
-      }, 2000);
+        setIsFromIdleTimeout(false);
+      }, delay);
     }
   };
 
@@ -146,7 +156,10 @@ export default function Home() {
         <Background />
         <div className="relative z-20 h-full w-full">
           {!(showGreeting || showMainAppFromStore) && (
-            <RobotFace isDisappearing={isDisappearing} />
+            <RobotFace 
+              isDisappearing={isDisappearing} 
+              skipExitAnimation={isFromIdleTimeout}
+            />
           )}
           <AnimatePresence mode="wait">
             {showGreeting && (
@@ -207,7 +220,10 @@ export default function Home() {
               role="button"
               tabIndex={0}
             >
-              <RobotFace isDisappearing={isDisappearing} />
+              <RobotFace 
+                isDisappearing={isDisappearing} 
+                skipExitAnimation={isFromIdleTimeout}
+              />
             </div>
           )}
         </AnimatePresence>
