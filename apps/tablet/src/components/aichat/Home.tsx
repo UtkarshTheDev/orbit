@@ -17,7 +17,7 @@ export default function Home({ onBack, onNavigateToVoice }: HomeProps) {
 
   // Handle WebSocket response updates
   useEffect(() => {
-    const { stage, aiText, aiTextChunk, error, webSearchActive } = response;
+    const { stage, aiText, error, webSearchActive } = response;
 
     // Update searching state
     if (stage === "searching" || webSearchActive) {
@@ -43,21 +43,22 @@ export default function Home({ onBack, onNavigateToVoice }: HomeProps) {
       return;
     }
 
-    if (aiTextChunk && streamingMessageId) {
-      // Update the streaming message in real-time by appending the chunk
+    // Update streaming message with accumulated text
+    if (aiText && streamingMessageId) {
       setMessages((prev) =>
         prev.map((msg) => {
           if (msg.id === streamingMessageId) {
-            return { ...msg, content: msg.content + aiTextChunk };
+            // Use the accumulated aiText directly instead of appending chunks
+            return { ...msg, content: aiText };
           }
           return msg;
         })
       );
-    }
 
-    if (stage === "responding" && aiText && streamingMessageId) {
-      // AI response is complete
-      setStreamingMessageId(null);
+      // Clear streaming ID when response is complete
+      if (stage === "responding") {
+        setStreamingMessageId(null);
+      }
     }
   }, [response, streamingMessageId]);
 

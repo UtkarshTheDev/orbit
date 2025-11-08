@@ -144,27 +144,53 @@ function MarkdownContent({ content }: { content: string }) {
 
 function AnimatedContent({ content }: { content: string }) {
 	const [displayedContent, setDisplayedContent] = useState("");
-	const [currentWordIndex, setCurrentWordIndex] = useState(0);
+	const [targetContent, setTargetContent] = useState("");
+	const animationFrameRef = useRef<number>();
+	const lastUpdateTimeRef = useRef(Date.now());
 
-	const words = content.split(" ");
-
+	// Update target content when new content arrives from backend
 	useEffect(() => {
-		setDisplayedContent("");
-		setCurrentWordIndex(0);
+		setTargetContent(content);
 	}, [content]);
 
+	// Animate character-by-character to catch up with target content
 	useEffect(() => {
-		if (currentWordIndex < words.length) {
-			const timer = setTimeout(() => {
-				setDisplayedContent(
-					(prev) => prev + (prev ? " " : "") + words[currentWordIndex],
-				);
-				setCurrentWordIndex((prev) => prev + 1);
-			}, 100); // Word-by-word animation speed
+		const animate = () => {
+			const now = Date.now();
+			const timeSinceLastUpdate = now - lastUpdateTimeRef.current;
 
-			return () => clearTimeout(timer);
-		}
-	}, [currentWordIndex, words]);
+			// Add characters at a controlled rate (adjust speed here)
+			if (
+				displayedContent.length < targetContent.length &&
+				timeSinceLastUpdate >= 10
+			) {
+				// 15ms per character for smooth typing effect
+				const charsToAdd = Math.min(
+					2, // Add 1-2 characters at a time for smoother effect
+					targetContent.length - displayedContent.length,
+				);
+				setDisplayedContent(
+					targetContent.slice(0, displayedContent.length + charsToAdd),
+				);
+				lastUpdateTimeRef.current = now;
+			}
+
+			// Continue animation if we haven't caught up yet
+			if (displayedContent.length < targetContent.length) {
+				animationFrameRef.current = requestAnimationFrame(animate);
+			}
+		};
+
+		// Start animation
+		animationFrameRef.current = requestAnimationFrame(animate);
+
+		// Cleanup
+		return () => {
+			if (animationFrameRef.current) {
+				cancelAnimationFrame(animationFrameRef.current);
+			}
+		};
+	}, [displayedContent, targetContent]);
 
 	return <MarkdownContent content={displayedContent} />;
 }
