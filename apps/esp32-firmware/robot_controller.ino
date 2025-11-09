@@ -74,8 +74,15 @@ const char* ws_path = "/ws";                       // WebSocket endpoint path
 // Hysteresis (prevent oscillation)
 #define DISTANCE_HYSTERESIS 10  // cm buffer zone
 
-// Median filter buffer
-#define MEDIAN_SAMPLES 5
+// Median filter buffer - increased for better noise rejection
+#define MEDIAN_SAMPLES 7  // Use 7 samples for better outlier rejection
+
+// Outlier rejection threshold
+#define OUTLIER_THRESHOLD 50.0  // Reject readings that differ by more than 50cm from median
+
+// PIR detection configuration
+#define PIR_READ_INTERVAL 50        // Read PIR every 50ms (20Hz)
+#define PIR_DEBOUNCE_MS 100         // Debounce PIR for 100ms
 
 // ============================================ 
 // SERVO OBJECTS
@@ -138,18 +145,27 @@ SystemState previousState = IDLE;
 
 // Timing variables
 unsigned long lastPIRTrigger = 0;
+unsigned long lastPIRReadTime = 0;
+unsigned long lastPirChangeTime = 0;
 unsigned long lastDistanceCheck = 0;
 unsigned long lastHeadMoveTime = 0;
 unsigned long nextHeadMoveTime = 0;
 
 const unsigned long PIR_TIMEOUT = 3000;
-const unsigned long DISTANCE_CHECK_INTERVAL = 500;
+const unsigned long DISTANCE_CHECK_INTERVAL = 200;  // Reduced to 200ms for faster response
 const unsigned long HEAD_MOVE_INTERVAL_MIN = 6000;
 const unsigned long HEAD_MOVE_INTERVAL_MAX = 15000;
+
+// PIR state tracking
+int pirState = LOW;
+int lastPirState = LOW;
+unsigned long pirHighStartTime = 0;
+unsigned long totalMotionDetections = 0;
 
 // Distance measurement
 float currentDistance = 999.0;
 float lastStableDistance = 999.0;
+float lastValidDistance = 999.0;  // Last known good distance reading
 
 unsigned long lastStateChangeTime = 0;
 const unsigned long STATE_CHANGE_DEBOUNCE = 2000;
@@ -161,6 +177,7 @@ const unsigned long DISTANCE_LOG_INTERVAL = 500;
 // Median filter buffer
 float distanceBuffer[MEDIAN_SAMPLES];
 int bufferIndex = 0;
+bool bufferFilled = false;  // Track if buffer has enough samples
 
 // ============================================ 
 // FUNCTION DECLARATIONS
@@ -554,6 +571,13 @@ void setup() {
   for (int i = 0; i < MEDIAN_SAMPLES; i++) {
     distanceBuffer[i] = 999.0;
   }
+  bufferFilled = false;
+  lastValidDistance = 999.0;
+  
+  // Initialize PIR state
+  pirState = LOW;
+  lastPirState = LOW;
+  totalMotionDetections = 0;
 
   setupTiltServos();
   setupHeadServo();
@@ -618,23 +642,60 @@ void loop() {
 }
 
 // ============================================ 
-// PIR DETECTION
+// PIR DETECTION - IMPROVED VERSION
 // ============================================ 
 void loopPIR(unsigned long currentTime) {
-  int pirValue = digitalRead(PIR_PIN);
-
-  if (pirValue == HIGH) {
-    lastPIRTrigger = currentTime;
-
-    if (currentState == IDLE) {
-      Serial.println("\n━━━ MOTION DETECTED ━━━");
-      currentState = MOTION_DETECTED;
-      digitalWrite(LED_PIN, HIGH);
-      sendMotionDetected(); // Send WebSocket message
-      // Reset head to neutral on motion detection
-      moveHeadSmooth(HEAD_NEUTRAL);
-      // Perform salute on first detection
-      performSalute();
+  // Read PIR at fixed intervals for consistent polling
+  if (currentTime - lastPIRReadTime < PIR_READ_INTERVAL) {
+    return;
+  }
+  lastPIRReadTime = currentTime;
+  
+  // Read current PIR state
+  pirState = digitalRead(PIR_PIN);
+  
+  // Detect state changes with debouncing
+  if (pirState != lastPirState) {
+    // Debounce: ensure state is stable
+    if (currentTime - lastPirChangeTime > PIR_DEBOUNCE_MS) {
+      
+      if (pirState == HIGH) {
+        // Motion detected
+        lastPIRTrigger = currentTime;
+        pirHighStartTime = currentTime;
+        totalMotionDetections++;
+        digitalWrite(LED_PIN, HIGH);
+        
+        // Only trigger state change and salute if coming from IDLE
+        if (currentState == IDLE) {
+          Serial.println("\n━━━ MOTION DETECTED ━━━");
+          Serial.printf("Detection #%lu\n", totalMotionDetections);
+          currentState = MOTION_DETECTED;
+          sendMotionDetected(); // Send WebSocket message
+          // Reset head to neutral on motion detection
+          moveHeadSmooth(HEAD_NEUTRAL);
+          // Perform salute on first detection
+          performSalute();
+        } else {
+          // Update trigger time even if not in IDLE state
+          Serial.println("━━━ MOTION CONTINUED ━━━");
+          sendMotionDetected(); // Still send WebSocket event
+        }
+        
+      } else {
+        // Motion ended
+        unsigned long pirDuration = currentTime - pirHighStartTime;
+        digitalWrite(LED_PIN, LOW);
+        Serial.printf("━━━ MOTION ENDED (duration: %lu ms) ━━━\n", pirDuration);
+      }
+      
+      lastPirChangeTime = currentTime;
+      lastPirState = pirState;
+    }
+  } else {
+    // Update lastPIRTrigger while motion is continuous
+    if (pirState == HIGH) {
+      lastPIRTrigger = currentTime;
     }
   }
 
@@ -669,8 +730,14 @@ void loopDistanceMeasurement(unsigned long currentTime) {
     // Add to median filter
     distanceBuffer[bufferIndex] = currentDistance;
     bufferIndex = (bufferIndex + 1) % MEDIAN_SAMPLES;
+    
+    // Mark buffer as filled after first complete cycle
+    if (bufferIndex == 0 && !bufferFilled) {
+      bufferFilled = true;
+      Serial.println("✓ Distance buffer filled - outlier rejection active");
+    }
 
-    // Get filtered distance
+    // Get filtered distance with outlier rejection
     float filteredDistance = getMedianDistance();
 
     // Update stable distance with hysteresis
@@ -780,7 +847,7 @@ float measureDistanceSimulated(unsigned long currentTime) {
   return simDistance;
 }
 
-// Median filter to remove spurious readings
+// Advanced median filter with outlier rejection
 float getMedianDistance() {
   float sorted[MEDIAN_SAMPLES];
   memcpy(sorted, distanceBuffer, sizeof(distanceBuffer));
@@ -796,7 +863,26 @@ float getMedianDistance() {
     }
   }
 
-  return sorted[MEDIAN_SAMPLES / 2];  // Return middle value
+  float median = sorted[MEDIAN_SAMPLES / 2];  // Get middle value
+  
+  // Outlier rejection: if median differs too much from last valid distance, use last valid
+  if (lastValidDistance < 900.0 && bufferFilled) {
+    float difference = abs(median - lastValidDistance);
+    
+    if (difference > OUTLIER_THRESHOLD) {
+      // This reading is likely an outlier, use last valid distance
+      Serial.printf("⚠️ Outlier rejected: %.1f cm (diff: %.1f cm from last valid: %.1f cm)\n", 
+                    median, difference, lastValidDistance);
+      return lastValidDistance;
+    }
+  }
+  
+  // This is a valid reading
+  if (median < 900.0) {
+    lastValidDistance = median;
+  }
+  
+  return median;
 }
 
 // ============================================ 
@@ -1116,9 +1202,20 @@ void printStatus() {
     case RETURNING_NEUTRAL: Serial.println("RETURNING_NEUTRAL"); break;
   }
 
+  Serial.print("PIR State: ");
+  Serial.print(pirState == HIGH ? "DETECTING" : "IDLE");
+  Serial.print(" (Total detections: ");
+  Serial.print(totalMotionDetections);
+  Serial.println(")");
+
   Serial.print("Current Distance: ");
   Serial.print(lastStableDistance, 1);
-  Serial.println(" cm");
+  Serial.print(" cm (Last valid: ");
+  Serial.print(lastValidDistance, 1);
+  Serial.println(" cm)");
+  
+  Serial.print("Buffer Status: ");
+  Serial.println(bufferFilled ? "FILLED (outlier rejection active)" : "FILLING...");
 
   Serial.print("Tilt Angle: ");
   Serial.print(currentTiltAngle);
