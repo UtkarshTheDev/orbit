@@ -132,15 +132,26 @@ export default function Home() {
   }, [isTablet, updateActivity]);
 
   const handleClick = () => {
+    console.log("[App] RobotFace clicked, isDisappearing:", isDisappearing, "isFromIdleTimeout:", isFromIdleTimeout);
+    
     if (!isDisappearing) {
-      setIsDisappearing(true);
-      // If coming from idle timeout, skip the exit animation delay
-      const delay = isFromIdleTimeout ? 0 : 2000;
-      setTimeout(() => {
+      // If coming from idle timeout, transition immediately without animation
+      if (isFromIdleTimeout) {
+        console.log("[App] Transitioning from idle timeout - immediate transition to greeting");
         setShowGreeting(true);
         setShowRobotFace(false);
         setIsFromIdleTimeout(false);
-      }, delay);
+        setIsDisappearing(false);
+      } else {
+        // Normal flow - play disappearing animation first
+        console.log("[App] Normal transition - playing disappearing animation");
+        setIsDisappearing(true);
+        setTimeout(() => {
+          setShowGreeting(true);
+          setShowRobotFace(false);
+          setIsDisappearing(false);
+        }, 2000);
+      }
     }
   };
 
@@ -193,16 +204,14 @@ export default function Home() {
           
           {/* Priority 3: Greeting animation - clickable to skip */}
           {!aiEditActive && !photoBoothActive && !isRetakeRequested && showGreeting && (
-            <div
+            <button
               key="greeting"
-              className="h-full w-full cursor-pointer"
+              type="button"
+              className="h-full w-full cursor-pointer border-0 bg-transparent p-0"
               onClick={handleGreetingComplete}
-              onKeyDown={(e) => e.key === "Enter" && handleGreetingComplete()}
-              role="button"
-              tabIndex={0}
             >
               <OrbitGreeting onComplete={handleGreetingComplete} />
-            </div>
+            </button>
           )}
           
           {/* Priority 4: Main app */}
@@ -212,19 +221,17 @@ export default function Home() {
           
           {/* Priority 5: Robot face (idle state) - clickable to start greeting */}
           {!aiEditActive && !photoBoothActive && !isRetakeRequested && !showGreeting && !showMainAppFromStore && showRobotFace && (
-            <div
+            <button
               key="robot"
-              className="h-full w-full cursor-pointer"
+              type="button"
+              className="h-full w-full cursor-pointer border-0 bg-transparent p-0"
               onClick={handleClick}
-              onKeyDown={(e) => e.key === "Enter" && handleClick()}
-              role="button"
-              tabIndex={0}
             >
               <RobotFace 
                 isDisappearing={isDisappearing} 
                 skipExitAnimation={isFromIdleTimeout}
               />
-            </div>
+            </button>
           )}
         </AnimatePresence>
       </div>

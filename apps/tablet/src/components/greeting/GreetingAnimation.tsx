@@ -35,8 +35,13 @@ export default function GreetingAnimation({
 	const greetingLines = ["LPS Eldeco", getTimeBasedGreeting()];
 
 	const completeAnimation = () => {
+		console.log("[GreetingAnimation] Click detected, current stage:", stage);
+		// Allow clicking at any stage to skip to completion
 		if (stage === "complete") {
 			onComplete();
+		} else {
+			// Skip to complete stage immediately
+			setStage("complete");
 		}
 	};
 
@@ -81,12 +86,19 @@ export default function GreetingAnimation({
 				console.error("Failed to play audio:", error);
 			});
 
+			// Auto-advance to next screen after audio plays (or after timeout)
+			const autoAdvanceTimer = setTimeout(() => {
+				console.log("[GreetingAnimation] Auto-advancing after complete stage");
+				onComplete();
+			}, 3000); // 3 seconds to show "I am Orbit" message
+
 			return () => {
 				audio.pause();
 				audio.currentTime = 0;
+				clearTimeout(autoAdvanceTimer);
 			};
 		}
-	}, [stage]);
+	}, [stage, onComplete]);
 
 	return (
 		<motion.div
