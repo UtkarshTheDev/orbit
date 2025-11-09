@@ -145,7 +145,7 @@ function MarkdownContent({ content }: { content: string }) {
 function AnimatedContent({ content }: { content: string }) {
 	const [displayedContent, setDisplayedContent] = useState("");
 	const [targetContent, setTargetContent] = useState("");
-	const animationFrameRef = useRef<number>();
+	const animationFrameRef = useRef<number | undefined>(undefined);
 	const lastUpdateTimeRef = useRef(Date.now());
 
 	// Update target content when new content arrives from backend
