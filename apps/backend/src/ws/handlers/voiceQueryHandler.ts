@@ -224,19 +224,32 @@ export async function handleVoiceQuery(
     // Stage 8: Converting to speech
     sendStatus(ws, "tts", "Converting to speech...");
 
-    // Convert to speech
-    const { audio, duration } = await textToSpeechWithTimeout(fullAiResponse);
+    // Try to convert to speech, but don't fail the entire query if TTS fails
+    try {
+      const { audio, duration } = await textToSpeechWithTimeout(fullAiResponse);
 
-    // Stage 9: TTS ready
-    ws.send(
-      JSON.stringify({
-        type: "tts_ready",
-        audio,
-        duration,
-      })
-    );
+      // Stage 9: TTS ready
+      ws.send(
+        JSON.stringify({
+          type: "tts_ready",
+          audio,
+          duration,
+        })
+      );
 
-    console.log(`[VoiceQuery] TTS ready: ${duration}s`);
+      console.log(`[VoiceQuery] TTS ready: ${duration}s`);
+    } catch (ttsError) {
+      console.error("[VoiceQuery] TTS failed, but continuing with text response:", ttsError);
+      
+      // Send TTS failure message with the AI response text
+      ws.send(
+        JSON.stringify({
+          type: "tts_failed",
+          text: fullAiResponse,
+          error: ttsError instanceof Error ? ttsError.message : "Text-to-speech service unavailable",
+        })
+      );
+    }
 
     // Cleanup temp file after a delay
     if (tempFilePath) {

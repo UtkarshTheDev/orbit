@@ -99,7 +99,7 @@ function VoiceApp() {
 
   // Handle WebSocket response updates
   useEffect(() => {
-    const { stage, transcribedText, aiText, aiTextChunk, ttsAudio, error } =
+    const { stage, transcribedText, aiText, aiTextChunk, ttsAudio, error, ttsFailed, ttsErrorMessage } =
       response;
 
     // Update state based on backend stage (but don't override done state)
@@ -179,6 +179,21 @@ function VoiceApp() {
           pendingDoneRef.current = null;
         }
       }, 30_000);
+    }
+
+    // Handle TTS failure from backend
+    if (ttsFailed && aiText) {
+      console.log("[VoiceApp] TTS failed on backend, showing response text with error message");
+      setTranscript(aiText);
+      setTtsError(true);
+      setState("responding");
+      setAriaLiveMessage(ttsErrorMessage || "Can't speak currently, but you can read the response");
+      
+      // Store final state for when user clicks continue
+      pendingDoneRef.current = {
+        transcript: aiText,
+        query: transcribedText || userQuery,
+      };
     }
 
     // Handle errors
@@ -364,11 +379,11 @@ function VoiceApp() {
               {state === "responding" && ttsError && (
                 <div className="-translate-x-1/2 absolute bottom-8 left-1/2 z-20 transform">
                   <div className="flex flex-col items-center gap-3">
-                    <p className="font-medium text-red-600 text-sm">Audio playback failed</p>
+                    <p className="font-medium text-amber-600 text-sm">Can't speak currently</p>
                     <button
                       className="rounded-lg bg-blue-500 px-6 py-2 font-medium font-orbitron text-white shadow-md transition-all hover:scale-105 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 active:scale-95"
                       onClick={() => {
-                        console.log("[VoiceApp] Retry TTS button clicked");
+                        console.log("[VoiceApp] Continue button clicked after TTS failure");
                         if (pendingDoneRef.current) {
                           const { transcript: finalTranscript, query } =
                             pendingDoneRef.current;
@@ -385,7 +400,7 @@ function VoiceApp() {
                       }}
                       type="button"
                     >
-                      Continue
+                      Try again
                     </button>
                   </div>
                 </div>

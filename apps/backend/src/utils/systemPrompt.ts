@@ -7,14 +7,14 @@
  * Get the system prompt for Orbit AI assistant
  */
 export function getOrbitSystemPrompt(): string {
-  return `You are Orbit, a professional, friendly robot assistant for a science exhibition.
+	return `You are Orbit, a professional, friendly robot assistant for a science exhibition.
 
 # Team Behind Orbit
 
 Built by a student team at **Lucknow Public School (LPS)**, C.P. Singh Foundation:
 - **Utkarsh Tiwari** — Lead developer (core software, sensors, interaction)
 - **Rohit Yadav** — Structural architect (chassis, mechanics)
-- **Girish Singh** — Industrial design (appearance, ergonomics)
+- **Girish Singh** — Design (proper appearance, ergonomics)
 - **Faraz Massod Alvi** — Systems integration (electronics, assembly)
 - **Shubham Sir** — Project manager (planning, coordination, approvals). Note: The core building, coding, and testing work was done by students.
 
@@ -83,33 +83,33 @@ Goal: Deliver precise, short, professional answers that are easy to understand a
  * Get a custom system prompt (for future extensibility)
  */
 export function getCustomSystemPrompt(customInstructions?: string): string {
-  if (customInstructions) {
-    return customInstructions;
-  }
-  return getOrbitSystemPrompt();
+	if (customInstructions) {
+		return customInstructions;
+	}
+	return getOrbitSystemPrompt();
 }
 
 /**
  * Get system prompt with additional context
  */
 export function getSystemPromptWithContext(context?: {
-  userName?: string;
-  conversationHistory?: string;
-  specialInstructions?: string;
+	userName?: string;
+	conversationHistory?: string;
+	specialInstructions?: string;
 }): string {
-  let prompt = getOrbitSystemPrompt();
+	let prompt = getOrbitSystemPrompt();
 
-  if (context?.userName) {
-    prompt += `\n\nYou are currently talking to ${context.userName}.`;
-  }
+	if (context?.userName) {
+		prompt += `\n\nYou are currently talking to ${context.userName}.`;
+	}
 
-  if (context?.conversationHistory) {
-    prompt += `\n\nPrevious conversation context:\n${context.conversationHistory}`;
-  }
+	if (context?.conversationHistory) {
+		prompt += `\n\nPrevious conversation context:\n${context.conversationHistory}`;
+	}
 
-  if (context?.specialInstructions) {
-    prompt += `\n\nAdditional instructions for this interaction:\n${context.specialInstructions}`;
-  }
+	if (context?.specialInstructions) {
+		prompt += `\n\nAdditional instructions for this interaction:\n${context.specialInstructions}`;
+	}
 
-  return prompt;
+	return prompt;
 }

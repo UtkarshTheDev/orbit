@@ -175,6 +175,8 @@ interface VoiceResponse {
 	ttsDuration?: number;
 	error?: string;
 	webSearchActive?: boolean;
+	ttsFailed?: boolean;
+	ttsErrorMessage?: string;
 }
 
 interface UseVoiceWebSocketReturn {
@@ -326,6 +328,16 @@ export const useVoiceWebSocket = (): UseVoiceWebSocketReturn => {
 						ttsDuration: msg.duration,
 					}));
 					console.log(`[VoiceWS] TTS ready: ${msg.duration}s`);
+				} else if (msg.type === "tts_failed") {
+					// TTS failed but we have the AI response text
+					console.log(`[VoiceWS] TTS failed: ${msg.error}`);
+					setResponse((prev) => ({
+						...prev,
+						stage: "responding",
+						aiText: msg.text,
+						ttsFailed: true,
+						ttsErrorMessage: msg.error || "Can't speak currently",
+					}));
 				} else if (msg.type === "error") {
 					setResponse((prev) => ({
 						...prev,
