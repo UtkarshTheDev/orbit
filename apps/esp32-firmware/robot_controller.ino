@@ -178,6 +178,8 @@ const unsigned long DISTANCE_LOG_INTERVAL = 500;
 float distanceBuffer[MEDIAN_SAMPLES];
 int bufferIndex = 0;
 bool bufferFilled = false;  // Track if buffer has enough samples
+int consecutiveOutliers = 0;  // Track consecutive outlier detections
+#define OUTLIER_ACCEPT_THRESHOLD 3  // Accept reading after 3 consecutive outliers
 
 // ============================================ 
 // FUNCTION DECLARATIONS
@@ -865,15 +867,30 @@ float getMedianDistance() {
 
   float median = sorted[MEDIAN_SAMPLES / 2];  // Get middle value
   
-  // Outlier rejection: if median differs too much from last valid distance, use last valid
+  // Outlier rejection with consecutive tracking
   if (lastValidDistance < 900.0 && bufferFilled) {
     float difference = abs(median - lastValidDistance);
     
     if (difference > OUTLIER_THRESHOLD) {
-      // This reading is likely an outlier, use last valid distance
-      Serial.printf("⚠️ Outlier rejected: %.1f cm (diff: %.1f cm from last valid: %.1f cm)\n", 
-                    median, difference, lastValidDistance);
-      return lastValidDistance;
+      // Potential outlier detected
+      consecutiveOutliers++;
+      
+      // If we've seen multiple consecutive outliers, accept it (person actually moved)
+      if (consecutiveOutliers >= OUTLIER_ACCEPT_THRESHOLD) {
+        Serial.printf("✓ Outlier accepted after %d consecutive detections: %.1f cm (person moved)\n", 
+                      consecutiveOutliers, median);
+        consecutiveOutliers = 0;  // Reset counter
+        lastValidDistance = median;
+        return median;
+      } else {
+        // Still rejecting, but counting
+        Serial.printf("⚠️ Outlier #%d: %.1f cm (diff: %.1f cm from last valid: %.1f cm)\n", 
+                      consecutiveOutliers, median, difference, lastValidDistance);
+        return lastValidDistance;
+      }
+    } else {
+      // Valid reading within threshold - reset outlier counter
+      consecutiveOutliers = 0;
     }
   }
   
