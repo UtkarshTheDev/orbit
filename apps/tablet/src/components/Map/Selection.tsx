@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink } from "lucide-react";
+import { PanelLeftOpen, PanelRight, Smartphone } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useSessionStore } from "@/lib/sessionStore";
@@ -12,6 +12,7 @@ import { SearchBar } from "./components/SearchBar";
 import { CAMPUS_LOCATIONS } from "./data/locations";
 import CampusNavigationMap from "./Map";
 import type { Location, MobileStep } from "./types";
+import { cn } from "@/lib/utils";
 
 export function LocationPicker() {
 	// Simplified tablet detection - check multiple sources
@@ -36,6 +37,10 @@ export function LocationPicker() {
 	const [navigationDestination, setNavigationDestination] = useState<
 		string | null
 	>(null);
+
+	const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+	const handleMapInteraction = () =>
+		!isSidebarCollapsed && setIsSidebarCollapsed(true);
 
 	// Phase 2: Check URL query parameters for destination on mount
 	useEffect(() => {
@@ -143,62 +148,118 @@ export function LocationPicker() {
 
 				{/* Left Side - Campus Map */}
 				<div className="flex-1 h-full bg-slate-100 relative">
-					<CampusNavigationMap initialDestination={navigationDestination} />
+					<CampusNavigationMap
+						initialDestination={navigationDestination}
+						onInteractionStart={handleMapInteraction}
+					/>
 				</div>
 
-				{/* Right Sidebar - Location List */}
-				<div className="w-[420px] h-full border-l-2 border-slate-300 bg-white shadow-2xl overflow-y-auto flex-shrink-0">
-					<div className="p-8">
-						{/* Header */}
-						<div className="mb-8">
-							{/* Title */}
-							<div className="mb-6">
-								<h1 className="font-orbitron text-3xl font-bold text-slate-900 tracking-tight">
-									Campus Navigation
-								</h1>
-								<p className="font-sans text-base text-gray-500 mt-2 leading-relaxed">
-									Select a location to navigate from Gate No. 1
-								</p>
-							</div>
-
-							{/* View Map in Phone Button */}
+				{/* Right Sidebar */}
+				<div
+					className={cn(
+						"h-full border-l-2 border-slate-300 bg-white shadow-2xl flex-shrink-0 transition-all duration-500 ease-in-out",
+						isSidebarCollapsed ? "w-[90px]" : "w-[420px]",
+					)}
+				>
+					{/* Sidebar content */}
+					<div className="h-full flex flex-col">
+						{/* Collapsed controls */}
+						<div
+							className={cn(
+								"flex flex-col items-center justify-center flex-1 gap-4 p-4",
+								isSidebarCollapsed ? "" : "hidden",
+							)}
+						>
+							<Button
+								onClick={() => setIsSidebarCollapsed(false)}
+								variant="ghost"
+								size="icon"
+								className="w-16 h-16 rounded-2xl"
+							>
+								<PanelLeftOpen className="h-8 w-8" />
+							</Button>
 							<Button
 								onClick={() => setIsQRDialogOpen(true)}
-								className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-sans font-semibold py-7 px-6 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-3 text-lg min-h-[64px]"
+								variant="default"
+								size="icon"
+								className="w-16 h-16 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white shadow-lg ring-2 ring-blue-300/50 ring-offset-2 ring-offset-white"
 							>
-								<ExternalLink className="h-6 w-6" />
-								<span>View Map in Phone</span>
+								<Smartphone className="h-8 w-8" />
 							</Button>
 						</div>
 
-						{/* Group locations by category */}
-						{["Events", "Facilities", "Access Points", "Navigation"].map(
-							(category) => {
-								const categoryLocations = CAMPUS_LOCATIONS.filter(
-									(loc) => loc.category === category,
-								);
-								if (categoryLocations.length === 0) return null;
-
-								return (
-									<div key={category} className="mb-7">
-										<h3 className="mb-4 font-sans text-sm font-bold text-gray-600 uppercase tracking-wider">
-											{category}
-										</h3>{" "}
-										<div className="space-y-3">
-											{categoryLocations.map((location) => (
-												<LocationCard
-													key={location.id}
-													location={location}
-													isSelected={selectedLocation?.id === location.id}
-													onClick={handleTabletLocationSelect}
-													variant="tablet"
-												/>
-											))}
+						{/* Expanded content */}
+						<div
+							className={cn(
+								"h-full overflow-y-auto",
+								isSidebarCollapsed ? "hidden" : "flex flex-col",
+							)}
+						>
+							<div className="p-8">
+								{/* Header */}
+								<div className="mb-8">
+									{/* Title and close button */}
+									<div className="flex justify-between items-start mb-6">
+										<div>
+											<h1 className="font-orbitron text-3xl font-bold text-slate-900 tracking-tight">
+												Campus Navigation
+											</h1>
+											<p className="font-sans text-base text-gray-500 mt-2 leading-relaxed">
+												Select a location to navigate from Gate No. 1
+											</p>
 										</div>
+										<Button
+											onClick={() => setIsSidebarCollapsed(true)}
+											variant="ghost"
+											size="icon"
+											className="-mr-4 -mt-2"
+										>
+											<PanelRight className="h-6 w-6" />
+										</Button>
 									</div>
-								);
-							},
-						)}
+
+									{/* View Map in Phone Button */}
+									<Button
+										onClick={() => setIsQRDialogOpen(true)}
+										className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-sans font-semibold py-7 px-6 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-3 text-lg min-h-[64px]"
+									>
+										<Smartphone className="h-6 w-6" />
+										<span>View Map in Phone</span>
+									</Button>
+								</div>
+
+								{/* Group locations by category */}
+								{["Events", "Facilities", "Access Points", "Navigation"].map(
+									(category) => {
+										const categoryLocations = CAMPUS_LOCATIONS.filter(
+											(loc) => loc.category === category,
+										);
+										if (categoryLocations.length === 0) return null;
+
+										return (
+											<div key={category} className="mb-7">
+												<h3 className="mb-4 font-sans text-sm font-bold text-gray-600 uppercase tracking-wider">
+													{category}
+												</h3>{" "}
+												<div className="space-y-3">
+													{categoryLocations.map((location) => (
+														<LocationCard
+															key={location.id}
+															location={location}
+															isSelected={
+																selectedLocation?.id === location.id
+															}
+															onClick={handleTabletLocationSelect}
+															variant="tablet"
+														/>
+													))}
+												</div>
+											</div>
+										);
+									},
+								)}
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>

@@ -22,6 +22,7 @@ interface CampusNavigationMapProps {
   mobileStartLocation?: string | null;
   showBackButton?: boolean;
   onBack?: () => void;
+  onInteractionStart?: () => void;
 }
 
 
@@ -30,7 +31,8 @@ export default function CampusNavigationMap({
   initialDestination, 
   mobileStartLocation,
   showBackButton = false,
-  onBack
+  onBack,
+  onInteractionStart
 }: CampusNavigationMapProps = {}) {
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null)
   const [startRoom, setStartRoom] = useState<Room | null>(null)
@@ -204,6 +206,7 @@ export default function CampusNavigationMap({
   }
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    onInteractionStart?.()
     setIsDragging(true)
     setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y })
   }
@@ -219,6 +222,7 @@ export default function CampusNavigationMap({
   }
 
   const handleTouchStart = (e: React.TouchEvent) => {
+    onInteractionStart?.()
     if (e.touches.length === 1) {
       // Single touch - pan
       setIsDragging(true)
