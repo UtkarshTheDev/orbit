@@ -109,7 +109,7 @@ export function OrbitMain({ skipWelcomeAudio = false }: OrbitMainProps) {
 					>
 						<div className="flex w-full flex-1 items-start justify-center pt-8 md:pt-12">
 							<div className="flex w-full max-w-5xl flex-col items-center text-center">
-								<div className="relative flex h-[240px] w-[240px] items-center justify-center">
+								<div className="relative flex h-[200px] w-[200px] items-center justify-center">
 									<RobotHead />
 								</div>
 								<motion.h1
@@ -128,7 +128,7 @@ export function OrbitMain({ skipWelcomeAudio = false }: OrbitMainProps) {
 
 								<motion.div
 									animate={{ opacity: 1 }}
-									className="mt-8 grid grid-cols-2 gap-4 px-2 md:mt-10 md:gap-6"
+									className="mt-10 grid grid-cols-2 gap-4 px-2 md:mt-12 md:gap-6"
 									initial={{ opacity: 0 }}
 									transition={{ delay: 0.4, duration: 0.4 }}
 								>
@@ -159,7 +159,7 @@ export function OrbitMain({ skipWelcomeAudio = false }: OrbitMainProps) {
 
 						<motion.div
 							animate={{ opacity: 1, y: 0 }}
-							className="mb-8 mt-12 w-full max-w-2xl px-4 md:mt-16"
+							className="mb-8 mt-4 w-full max-w-2xl px-4 md:mt-6"
 							initial={{ opacity: 0, y: 20 }}
 							transition={{
 								delay: 0.9,
