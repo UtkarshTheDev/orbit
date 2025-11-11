@@ -2,9 +2,14 @@
  * AI Service using Google Gemini 2.0 Flash
  */
 
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Content } from "@google/genai";
 import { AI_TIMEOUT, GOOGLE_GEMINI_API_KEY } from "../config";
 import { getOrbitSystemPrompt } from "../utils/systemPrompt";
+
+export interface ConversationMessage {
+	role: "user" | "model";
+	content: string;
+}
 
 // Initialize Gemini client
 let genAi: GoogleGenAI | null = null;
@@ -23,17 +28,18 @@ function getGeminiClient(): GoogleGenAI {
 
 /**
  * Generate AI response with streaming
- * @param userQuery - User's transcribed query
+ * @param messages - Conversation history, with the last message being the user's query
  * @param onChunk - Callback for each chunk of text
  * @param onSearchDetected - Optional callback when Google Search is detected
  * @returns Object containing full AI response text and search usage flag
  */
 export async function generateAIResponseStream(
-  userQuery: string,
+  messages: ConversationMessage[],
   onChunk: (chunk: string) => void,
   onSearchDetected?: () => void
 ): Promise<{ text: string; usedSearch: boolean }> {
   try {
+    const userQuery = messages[messages.length - 1]?.content || "";
     console.log(
       `[AI] Generating response for query: ${userQuery.substring(0, 100)}...`
     );
@@ -47,10 +53,16 @@ export async function generateAIResponseStream(
       googleSearch: {},
     };
 
+    // Format messages for Gemini API
+    const contents: Content[] = messages.map(message => ({
+      role: message.role,
+      parts: [{ text: message.content }],
+    }));
+
     // Generate content with streaming using new API
     const response = await client.models.generateContentStream({
       model: "gemini-2.5-flash-lite",
-      contents: userQuery,
+      contents: contents,
       config: {
         systemInstruction: systemPrompt,
         tools: [groundingTool],
@@ -94,13 +106,14 @@ export async function generateAIResponseStream(
 
 /**
  * Generate AI response without streaming (fallback)
- * @param userQuery - User's transcribed query
+ * @param messages - Conversation history, with the last message being the user's query
  * @returns Object containing full AI response text and search usage flag
  */
 export async function generateAIResponse(
-  userQuery: string
+  messages: ConversationMessage[]
 ): Promise<{ text: string; usedSearch: boolean }> {
   try {
+    const userQuery = messages[messages.length - 1]?.content || "";
     console.log(
       `[AI] Generating non-streaming response for query: ${userQuery.substring(0, 100)}...`
     );
@@ -114,9 +127,15 @@ export async function generateAIResponse(
       googleSearch: {},
     };
 
+    // Format messages for Gemini API
+    const contents: Content[] = messages.map(message => ({
+      role: message.role,
+      parts: [{ text: message.content }],
+    }));
+
     const response = await client.models.generateContent({
       model: "gemini-2.5-flash-lite",
-      contents: userQuery,
+      contents: contents,
       config: {
         systemInstruction: systemPrompt,
         tools: [groundingTool],
@@ -139,20 +158,20 @@ export async function generateAIResponse(
 
 /**
  * Generate AI response with timeout
- * @param userQuery - User's transcribed query
+ * @param messages - Conversation history, with the last message being the user's query
  * @param onChunk - Callback for each chunk of text
  * @param onSearchDetected - Optional callback when Google Search is detected
  * @param timeoutMs - Timeout in milliseconds
  * @returns Object containing full AI response text and search usage flag
  */
 export async function generateAIResponseWithTimeout(
-  userQuery: string,
+  messages: ConversationMessage[],
   onChunk: (chunk: string) => void,
   onSearchDetected?: () => void,
   timeoutMs: number = AI_TIMEOUT
 ): Promise<{ text: string; usedSearch: boolean }> {
   return Promise.race([
-    generateAIResponseStream(userQuery, onChunk, onSearchDetected),
+    generateAIResponseStream(messages, onChunk, onSearchDetected),
     new Promise<{ text: string; usedSearch: boolean }>((_, reject) =>
       setTimeout(() => reject(new Error("AI generation timeout")), timeoutMs)
     ),

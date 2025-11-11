@@ -94,17 +94,12 @@ export function getCustomSystemPrompt(customInstructions?: string): string {
  */
 export function getSystemPromptWithContext(context?: {
 	userName?: string;
-	conversationHistory?: string;
 	specialInstructions?: string;
 }): string {
 	let prompt = getOrbitSystemPrompt();
 
 	if (context?.userName) {
 		prompt += `\n\nYou are currently talking to ${context.userName}.`;
-	}
-
-	if (context?.conversationHistory) {
-		prompt += `\n\nPrevious conversation context:\n${context.conversationHistory}`;
 	}
 
 	if (context?.specialInstructions) {
