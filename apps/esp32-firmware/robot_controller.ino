@@ -73,6 +73,7 @@ const char* ws_path = "/ws";                       // WebSocket endpoint path
 
 // Hysteresis (prevent oscillation)
 #define DISTANCE_HYSTERESIS 10  // cm buffer zone
+#define DISTANCE_DEPARTURE_THRESHOLD 30 // cm increase to detect departure
 
 // Median filter buffer - increased for better noise rejection
 #define MEDIAN_SAMPLES 7  // Use 7 samples for better outlier rejection
@@ -103,7 +104,8 @@ enum WsUserState
 {
   WS_STATE_NONE,
   WS_STATE_PASSED,
-  WS_STATE_ARRIVED
+  WS_STATE_ARRIVED,
+  WS_STATE_LEAVED
 };
 WsUserState lastSentWsState = WS_STATE_NONE;
 
@@ -137,6 +139,7 @@ enum SystemState {
   VIEWING_CLOSE,
   VIEWING_MEDIUM,
   VIEWING_FAR,
+  USER_DEPARTING,
   RETURNING_NEUTRAL
 };
 
@@ -296,6 +299,11 @@ void sendWsUserState(WsUserState state, float distance)
   {
     doc["type"] = "user_arrived";
     doc["message"] = "User arrived near the tablet";
+  }
+  else if (state == WS_STATE_LEAVED)
+  {
+    doc["type"] = "user_leaved";
+    doc["message"] = "User leaved the tablet";
   }
   else
   {
@@ -705,6 +713,12 @@ void loopPIR(unsigned long currentTime) {
       // Will be handled by distance check
     }
   }
+
+  // Check for stuck PIR sensor
+  if (pirState == HIGH && (currentTime - pirHighStartTime) > 60000) {
+    Serial.println("WARNING: PIR sensor has been HIGH for over 60 seconds. Check for hardware issues.");
+    pirHighStartTime = currentTime; // Reset timer to avoid spamming
+  }
 }
 
 // ============================================ 
@@ -904,6 +918,13 @@ void loopTiltControl(unsigned long currentTime) {
     // Far or no person
     targetTiltAngle = TILT_NEUTRAL;
 
+    // Detect departure if distance increases significantly
+    if (currentState == VIEWING_CLOSE || currentState == VIEWING_MEDIUM || currentState == VIEWING_FAR) {
+      if (lastStableDistance > lastValidDistance + DISTANCE_DEPARTURE_THRESHOLD) {
+        newState = USER_DEPARTING;
+      }
+    }
+
     // Only return to idle if no recent PIR activity
     if ((currentTime - lastPIRTrigger) > PIR_TIMEOUT) {
       newState = RETURNING_NEUTRAL;
@@ -936,23 +957,33 @@ void loopTiltControl(unsigned long currentTime) {
     switch(currentState) {
       case VIEWING_CLOSE:
         Serial.println("━━━ State: VIEWING_CLOSE (< 50cm) ━━━");
-        if (lastSentWsState != WS_STATE_ARRIVED) {
+        // If user was previously considered 'passed' or not yet classified, upgrade to 'arrived'
+        if (lastSentWsState == WS_STATE_NONE || lastSentWsState == WS_STATE_PASSED) {
           sendWsUserState(WS_STATE_ARRIVED, lastStableDistance);
           lastSentWsState = WS_STATE_ARRIVED;
         }
         break;
       case VIEWING_MEDIUM:
         Serial.println("━━━ State: VIEWING_MEDIUM (50-100cm) ━━━");
-        if (lastSentWsState != WS_STATE_ARRIVED) {
+        // If user was previously considered 'passed' or not yet classified, upgrade to 'arrived'
+        if (lastSentWsState == WS_STATE_NONE || lastSentWsState == WS_STATE_PASSED) {
           sendWsUserState(WS_STATE_ARRIVED, lastStableDistance);
           lastSentWsState = WS_STATE_ARRIVED;
         }
         break;
       case VIEWING_FAR:
         Serial.println("━━━ State: VIEWING_FAR (100-150cm) ━━━");
-        if (lastSentWsState != WS_STATE_PASSED) {
+        // Only send 'passed' if no other state has been sent yet
+        if (lastSentWsState == WS_STATE_NONE) {
           sendWsUserState(WS_STATE_PASSED, lastStableDistance);
           lastSentWsState = WS_STATE_PASSED;
+        }
+        break;
+      case USER_DEPARTING:
+        Serial.println("━━━ State: USER_DEPARTING ━━━");
+        if (lastSentWsState != WS_STATE_LEAVED) {
+          sendWsUserState(WS_STATE_LEAVED, lastStableDistance);
+          lastSentWsState = WS_STATE_LEAVED;
         }
         break;
       case RETURNING_NEUTRAL:
@@ -1194,6 +1225,7 @@ void printStatus() {
     case VIEWING_CLOSE: Serial.println("VIEWING_CLOSE"); break;
     case VIEWING_MEDIUM: Serial.println("VIEWING_MEDIUM"); break;
     case VIEWING_FAR: Serial.println("VIEWING_FAR"); break;
+    case USER_DEPARTING: Serial.println("USER_DEPARTING"); break;
     case RETURNING_NEUTRAL: Serial.println("RETURNING_NEUTRAL"); break;
   }
 
