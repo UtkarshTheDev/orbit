@@ -5,7 +5,9 @@
 import {
   generateAIResponseWithTimeout,
   isAIConfigured,
+  ConversationMessage,
 } from "../../services/aiService";
+import { conversationManager } from "../conversationManager";
 import {
   isTTSConfigured,
   textToSpeechWithTimeout,
@@ -122,12 +124,16 @@ export async function handleTextQuery(
     const streamSession = streamingManager.createSession(id);
     streamingManager.sendStreamStart(ws, streamSession);
 
+    // Get conversation history and add user message
+    const conversationHistory = conversationManager.getHistory(ws.id);
+    conversationManager.addMessage(ws.id, { role: "user", content: text });
+
     // Generate AI response with streaming
     let fullAiResponse = "";
     const bufferedSender = streamingManager.createBufferedSender(ws, streamSession);
 
     const aiResponse = await generateAIResponseWithTimeout(
-      text,
+      [...conversationHistory, { role: "user", content: text }], // Pass full conversation history
       (chunk) => {
         bufferedSender.sendChunk(chunk);
       },
@@ -147,6 +153,7 @@ export async function handleTextQuery(
     bufferedSender.flush();
 
     fullAiResponse = aiResponse.text;
+    conversationManager.addMessage(ws.id, { role: "model", content: fullAiResponse }); // Add AI response to history
 
     // Send stream end with completion marker
     streamingManager.sendStreamEnd(ws, streamSession, fullAiResponse);

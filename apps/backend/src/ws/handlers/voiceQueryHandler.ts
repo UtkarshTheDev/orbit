@@ -6,7 +6,9 @@ import { MAX_AUDIO_SIZE_BYTES } from "../../config";
 import {
   generateAIResponseWithTimeout,
   isAIConfigured,
+  ConversationMessage,
 } from "../../services/aiService";
+import { conversationManager } from "../conversationManager";
 import {
   isSTTConfigured,
   transcribeAudioWithTimeout,
@@ -183,12 +185,16 @@ export async function handleVoiceQuery(
     const streamSession = streamingManager.createSession(id);
     streamingManager.sendStreamStart(ws, streamSession);
 
+    // Get conversation history and add user message
+    const conversationHistory = conversationManager.getHistory(ws.id);
+    conversationManager.addMessage(ws.id, { role: "user", content: transcribedText });
+
     // Generate AI response with streaming
     let fullAiResponse = "";
     const bufferedSender = streamingManager.createBufferedSender(ws, streamSession);
 
     const aiResponse = await generateAIResponseWithTimeout(
-      transcribedText,
+      [...conversationHistory, { role: "user", content: transcribedText }], // Pass full conversation history
       (chunk) => {
         bufferedSender.sendChunk(chunk);
       },
@@ -208,6 +214,7 @@ export async function handleVoiceQuery(
     bufferedSender.flush();
 
     fullAiResponse = aiResponse.text;
+    conversationManager.addMessage(ws.id, { role: "model", content: fullAiResponse }); // Add AI response to history
 
     // Send stream end with completion marker
     streamingManager.sendStreamEnd(ws, streamSession, fullAiResponse);

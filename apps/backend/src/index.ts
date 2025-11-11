@@ -1,3 +1,4 @@
+import { conversationManager } from "./ws/conversationManager";
 import type { Server } from "node:http";
 import { createBunWebSocket } from "hono/bun";
 import { NODE_ENV, PORT } from "./config";
@@ -134,6 +135,7 @@ const wsHandler = upgradeWebSocket((c) => {
       
       removeFromQueue(ws.id, server);
       cleanupConnection(ws, (ws as any).pingInterval);
+      conversationManager.clearHistory(clientId);
     },
     onError: (_event: Error, ws: WSConnection) => {
       const clientId = (ws as any).raw?.data?.clientId;
@@ -185,6 +187,7 @@ const wsHandler = upgradeWebSocket((c) => {
       
       removeFromQueue(ws.id, server);
       cleanupConnection(ws, (ws as any).pingInterval);
+      conversationManager.clearHistory(clientId);
     },
   };
 });
