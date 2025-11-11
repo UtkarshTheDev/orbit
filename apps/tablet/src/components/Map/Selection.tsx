@@ -11,7 +11,7 @@ import { QRDialog } from "./components/QRDialog";
 import { SearchBar } from "./components/SearchBar";
 import { CAMPUS_LOCATIONS } from "./data/locations";
 import CampusNavigationMap from "./Map";
-import type { Location, MobileStep } from "./types";
+import type { Location, MobileStep, Room } from "./types";
 import { cn } from "@/lib/utils";
 
 export function LocationPicker() {
@@ -41,6 +41,13 @@ export function LocationPicker() {
 	const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 	const handleMapInteraction = () =>
 		!isSidebarCollapsed && setIsSidebarCollapsed(true);
+
+	const handleMapRoomSelect = (room: Room) => {
+		const location = CAMPUS_LOCATIONS.find((loc) => loc.id === room.id);
+		if (location) {
+			setSelectedLocation(location);
+		}
+	};
 
 	// Phase 2: Check URL query parameters for destination on mount
 	useEffect(() => {
@@ -151,6 +158,7 @@ export function LocationPicker() {
 					<CampusNavigationMap
 						initialDestination={navigationDestination}
 						onInteractionStart={handleMapInteraction}
+						onRoomSelect={handleMapRoomSelect}
 					/>
 				</div>
 

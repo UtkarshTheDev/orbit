@@ -23,6 +23,7 @@ interface CampusNavigationMapProps {
   showBackButton?: boolean;
   onBack?: () => void;
   onInteractionStart?: () => void;
+  onRoomSelect?: (room: Room) => void;
 }
 
 
@@ -32,7 +33,8 @@ export default function CampusNavigationMap({
   mobileStartLocation,
   showBackButton = false,
   onBack,
-  onInteractionStart
+  onInteractionStart,
+  onRoomSelect
 }: CampusNavigationMapProps = {}) {
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null)
   const [startRoom, setStartRoom] = useState<Room | null>(null)
@@ -110,6 +112,9 @@ export default function CampusNavigationMap({
 
   const handleRoomClick = (room: Room) => {
     if (room.type === "corridor" || room.type === "outdoor") return
+    if (room.id === "entry") return // Don't navigate to the start point itself
+
+    onRoomSelect?.(room)
 
     if (room.id === "gate2") {
       if (selectedRoom) {
@@ -157,8 +162,6 @@ export default function CampusNavigationMap({
       }
       return
     }
-
-    if (room.id === "entry") return // Don't navigate to the start point itself
 
     setSelectedRoom(room)
     setEndRoom(room)
