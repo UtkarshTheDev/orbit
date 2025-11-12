@@ -160,41 +160,47 @@ export function LocationPicker() {
 						onInteractionStart={handleMapInteraction}
 						onRoomSelect={handleMapRoomSelect}
 					/>
+					
+					{/* Floating Controls - Only shown when sidebar is collapsed */}
+					{isSidebarCollapsed && (
+						<div className="absolute left-6 top-6 z-20 flex flex-col gap-4">
+							{/* Toggle Sidebar Button */}
+							<Button
+								onClick={() => setIsSidebarCollapsed(false)}
+								variant="default"
+								className="bg-white/98 hover:bg-white text-slate-700 hover:text-slate-900 shadow-2xl backdrop-blur-md border border-slate-200/80 hover:border-slate-300 transition-all duration-300 active:scale-95 h-12 w-12 rounded-2xl group"
+								size="icon"
+								title="Show Navigation Panel"
+							>
+								<PanelLeftOpen className="h-5 w-5 transition-transform duration-200 group-hover:scale-110" />
+							</Button>
+							
+							{/* Open Map in Phone Button */}
+							<Button
+								onClick={() => setIsQRDialogOpen(true)}
+								variant="default"
+								className="bg-gradient-to-r from-blue-600/95 to-blue-700/95 hover:from-blue-700 hover:to-blue-800 text-white shadow-2xl backdrop-blur-md border border-blue-400/30 hover:border-blue-300/50 transition-all duration-300 active:scale-95 rounded-2xl px-3 py-3 h-auto min-h-[52px] flex items-center gap-2.5 font-semibold group max-w-[140px]"
+								title="Open map on your phone via QR code"
+							>
+								<Smartphone className="h-4 w-4 flex-shrink-0 transition-transform duration-200 group-hover:scale-110" />
+								<span className="text-xs leading-tight text-center">
+									Open Map<br />
+									<span className="font-medium opacity-90">on Phone</span>
+								</span>
+							</Button>
+						</div>
+					)}
 				</div>
 
 				{/* Right Sidebar */}
 				<div
 					className={cn(
 						"h-full border-l-2 border-slate-300 bg-white shadow-2xl flex-shrink-0 transition-all duration-500 ease-in-out",
-						isSidebarCollapsed ? "w-[90px]" : "w-[420px]",
+						isSidebarCollapsed ? "w-0 border-l-0" : "w-[420px]",
 					)}
 				>
 					{/* Sidebar content */}
-					<div className="h-full flex flex-col">
-						{/* Collapsed controls */}
-						<div
-							className={cn(
-								"flex flex-col items-center justify-center flex-1 gap-4 p-4",
-								isSidebarCollapsed ? "" : "hidden",
-							)}
-						>
-							<Button
-								onClick={() => setIsSidebarCollapsed(false)}
-								variant="ghost"
-								size="icon"
-								className="w-16 h-16 rounded-2xl"
-							>
-								<PanelLeftOpen className="h-8 w-8" />
-							</Button>
-							<Button
-								onClick={() => setIsQRDialogOpen(true)}
-								variant="default"
-								size="icon"
-								className="w-16 h-16 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white shadow-lg ring-2 ring-blue-300/50 ring-offset-2 ring-offset-white"
-							>
-								<Smartphone className="h-8 w-8" />
-							</Button>
-						</div>
+					<div className="h-full flex flex-col overflow-hidden">
 
 						{/* Expanded content */}
 						<div
