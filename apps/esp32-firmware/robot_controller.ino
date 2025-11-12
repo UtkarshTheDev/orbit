@@ -726,10 +726,8 @@ void loopPIR(unsigned long currentTime) {
 // ============================================ 
 void loopDistanceMeasurement(unsigned long currentTime) {
 
-  // Only measure distance when motion detected or in viewing states
-  if (currentState == IDLE) {
-    return;
-  }
+  // Always measure distance to allow for presence detection without PIR.
+  // The state machine in loopTiltControl will handle transitions from IDLE.
 
   // Check distance at regular intervals
   if ((currentTime - lastDistanceCheck) >= DISTANCE_CHECK_INTERVAL) {
@@ -918,15 +916,19 @@ void loopTiltControl(unsigned long currentTime) {
     // Far or no person
     targetTiltAngle = TILT_NEUTRAL;
 
-    // Detect departure if distance increases significantly
-    if (currentState == VIEWING_CLOSE || currentState == VIEWING_MEDIUM || currentState == VIEWING_FAR) {
+    bool wasViewing = (currentState == VIEWING_CLOSE || currentState == VIEWING_MEDIUM || currentState == VIEWING_FAR);
+
+    // If user was being viewed and now they are far away, they are either departing or have left.
+    if (wasViewing) {
       if (lastStableDistance > lastValidDistance + DISTANCE_DEPARTURE_THRESHOLD) {
-        newState = USER_DEPARTING;
+        newState = USER_DEPARTING; // User left quickly
+      } else {
+        newState = RETURNING_NEUTRAL; // User moved away slowly
       }
     }
-
-    // Only return to idle if no recent PIR activity
-    if ((currentTime - lastPIRTrigger) > PIR_TIMEOUT) {
+    // If not viewing but in an active state (e.g. MOTION_DETECTED), and distance is far, return to neutral.
+    // This makes ultrasonic the source of truth for presence.
+    else if (currentState != IDLE && currentState != RETURNING_NEUTRAL) {
       newState = RETURNING_NEUTRAL;
     }
   }
