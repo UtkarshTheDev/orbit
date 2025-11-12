@@ -352,6 +352,10 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 								});
 							}
 						}
+						if (msg.type === "user_leaved" && get().isTablet) {
+							console.log("[Frontend] User leaved detected");
+							set({ userPresent: false });
+						}
 					} catch {
 						// ignore non-JSON
 					}

@@ -109,6 +109,14 @@ export function handleMessage(
         console.log(`[ESP32] User arrived near (from ${ws.id})`);
         broadcastToTablets(server, { type: "user_arrived" });
         break;
+      case "user_leaved":
+        if (clientRoles.get(ws.id) !== "esp32_sensor") {
+          console.warn(`[Backend] Ignoring user_leaved from non-esp32 client ${ws.id}`);
+          break;
+        }
+        console.log(`[ESP32] User leaved (from ${ws.id})`);
+        broadcastToTablets(server, { type: "user_leaved" });
+        break;
       case "ping":
         // Respond to ping with pong (for any client, but log ESP32 specifically)
         ws.send(JSON.stringify({ type: "pong", timestamp: Date.now() }));

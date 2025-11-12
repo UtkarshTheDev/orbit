@@ -34,9 +34,47 @@ export default function Home() {
   const setUserPresent = useSessionStore((s) => s.setUserPresent);
   const updateActivity = useSessionStore((s) => s.updateActivity);
 
+  // Timer for user leaving
+  const userLeavedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     connectWs();
   }, [connectWs]);
+  
+  // Handle user_leaved event - show RobotFace after 15 seconds
+  useEffect(() => {
+    // Only act if user is not present AND the main app is showing
+    if (!userPresent && showMainAppFromStore) {
+      console.log("[App] User not present, starting 15s timer to show RobotFace");
+      
+      // Clear any existing timer
+      if (userLeavedTimerRef.current) {
+        clearTimeout(userLeavedTimerRef.current);
+      }
+      
+      userLeavedTimerRef.current = setTimeout(() => {
+        console.log("[App] User leaved timeout reached - showing RobotFace");
+        setShowMainApp(false);
+        setShowGreeting(false);
+        setShowRobotFace(true);
+        setIsFromIdleTimeout(true); // Use same logic as idle timeout for smooth transition
+      }, 15000); // 15 seconds
+    }
+    
+    // If user becomes present again, cancel the timer
+    if (userPresent) {
+      if (userLeavedTimerRef.current) {
+        console.log("[App] User became present again, clearing timer");
+        clearTimeout(userLeavedTimerRef.current);
+      }
+    }
+    
+    return () => {
+      if (userLeavedTimerRef.current) {
+        clearTimeout(userLeavedTimerRef.current);
+      }
+    };
+  }, [userPresent, showMainAppFromStore, setShowMainApp, setShowGreeting, setShowRobotFace]);
 
   // Handle greeting animation completion
   const handleGreetingComplete = () => {
