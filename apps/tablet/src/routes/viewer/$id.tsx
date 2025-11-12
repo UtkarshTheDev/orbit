@@ -112,7 +112,7 @@ function ViewerPage() {
         >
           <Button
             className="h-14 w-14 rounded-full bg-white/90 shadow-lg backdrop-blur-sm transition-all hover:bg-white hover:shadow-xl md:h-12 md:w-12"
-            onClick={() => navigate({ to: "/" })}
+            onClick={() => navigate({ to: "/", search: { tablet: 1 } })}
             size="icon"
             variant="secondary"
           >
