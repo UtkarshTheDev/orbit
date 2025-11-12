@@ -201,7 +201,7 @@ export default function Home() {
               <OrbitGreeting onComplete={handleGreetingComplete} />
             )}
           </AnimatePresence>
-          {!showGreeting && showMainAppFromStore && <OrbitMain />}
+          {!showGreeting && showMainAppFromStore && <OrbitMain fromGreeting />}
         </div>
         <Toaster position="top-center" richColors />
       </div>
@@ -254,7 +254,7 @@ export default function Home() {
 						!isRetakeRequested &&
 						!showGreeting &&
 						showMainAppFromStore && (
-							<OrbitMain key="main" skipWelcomeAudio />
+							<OrbitMain key="main" fromGreeting />
 						)}
 
 					{/* Priority 5: Robot face (idle state) - clickable to start greeting */}

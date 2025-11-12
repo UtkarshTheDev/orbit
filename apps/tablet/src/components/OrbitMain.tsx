@@ -15,9 +15,10 @@ import { playSound } from "@/lib/basicAudioPlayer";
 
 type OrbitMainProps = {
 	skipWelcomeAudio?: boolean;
+	fromGreeting?: boolean;
 };
 
-export function OrbitMain({ skipWelcomeAudio = false }: OrbitMainProps) {
+export function OrbitMain({ skipWelcomeAudio = false, fromGreeting = false }: OrbitMainProps) {
 	const [inputMode, setInputMode] = useState<"voice" | "text">("voice");
 	const [
 		activeView,
@@ -89,9 +90,18 @@ export function OrbitMain({ skipWelcomeAudio = false }: OrbitMainProps) {
 
 	useEffect(() => {
 		if (!skipWelcomeAudio) {
-			playSound("/audio/help-you.mp3");
+			if (fromGreeting) {
+				// If coming from greeting animation, wait for it to fully complete before playing help sound
+				const timer = setTimeout(() => {
+					playSound("/audio/help-you.mp3");
+				}, 1000); // 1 second delay to ensure greeting animation is fully complete
+				return () => clearTimeout(timer);
+			} else {
+				// Play immediately for direct navigation
+				playSound("/audio/help-you.mp3");
+			}
 		}
-	}, [skipWelcomeAudio]);
+	}, [skipWelcomeAudio, fromGreeting]);
 
 	return (
 		<div className="relative h-screen bg-[#F9FAFB]">

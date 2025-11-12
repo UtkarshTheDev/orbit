@@ -64,4 +64,7 @@ export function preloadSound(soundUrl: string): void {
 if (typeof window !== 'undefined') {
   preloadSound('/audio/qr-scanned.mp3');
   preloadSound('/audio/download-polaroid.mp3');
+  preloadSound('/audio/help-you.mp3');
+  preloadSound('/audio/iam.mp3');
+  preloadSound('/audio/welcome.mp3');
 }
