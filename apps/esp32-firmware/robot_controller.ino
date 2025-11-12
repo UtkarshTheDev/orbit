@@ -62,8 +62,8 @@ const char* ws_path = "/ws";                       // WebSocket endpoint path
 // Distance thresholds (cm)
 #define DISTANCE_VERY_CLOSE 50    // < 50cm: Max tilt
 #define DISTANCE_CLOSE 100        // 50-100cm: Medium tilt
-#define DISTANCE_VIEWING 150      // 100-150cm: Slight tilt
-#define DISTANCE_FAR 200          // > 150cm: Return to neutral
+#define DISTANCE_VIEWING 250      // 100-250cm: Slight tilt
+#define DISTANCE_FAR 300          // > 250cm: Return to neutral
 
 // Distance zone tilt angles - adjusted for opposite servo mounting
 #define TILT_VERY_CLOSE 115   // Lean back more when very close (reduced for dual servo stability)
@@ -596,8 +596,8 @@ void setup() {
   Serial.println("\nDistance Zones:");
   Serial.println("  < 50cm   = Very Close (tilt 115°)");
   Serial.println("  50-100cm = Close (tilt 100°)");
-  Serial.println("  100-150cm = Viewing (tilt 95°)");
-  Serial.println("  > 150cm  = Far (neutral 90°)");
+  Serial.println("  100-250cm = Viewing (tilt 95°)");
+  Serial.println("  > 250cm  = Far (neutral 90°)");
 
   // --- WiFi & WebSocket Setup ---
   Serial.printf("\n[WiFi] Connecting to %s", ssid);
@@ -684,6 +684,12 @@ void loopPIR(unsigned long currentTime) {
           moveHeadSmooth(HEAD_NEUTRAL);
           // Perform salute on first detection
           performSalute();
+
+          // If PIR detects motion and no WS state has been sent yet, consider it a 'user_passed' event.
+          if (lastSentWsState == WS_STATE_NONE) {
+            sendWsUserState(WS_STATE_PASSED, lastStableDistance); // Use current distance, could be 999.0
+            lastSentWsState = WS_STATE_PASSED;
+          }
         } else {
           // Update trigger time even if not in IDLE state
           Serial.println("━━━ MOTION CONTINUED ━━━");
@@ -898,6 +904,14 @@ float getMedianDistance() {
 void loopTiltControl(unsigned long currentTime) {
   int targetTiltAngle = TILT_NEUTRAL;
   SystemState newState = currentState;
+
+  // If IDLE, check for presence using ultrasonic sensor as a primary trigger
+  if (currentState == IDLE && lastStableDistance < DISTANCE_VIEWING) {
+    // A person is detected if distance is valid and within viewing range
+    Serial.println("\n━━━ ULTRASONIC PRESENCE DETECTED ━━━");
+    currentState = MOTION_DETECTED; // Mimic PIR trigger to enter the active flow
+                                    // This avoids the salute/head-snap but engages tilt
+  }
 
   // Determine target angle based on distance
   if (lastStableDistance < DISTANCE_VERY_CLOSE) {
