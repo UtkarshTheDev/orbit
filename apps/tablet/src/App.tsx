@@ -175,33 +175,38 @@ export default function Home() {
 		}
 	};
 
-	// For non-tablet (phone) mode - original behavior
-	if (!isTablet) {
-		return (
-			<button
-				type="button"
-				className="relative flex h-screen w-full cursor-pointer items-center justify-center overflow-hidden text-foreground border-0 p-0 bg-transparent"
-				onClick={handleClick}
-				onKeyDown={(e) => e.key === "Enter" && handleClick()}
-			>
-				<Background />
-				<div className="relative z-20 h-full w-full">
-					{!(showGreeting || showMainAppFromStore) && (
-						<RobotFace
-							isDisappearing={isDisappearing}
-							skipExitAnimation={isFromIdleTimeout}
-						/>
-					)}
-					<AnimatePresence mode="wait">
-						{showGreeting && <OrbitGreeting onComplete={handleGreetingComplete} />}
-					</AnimatePresence>
-
-					{!showGreeting && showMainAppFromStore && <OrbitMain />}
-				</div>
-				<Toaster position="top-center" richColors />
-			</button>
-		);
-	}
+  // For non-tablet (phone) mode - original behavior
+  if (!isTablet) {
+    return (
+      <div
+        className="relative flex h-screen w-full items-center justify-center overflow-hidden text-foreground"
+      >
+        <Background />
+        <div className="relative z-20 h-full w-full">
+          {!(showGreeting || showMainAppFromStore) && (
+            <button
+              type="button"
+              className="h-full w-full cursor-pointer border-0 bg-transparent p-0"
+              onClick={handleClick}
+              onKeyDown={(e) => e.key === "Enter" && handleClick()}
+            >
+              <RobotFace
+                isDisappearing={isDisappearing}
+                skipExitAnimation={isFromIdleTimeout}
+              />
+            </button>
+          )}
+          <AnimatePresence mode="wait">
+            {showGreeting && (
+              <OrbitGreeting onComplete={handleGreetingComplete} />
+            )}
+          </AnimatePresence>
+          {!showGreeting && showMainAppFromStore && <OrbitMain />}
+        </div>
+        <Toaster position="top-center" richColors />
+      </div>
+    );
+  }
 
 	// Tablet mode - handle all state transitions with priority order
 	return (
