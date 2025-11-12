@@ -24,6 +24,7 @@ interface CampusNavigationMapProps {
   onBack?: () => void;
   onInteractionStart?: () => void;
   onRoomSelect?: (room: Room) => void;
+  resetMapPosition?: boolean;
 }
 
 
@@ -34,7 +35,8 @@ export default function CampusNavigationMap({
   showBackButton = false,
   onBack,
   onInteractionStart,
-  onRoomSelect
+  onRoomSelect,
+  resetMapPosition = false
 }: CampusNavigationMapProps = {}) {
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null)
   const [startRoom, setStartRoom] = useState<Room | null>(null)
@@ -109,6 +111,21 @@ export default function CampusNavigationMap({
       }
     }
   }, [initialDestination, mobileStartLocation])
+
+  // Reset map position when sidebar is reopened
+  useEffect(() => {
+    if (resetMapPosition) {
+      const width = window.innerWidth
+      if (width < 640) {
+        setZoom(0.85)
+      } else if (width < 1024) {
+        setZoom(0.9)
+      } else {
+        setZoom(1)
+      }
+      setPan({ x: 0, y: 0 })
+    }
+  }, [resetMapPosition])
 
   const handleRoomClick = (room: Room) => {
     if (room.type === "corridor" || room.type === "outdoor") return

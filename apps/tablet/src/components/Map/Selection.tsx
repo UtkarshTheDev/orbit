@@ -39,8 +39,22 @@ export function LocationPicker() {
 	>(null);
 
 	const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+	const [shouldResetMap, setShouldResetMap] = useState(false);
+	
 	const handleMapInteraction = () =>
 		!isSidebarCollapsed && setIsSidebarCollapsed(true);
+		
+	const handleToggleSidebar = () => {
+		if (isSidebarCollapsed) {
+			// When reopening sidebar, trigger map reset
+			setShouldResetMap(true);
+			setIsSidebarCollapsed(false);
+			// Reset the trigger after a brief delay
+			setTimeout(() => setShouldResetMap(false), 100);
+		} else {
+			setIsSidebarCollapsed(true);
+		}
+	};
 
 	const handleMapRoomSelect = (room: Room) => {
 		const location = CAMPUS_LOCATIONS.find((loc) => loc.id === room.id);
@@ -159,14 +173,15 @@ export function LocationPicker() {
 						initialDestination={navigationDestination}
 						onInteractionStart={handleMapInteraction}
 						onRoomSelect={handleMapRoomSelect}
+						resetMapPosition={shouldResetMap}
 					/>
 					
 					{/* Floating Controls - Only shown when sidebar is collapsed */}
 					{isSidebarCollapsed && (
-						<div className="absolute left-6 top-6 z-20 flex flex-col gap-4">
+						<div className="absolute right-6 top-6 z-20 flex flex-col gap-4 items-end">
 							{/* Toggle Sidebar Button */}
 							<Button
-								onClick={() => setIsSidebarCollapsed(false)}
+								onClick={handleToggleSidebar}
 								variant="default"
 								className="bg-white/98 hover:bg-white text-slate-700 hover:text-slate-900 shadow-2xl backdrop-blur-md border border-slate-200/80 hover:border-slate-300 transition-all duration-300 active:scale-95 h-12 w-12 rounded-2xl group"
 								size="icon"
@@ -223,7 +238,7 @@ export function LocationPicker() {
 											</p>
 										</div>
 										<Button
-											onClick={() => setIsSidebarCollapsed(true)}
+											onClick={handleToggleSidebar}
 											variant="ghost"
 											size="icon"
 											className="-mr-4 -mt-2"
