@@ -37,6 +37,8 @@ type SessionState = {
 	setShowRobotFace: (val: boolean) => void;
 	setUserPresent: (val: boolean) => void;
 	updateActivity: () => void;
+	greetingStage: "detecting" | "greeting" | "complete" | null;
+	setGreetingStage: (val: "detecting" | "greeting" | "complete" | null) => void;
 };
 
 // Connection configuration
@@ -140,6 +142,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 	showRobotFace: true,
 	userPresent: false,
 	lastActivityTime: Date.now(),
+	greetingStage: null,
 	ws: null,
 	wsReady: false,
 	wsReconnecting: false,
@@ -329,10 +332,11 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 								showRobotFace: false,
 								userPresent: true,
 								lastActivityTime: Date.now(),
+								greetingStage: "detecting",
 							});
 						}
 						if (msg.type === "user_arrived" && get().isTablet) {
-							console.log("[Frontend] User arrived - preparing to show main app");
+							console.log("[Frontend] User arrived - ensuring greeting is shown");
 							const state = get();
 							
 							// Update activity and user presence
@@ -341,16 +345,38 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 								lastActivityTime: Date.now(),
 							});
 							
-							// If greeting is playing, it will handle transition on completion
-							// If OrbitMain is already active, do nothing (avoid re-render)
-							if (!state.showGreeting && !state.showMainApp) {
-								// Show OrbitMain directly if no greeting is playing
+							// If greeting is showing and in complete stage, transition to OrbitMain
+							if (state.showGreeting && state.greetingStage === "complete") {
+								console.log("[Frontend] Greeting complete, transitioning to OrbitMain");
 								set({
-									showMainApp: true,
 									showGreeting: false,
+									showMainApp: true,
 									showRobotFace: false,
+									greetingStage: null,
 								});
+								return;
 							}
+							
+							// If greeting is already showing but not complete, wait for completion
+							if (state.showGreeting) {
+								console.log("[Frontend] Greeting in progress, will transition when complete");
+								return;
+							}
+							
+							// If OrbitMain is already showing, do nothing (avoid re-render)
+							if (state.showMainApp) {
+								console.log("[Frontend] OrbitMain already showing, no action needed");
+								return;
+							}
+							
+							// If no greeting is showing and OrbitMain is not active, show greeting first
+							console.log("[Frontend] Starting greeting animation for direct arrival");
+							set({
+								showGreeting: true,
+								showMainApp: false,
+								showRobotFace: false,
+								greetingStage: "detecting",
+							});
 						}
 						if (msg.type === "user_leaved" && get().isTablet) {
 							console.log("[Frontend] User leaved detected");
@@ -496,5 +522,8 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 	},
 	updateActivity: () => {
 		set({ lastActivityTime: Date.now() });
+	},
+	setGreetingStage: (val) => {
+		set({ greetingStage: val });
 	},
 }));

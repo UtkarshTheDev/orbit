@@ -22,7 +22,7 @@ export default function GreetingAnimation({
 	const [currentText, setCurrentText] = useState("");
 	const [lineIndex, setLineIndex] = useState(0);
 	const [charIndex, setCharIndex] = useState(0);
-	const { isTablet } = useSessionStore();
+	const { isTablet, setGreetingStage } = useSessionStore();
 
 	const getTimeBasedGreeting = () => {
 		const hour = new Date().getHours();
@@ -46,15 +46,17 @@ export default function GreetingAnimation({
 			// Skip to complete stage immediately and play sound
 			playSound("/audio/iam.mp3");
 			setStage("complete");
+			setGreetingStage("complete");
 		}
 	};
 
 	useEffect(() => {
 		const timer = setTimeout(() => {
 			setStage("greeting");
+			setGreetingStage("greeting");
 		}, 1500);
 		return () => clearTimeout(timer);
-	}, []);
+	}, [setGreetingStage]);
 
 	useEffect(() => {
 		if (stage !== "greeting") {
@@ -79,9 +81,10 @@ export default function GreetingAnimation({
 
 		const completeTimer = setTimeout(() => {
 			setStage("complete");
+			setGreetingStage("complete");
 		}, 100);
 		return () => clearTimeout(completeTimer);
-	}, [stage, lineIndex, charIndex, greetingLines.length]);
+	}, [stage, lineIndex, charIndex, greetingLines.length, setGreetingStage]);
 
 	useEffect(() => {
 		if (stage === "complete") {
@@ -90,17 +93,11 @@ export default function GreetingAnimation({
 				playSound("/audio/iam.mp3");
 			}
 
-			// Auto-advance to next screen after audio plays (or after timeout)
-			const autoAdvanceTimer = setTimeout(() => {
-				console.log("[GreetingAnimation] Auto-advancing after complete stage");
-				onComplete();
-			}, 3000); // 3 seconds to show "I am Orbit" message
-
-			return () => {
-				clearTimeout(autoAdvanceTimer);
-			};
+			// Do NOT auto-advance - wait for user_arrived event to trigger transition
+			// The sessionStore will handle the transition when user_arrived is received
+			console.log("[GreetingAnimation] Complete stage reached - waiting for user_arrived event");
 		}
-	}, [stage, onComplete, isTablet]);
+	}, [stage, isTablet]);
 
 	return (
 		<motion.div
