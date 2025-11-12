@@ -6,6 +6,8 @@ import AudioSync from "./AudioSync";
 import Background from "../ui/Background";
 import RobotHead from "../robot/RobotHead";
 import { SystemStatus } from "../ui/SystemStatus";
+import { playSound } from "@/lib/basicAudioPlayer";
+import { useSessionStore } from "@/lib/sessionStore";
 
 type GreetingAnimationProps = {
 	onComplete: () => void;
@@ -20,6 +22,7 @@ export default function GreetingAnimation({
 	const [currentText, setCurrentText] = useState("");
 	const [lineIndex, setLineIndex] = useState(0);
 	const [charIndex, setCharIndex] = useState(0);
+	const { isTablet } = useSessionStore();
 
 	const getTimeBasedGreeting = () => {
 		const hour = new Date().getHours();
@@ -40,7 +43,8 @@ export default function GreetingAnimation({
 		if (stage === "complete") {
 			onComplete();
 		} else {
-			// Skip to complete stage immediately
+			// Skip to complete stage immediately and play sound
+			playSound("/audio/iam.mp3");
 			setStage("complete");
 		}
 	};
@@ -81,10 +85,10 @@ export default function GreetingAnimation({
 
 	useEffect(() => {
 		if (stage === "complete") {
-			const audio = new Audio("/audio/iam.mp3");
-			audio.play().catch((error) => {
-				console.error("Failed to play audio:", error);
-			});
+			// Autoplay for tablet, otherwise rely on click
+			if (isTablet) {
+				playSound("/audio/iam.mp3");
+			}
 
 			// Auto-advance to next screen after audio plays (or after timeout)
 			const autoAdvanceTimer = setTimeout(() => {
@@ -93,12 +97,10 @@ export default function GreetingAnimation({
 			}, 3000); // 3 seconds to show "I am Orbit" message
 
 			return () => {
-				audio.pause();
-				audio.currentTime = 0;
 				clearTimeout(autoAdvanceTimer);
 			};
 		}
-	}, [stage, onComplete]);
+	}, [stage, onComplete, isTablet]);
 
 	return (
 		<motion.div

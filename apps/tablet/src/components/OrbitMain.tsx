@@ -1,6 +1,6 @@
 ﻿import { motion, AnimatePresence } from "motion/react";
 import { Box, Camera, MapPin, MessageCircle, ArrowLeft } from "lucide-react";
-import { useState, useEffect} from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useSessionStore } from "@/lib/sessionStore";
 import { FeatureButton } from "./ui/FeatureButton";
@@ -11,6 +11,7 @@ import Models from "./models/Models";
 import VoiceApp from "./voice/VoiceApp";
 import Home from "./aichat/Home";
 import { LocationPicker } from "./Map";
+import { playSound } from "@/lib/basicAudioPlayer";
 
 type OrbitMainProps = {
 	skipWelcomeAudio?: boolean;
@@ -18,7 +19,12 @@ type OrbitMainProps = {
 
 export function OrbitMain({ skipWelcomeAudio = false }: OrbitMainProps) {
 	const [inputMode, setInputMode] = useState<"voice" | "text">("voice");
-	const [activeView, setActiveView] = useState<"main" | "photobooth" | "models" | "voice" | "home" | "map">("main");
+	const [
+		activeView,
+		setActiveView,
+	] = useState<"main" | "photobooth" | "models" | "voice" | "home" | "map">(
+		"main",
+	);
 	const navigate = useNavigate();
 	const isTablet = useSessionStore((s) => s.isTablet);
 
@@ -83,15 +89,7 @@ export function OrbitMain({ skipWelcomeAudio = false }: OrbitMainProps) {
 
 	useEffect(() => {
 		if (!skipWelcomeAudio) {
-			const audio = new Audio("/audio/help-you.mp3");
-			audio.play().catch((error) => {
-				console.error("Failed to play welcome audio:", error);
-			});
-
-			return () => {
-				audio.pause();
-				audio.currentTime = 0;
-			};
+			playSound("/audio/help-you.mp3");
 		}
 	}, [skipWelcomeAudio]);
 

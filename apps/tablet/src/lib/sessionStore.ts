@@ -355,6 +355,27 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 						if (msg.type === "user_leaved" && get().isTablet) {
 							console.log("[Frontend] User leaved detected");
 							set({ userPresent: false });
+
+							// Start a timer to show RobotFace after 15 seconds if no new user arrives
+							// and no other active views are present
+							setTimeout(() => {
+								const state = get();
+								if (
+									!state.userPresent &&
+									!state.photoBoothActive &&
+									!state.aiEditActive &&
+									!state.showGreeting &&
+									state.showMainApp
+								) {
+									console.log(
+										"[Frontend] 15s after user_leaved, showing RobotFace",
+									);
+									set({
+										showMainApp: false,
+										showRobotFace: true,
+									});
+								}
+							}, 15000); // 15 seconds
 						}
 					} catch {
 						// ignore non-JSON
