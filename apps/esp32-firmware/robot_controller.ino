@@ -127,7 +127,7 @@ int headMaxAngle = HEAD_MAX;
 bool headScanEnabled = true;
 bool headInvert = false;
 int headStepDeg = 2;
-unsigned long headStepDelayMs = 25;
+unsigned long headStepDelayMs = 5; // Further reduced for faster head movement
 int headRandomStepMinDeg = 15;
 int headRandomStepMaxDeg = 45;
 
@@ -341,13 +341,12 @@ void writeRightTiltServo(int angle) {
 }
 
 // Move both tilt servos simultaneously to their target angles
+// Move both tilt servos simultaneously, keeping them powered to hold position
 void moveBothTiltServos(int leftTarget, int rightTarget) {
   leftTarget = constrain(leftTarget, TILT_MIN, TILT_MAX);
   rightTarget = constrain(rightTarget, TILT_MIN, TILT_MAX);
 
-  // Attach both servos
-  tiltLeft.attach(TILT_LEFT_PIN);
-  tiltRight.attach(TILT_RIGHT_PIN);
+  // Servos are now continuously attached, so no attach/detach calls are needed here.
 
   // Calculate distances and determine maximum steps needed
   int leftDistance = abs(leftTarget - currentTiltAngle);
@@ -356,8 +355,6 @@ void moveBothTiltServos(int leftTarget, int rightTarget) {
 
   if (maxSteps == 0) {
     // Already at target positions
-    tiltLeft.detach();
-    tiltRight.detach();
     return;
   }
 
@@ -369,7 +366,7 @@ void moveBothTiltServos(int leftTarget, int rightTarget) {
 
     writeLeftTiltServo(leftPos);
     writeRightTiltServo(rightPos);
-    delay(15);
+    delay(2); // Further reduced delay for faster, yet smooth, movement under load
   }
 
   // Final positions
@@ -379,9 +376,7 @@ void moveBothTiltServos(int leftTarget, int rightTarget) {
 
   delay(100);
 
-  // Detach both servos
-  tiltLeft.detach();
-  tiltRight.detach();
+  // Servos are left attached to hold position against a load.
 }
 
 void moveTiltSmooth(int targetAngle) {
@@ -411,8 +406,7 @@ void setupTiltServos() {
 
   delay(500);
 
-  tiltLeft.detach();
-  tiltRight.detach();
+  // Servos are intentionally left attached to provide holding torque.
 }
 
 // Perform a "salute" nod when motion is first detected
@@ -448,29 +442,20 @@ void setupHeadServo() {
 
   currentHeadAngle = HEAD_NEUTRAL;
   delay(500);
-  headServo.detach();
+  // Servo is intentionally left attached to provide holding torque.
 
   Serial.print("Head servo initialized at: ");
   Serial.print(HEAD_NEUTRAL);
   Serial.println("°");
 }
 
-// FIXED: Precise servo positioning without drift
+// Precise servo positioning, keeping servo powered to hold position
 void moveHeadSmooth(int targetAngle) {
   // Enforce front viewing arc only
   targetAngle = constrain(targetAngle, headMinAngle, headMaxAngle);
 
-  // If already at target, just ensure servo is set correctly
+  // If already at target, do nothing.
   if (targetAngle == currentHeadAngle) {
-    // Still re-attach and re-set to ensure no drift
-    headServo.attach(HEAD_PIN);
-    writeHead(targetAngle);
-    delay(100);
-    headServo.detach();
-
-    Serial.print("Head: Already at ");
-    Serial.print(targetAngle);
-    Serial.println("° (re-calibrated)");
     return;
   }
 
@@ -480,7 +465,7 @@ void moveHeadSmooth(int targetAngle) {
   Serial.print(targetAngle);
   Serial.println("°");
 
-  headServo.attach(HEAD_PIN);
+  // Servo is now continuously attached, so no attach/detach calls are needed here.
 
   // CRITICAL: Always start from current known position
   writeHead(currentHeadAngle);
@@ -519,7 +504,7 @@ void moveHeadSmooth(int targetAngle) {
   currentHeadAngle = targetAngle;
 
   delay(100);
-  headServo.detach();
+  // Servo is left attached to hold position against a load.
 
   Serial.print("Head: Movement complete, now at ");
   Serial.print(currentHeadAngle);
@@ -1100,13 +1085,10 @@ void handleSerialCommands() {
       // Move left tilt servo only: TL <angle>
       int angle = command.substring(3).toInt();
       if (angle >= TILT_MIN && angle <= TILT_MAX) {
-        tiltLeft.attach(TILT_LEFT_PIN);
         Serial.print("Moving LEFT tilt to: ");
         Serial.print(angle);
         Serial.println("°");
         writeLeftTiltServo(angle);
-        delay(1000);
-        tiltLeft.detach();
       } else {
         Serial.println("Invalid angle!");
       }
@@ -1116,13 +1098,10 @@ void handleSerialCommands() {
       // Move right tilt servo only: TR <angle>
       int angle = command.substring(3).toInt();
       if (angle >= TILT_MIN && angle <= TILT_MAX) {
-        tiltRight.attach(TILT_RIGHT_PIN);
         Serial.print("Moving RIGHT tilt to: ");
         Serial.print(angle);
         Serial.println("°");
         writeRightTiltServo(angle);
-        delay(1000);
-        tiltRight.detach();
       } else {
         Serial.println("Invalid angle!");
       }
