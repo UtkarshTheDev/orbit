@@ -317,6 +317,7 @@ export function LocationPicker() {
 					<MobileStepNavigation
 						mobileStep={mobileStep}
 						currentLocation={currentLocation}
+						destinationLocation={destinationLocation}
 						onBack={handleMobileBack}
 						onChangeCurrentLocation={handleChangeCurrentLocation}
 					/>

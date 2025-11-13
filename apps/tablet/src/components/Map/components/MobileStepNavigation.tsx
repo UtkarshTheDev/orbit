@@ -7,6 +7,7 @@ import type { Location, MobileStep } from '../types';
 interface MobileStepNavigationProps {
   mobileStep: MobileStep;
   currentLocation: Location | null;
+  destinationLocation?: Location | null;
   onBack: () => void;
   onChangeCurrentLocation?: () => void;
 }
@@ -14,6 +15,7 @@ interface MobileStepNavigationProps {
 export const MobileStepNavigation: React.FC<MobileStepNavigationProps> = ({
   mobileStep,
   currentLocation,
+  destinationLocation,
   onBack,
   onChangeCurrentLocation,
 }) => {
@@ -90,8 +92,12 @@ export const MobileStepNavigation: React.FC<MobileStepNavigationProps> = ({
         {/* Connecting Line */}
         <div className="relative h-1 w-16 overflow-hidden rounded-full bg-slate-200">
           <div
-            className={`h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-700 ease-out ${
-              currentLocation ? "w-full" : "w-0"
+            className={`h-full transition-all duration-700 ease-out ${
+              destinationLocation 
+                ? "w-full bg-gradient-to-r from-green-500 to-green-600" 
+                : currentLocation 
+                  ? "w-full bg-gradient-to-r from-blue-500 to-blue-600" 
+                  : "w-0 bg-gradient-to-r from-blue-500 to-blue-600"
             }`}
           />
         </div>
@@ -102,25 +108,31 @@ export const MobileStepNavigation: React.FC<MobileStepNavigationProps> = ({
             className={`relative flex h-10 w-10 items-center justify-center rounded-full transition-all duration-500 ${
               mobileStep === "destination"
                 ? "bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/50 ring-4 ring-blue-300/50 scale-110"
-                : currentLocation
-                  ? "bg-blue-200"
-                  : "bg-slate-200"
+                : destinationLocation
+                  ? "bg-gradient-to-br from-green-500 to-green-600 shadow-lg shadow-green-500/50"
+                  : currentLocation
+                    ? "bg-blue-200"
+                    : "bg-slate-200"
             }`}
           >
-            <span
-              className={`font-orbitron text-sm font-bold ${
-                mobileStep === "destination" ? "text-white" : "text-slate-500"
-              }`}
-            >
-              2
-            </span>
+            {destinationLocation ? (
+              <CheckCircle2 className="h-5 w-5 text-white animate-in zoom-in duration-300" />
+            ) : (
+              <span
+                className={`font-orbitron text-sm font-bold ${
+                  mobileStep === "destination" ? "text-white" : "text-slate-500"
+                }`}
+              >
+                2
+              </span>
+            )}
             {mobileStep === "destination" && (
               <div className="absolute inset-0 animate-ping rounded-full bg-blue-400 opacity-75" />
             )}
           </div>
           <span
             className={`font-sans text-xs font-medium transition-colors ${
-              mobileStep === "destination" ? "text-blue-700" : "text-slate-400"
+              mobileStep === "destination" || destinationLocation ? "text-blue-700" : "text-slate-400"
             }`}
           >
             Destination
