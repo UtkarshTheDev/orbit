@@ -41,9 +41,9 @@ function MarkdownContent({ content }: { content: string }) {
 							key={`code-${index}`}
 							className="bg-muted p-3 rounded-md overflow-x-auto my-2"
 						>
-							<code className="text-sm text-foreground">
+							<code className="text-base text-foreground">
 								{codeBlockContent.join("\n")}
-							</code>
+							</code>,
 						</pre>,
 					);
 					codeBlockContent = [];
@@ -90,11 +90,10 @@ function MarkdownContent({ content }: { content: string }) {
 						codeParts.push(content.slice(lastIdx, codeMatch.index));
 					}
 					codeParts.push(
-						<code
-							key={`code-${codeMatch.index}`}
-							className="bg-muted px-1 py-0.5 rounded text-sm"
-						>
-							{codeMatch[1]}
+													<code
+														key={`code-${codeMatch.index}`}
+														className="bg-muted px-1 py-0.5 rounded text-base"
+													>							{codeMatch[1]}
 						</code>,
 					);
 					lastIdx = codeMatch.index + codeMatch[0].length;
@@ -139,7 +138,7 @@ function MarkdownContent({ content }: { content: string }) {
 		return elements;
 	};
 
-	return <div className="space-y-1 text-sm">{parseMarkdown(content)}</div>;
+	return <div className="space-y-2 text-base">{parseMarkdown(content)}</div>;
 }
 
 function AnimatedContent({ content }: { content: string }) {
@@ -309,7 +308,7 @@ export function OrbitChat({
 				</div>
 			) : (
 				<>
-					<div className="flex-1 overflow-y-auto px-6 py-8 space-y-8 md:px-10 lg:px-16">
+					<div className="flex-1 overflow-y-auto px-8 py-10 space-y-10 md:px-12 lg:px-20">
 						{messages.map((message) => {
 							const isUser = message.role === "user";
 
@@ -348,10 +347,9 @@ export function OrbitChat({
 											}`}
 										>
 											{isUser ? (
-												<p className="text-base leading-relaxed whitespace-pre-wrap">
-													{message.content}
-												</p>
-											) : message.content ? (
+																							<p className="text-lg leading-relaxed whitespace-pre-wrap">
+																								{message.content}
+																							</p>											) : message.content ? (
 												<AnimatedContent content={message.content} />
 											) : (
 												<div className="flex items-center gap-2">
@@ -411,7 +409,7 @@ export function OrbitChat({
 						<div ref={messagesEndRef} />
 					</div>
 
-					<div className="border-t border-border bg-card px-6 py-6 md:px-10 lg:px-16">
+					<div className="border-t border-border bg-card px-8 py-8 md:px-12 lg:px-20">
 						<div className="max-w-5xl mx-auto">
 							<div className="flex items-center gap-4 bg-card border-2 border-border rounded-2xl px-4 py-2 hover:border-primary/40 transition-all duration-300">
 								<Button
