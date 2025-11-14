@@ -1,355 +1,267 @@
 /*
- * MINIMAL TILT SERVO CONTROLLER
- * 
- * Essential commands only:
- * - L <angle>         : Move left servo to angle (0-180)
- * - R <angle>         : Move right servo to angle (0-180)
- * - BOTH <angle>      : Move both servos to same angle simultaneously
- * - OPPOSITE <deg>    : Move left CW and right CCW by degrees (simultaneous)
- * - INVERTL <on|off>  : Invert left servo direction
- * - INVERTR <on|off>  : Invert right servo direction
- * - SWEEP             : Test sweep 0° → 180° → 0°
- * - STATUS            : Show current positions
+ * ADVANCED DUAL-SERVO TILT CONTROLLER FOR ESP32
+ *
+ * Description:
+ * This script provides a robust debugging and testing environment for a dual-servo
+ * tilt mechanism on an ESP32. It is optimized for handling significant, off-center
+ * loads by implementing smooth, ramped movement and command staggering to prevent
+ * mechanical stress and electrical instability.
+ *
+ * Key Features for Load Handling:
+ * 1.  **PWM Position Ramping:** Moves servos in small, controlled steps instead of
+ *     jumping to the target. This avoids sudden torque spikes that can stall servos.
+ * 2.  **Command Staggering:** Introduces a tiny delay between commanding the two
+ *     servos, smoothing out the peak current draw on the power supply.
+ * 3.  **Holding Torque:** Servos remain attached (`attached()`) at all times after
+ *     setup to continuously provide torque, holding the platform steady against the load.
+ *
+ * Hardware Setup (ESP32):
+ * - Servo 1 (Left):  Connect signal wire to Pin 19.
+ * - Servo 2 (Right): Connect signal wire to Pin 21.
+ * - Power: Connect BOTH servos to a strong external 5V, 3A+ power supply.
+ * - Ground: Ensure a common ground between the ESP32, servos, and power supply.
+ * - DO NOT power the servos from the ESP32's 3.3V or 5V pins.
+ *
+ * Serial Commands (send via Serial Monitor at 115200 baud):
+ * - HELP          - Shows this command list.
+ * - T <angle>     - Ramped move of both servos to a target angle (e.g., "T 120").
+ * - J <angle>     - Instant "jump" move of both servos (e.g., "J 45").
+ * - TL <angle>    - Move only the LEFT servo.
+ * - TR <angle>    - Move only the RIGHT servo.
+ * - INVERTL ON/OFF- Set inversion for the LEFT servo.
+ * - INVERTR ON/OFF- Set inversion for the RIGHT servo.
+ * - SWEEP         - Perform a slow, continuous sweep from min to max angle.
+ * - CENTER        - Move both servos to the neutral position (90 degrees).
+ * - STATUS        - Print the current angle and inversion status of both servos.
  */
 
 #include <ESP32Servo.h>
 
-// Pin definitions
+// ============================================
+// PIN & ANGLE CONFIGURATION
+// ============================================
 #define TILT_LEFT_PIN 19
 #define TILT_RIGHT_PIN 21
 #define LED_PIN 2
 
-// Servo objects
-Servo tiltLeft;
-Servo tiltRight;
+#define TILT_MIN 60
+#define TILT_MAX 120
+#define TILT_NEUTRAL 90
 
-// Current positions
-int currentLeftAngle = 90;
-int currentRightAngle = 90;
+// ============================================
+// SERVO MANAGEMENT STRUCT
+// ============================================
+struct ServoMotion {
+  Servo servo;
+  int currentAngle;
+  bool invert = false;
 
-// Opposite mounting compensation
-bool leftServoInvert = false;   // Set to true if left servo mounted opposite
-bool rightServoInvert = true;   // Set to true if right servo mounted opposite
+  void attach(int pin) {
+    servo.attach(pin);
+  }
 
-// Function to write angle with inversion support
-void writeLeftServo(int angle) {
-  int physicalAngle = leftServoInvert ? (180 - angle) : angle;
-  tiltLeft.write(physicalAngle);
-}
+  void write(int angle) {
+    int physicalAngle = invert ? (180 - angle) : angle;
+    physicalAngle = constrain(physicalAngle, 0, 180);
+    servo.write(physicalAngle);
+    currentAngle = angle; // Store the logical angle
+  }
+};
 
-void writeRightServo(int angle) {
-  int physicalAngle = rightServoInvert ? (180 - angle) : angle;
-  tiltRight.write(physicalAngle);
-}
+ServoMotion tiltLeft;
+ServoMotion tiltRight;
 
+// ============================================
+// SETUP
+// ============================================
 void setup() {
   Serial.begin(115200);
-  
-  Serial.println("\n=== MINIMAL TILT SERVO CONTROLLER ===");
-  Serial.println("Commands: L <angle>, R <angle>, BOTH <angle>");
-  Serial.println("          OPPOSITE <deg>, INVERTL/INVERTR <on|off>");
-  Serial.println("          SWEEP, STATUS");
-  
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, HIGH);
-  
-  // Initialize servos
+
+  Serial.println("\nAdvanced Dual-Servo Tilt Test (ESP32)");
+  Serial.println("--------------------------------------");
+
+  // --- Attach Servos ---
   tiltLeft.attach(TILT_LEFT_PIN);
   tiltRight.attach(TILT_RIGHT_PIN);
-  
-  // Move to neutral
-  writeLeftServo(90);
-  writeRightServo(90);
-  delay(1000);
-  
-  tiltLeft.detach();
-  tiltRight.detach();
-  
-  Serial.println("Ready! Type commands:");
-  showStatus();
+
+  // --- Set Initial Inversion ---
+  // One servo is typically mounted opposite the other.
+  tiltLeft.invert = false;
+  tiltRight.invert = true;
+
+  // --- Move to Neutral Position ---
+  Serial.println("Moving to neutral position...");
+  tiltLeft.write(TILT_NEUTRAL);
+  tiltRight.write(TILT_NEUTRAL);
+  delay(500);
+
+  // Servos are now attached and will hold their position.
+  printHelp();
+  printStatus();
 }
 
+// ============================================
+// MAIN LOOP - COMMAND HANDLER
+// ============================================
 void loop() {
-  handleSerialCommands();
-  delay(10);
-}
-
-void handleSerialCommands() {
   if (Serial.available() > 0) {
     String command = Serial.readStringUntil('\n');
     command.trim();
     command.toUpperCase();
-    
-    if (command.startsWith("L ")) {
-      // Move left servo
+
+    Serial.print(">> CMD: ");
+    Serial.println(command);
+
+    // --- PARSE AND EXECUTE ---
+    if (command.startsWith("T ")) {
       int angle = command.substring(2).toInt();
-      if (angle >= 0 && angle <= 180) {
-        moveLeftServo(angle);
-        Serial.println("✓ Left servo moved");
-      } else {
-        Serial.println("❌ Invalid angle! Use 0-180");
-      }
-    }
-    
-    else if (command.startsWith("R ")) {
-      // Move right servo
+      rampMoveTilt(angle);
+    } else if (command.startsWith("J ")) {
       int angle = command.substring(2).toInt();
-      if (angle >= 0 && angle <= 180) {
-        moveRightServo(angle);
-        Serial.println("✓ Right servo moved");
-      } else {
-        Serial.println("❌ Invalid angle! Use 0-180");
-      }
-    }
-    
-    else if (command.startsWith("BOTH ")) {
-      // Move both servos to same angle simultaneously
-      int angle = command.substring(5).toInt();
-      if (angle >= 0 && angle <= 180) {
-        Serial.print("Moving BOTH servos to: ");
-        Serial.print(angle);
-        Serial.println("°");
-        
-        moveBothServos(angle, angle);
-        Serial.println("✓ Both servos moved");
-      } else {
-        Serial.println("❌ Invalid angle! Use 0-180");
-      }
-    }
-    
-    else if (command.startsWith("OPPOSITE ")) {
-      // Move left CW and right CCW simultaneously
-      int degrees = command.substring(9).toInt();
-      if (degrees > 0 && degrees <= 90) {
-        int newLeft = constrain(currentLeftAngle + degrees, 0, 180);
-        int newRight = constrain(currentRightAngle - degrees, 0, 180);
-        
-        Serial.print("OPPOSITE: Left +");
-        Serial.print(degrees);
-        Serial.print("° → ");
-        Serial.print(newLeft);
-        Serial.print("°, Right -");
-        Serial.print(degrees);
-        Serial.print("° → ");
-        Serial.print(newRight);
-        Serial.println("°");
-        
-        // Move both servos simultaneously
-        moveBothServos(newLeft, newRight);
-        Serial.println("✓ Opposite movement complete");
-      } else {
-        Serial.println("❌ Invalid degrees! Use 1-90");
-      }
-    }
-    
-    else if (command.startsWith("INVERTL ")) {
+      moveInstant(angle);
+    } else if (command.startsWith("TL ")) {
+      int angle = command.substring(3).toInt();
+      tiltLeft.write(constrain(angle, TILT_MIN, TILT_MAX));
+    } else if (command.startsWith("TR ")) {
+      int angle = command.substring(3).toInt();
+      tiltRight.write(constrain(angle, TILT_MIN, TILT_MAX));
+    } else if (command.startsWith("INVERTL ")) {
       String param = command.substring(8);
-      if (param == "ON") {
-        leftServoInvert = true;
-        Serial.println("Left servo inversion: ENABLED");
-      } else if (param == "OFF") {
-        leftServoInvert = false;
-        Serial.println("Left servo inversion: DISABLED");
-      } else {
-        Serial.println("Usage: INVERTL ON or INVERTL OFF");
-      }
-    }
-    
-    else if (command.startsWith("INVERTR ")) {
+      tiltLeft.invert = (param == "ON");
+      Serial.print("Left servo inversion set to: ");
+      Serial.println(tiltLeft.invert ? "ON" : "OFF");
+    } else if (command.startsWith("INVERTR ")) {
       String param = command.substring(8);
-      if (param == "ON") {
-        rightServoInvert = true;
-        Serial.println("Right servo inversion: ENABLED");
-      } else if (param == "OFF") {
-        rightServoInvert = false;
-        Serial.println("Right servo inversion: DISABLED");
-      } else {
-        Serial.println("Usage: INVERTR ON or INVERTR OFF");
-      }
-    }
-    
-    else if (command == "SWEEP") {
-      runSweepTest();
-    }
-    
-    else if (command == "STATUS") {
-      showStatus();
-    }
-    
-    else if (command.length() > 0) {
-      Serial.println("❌ Unknown command");
-      Serial.println("Available: L <angle>, R <angle>, BOTH <angle>");
-      Serial.println("           OPPOSITE <deg>, INVERTL/INVERTR <on|off>");
-      Serial.println("           SWEEP, STATUS");
+      tiltRight.invert = (param == "ON");
+      Serial.print("Right servo inversion set to: ");
+      Serial.println(tiltRight.invert ? "ON" : "OFF");
+    } else if (command == "SWEEP") {
+      performSweep();
+    } else if (command == "CENTER") {
+      rampMoveTilt(TILT_NEUTRAL);
+    } else if (command == "STATUS") {
+      printStatus();
+    } else if (command == "HELP") {
+      printHelp();
+    } else if (command.length() > 0) {
+      Serial.println("Unknown command. Type HELP for a list.");
     }
   }
+  delay(10); // Small delay to prevent busy-looping
 }
 
-void moveLeftServo(int targetAngle) {
-  targetAngle = constrain(targetAngle, 0, 180);
-  
-  tiltLeft.attach(TILT_LEFT_PIN);
-  
-  Serial.print("Left: ");
-  Serial.print(currentLeftAngle);
-  Serial.print("° → ");
+// ============================================
+// MOVEMENT FUNCTIONS
+// ============================================
+
+/**
+ * @brief Moves both servos to a target angle with smooth ramping and staggering.
+ * @param targetAngle The logical angle to move to.
+ */
+void rampMoveTilt(int targetAngle) {
+  targetAngle = constrain(targetAngle, TILT_MIN, TILT_MAX);
+  Serial.print("Ramping move to ");
   Serial.print(targetAngle);
-  Serial.println("°");
-  
-  // Smooth movement
-  int step = (targetAngle > currentLeftAngle) ? 1 : -1;
-  for (int angle = currentLeftAngle; angle != targetAngle; angle += step) {
-    writeLeftServo(angle);
-    delay(15);
+  Serial.println(" degrees...");
+
+  // Use the left servo's angle as the logical master angle
+  int startAngle = tiltLeft.currentAngle;
+  int step = (targetAngle > startAngle) ? 1 : -1;
+
+  int rampDelayMs = 30;    // Delay between each degree of movement
+  int staggerDelayMs = 5;  // Delay between commanding each servo
+
+  for (int angle = startAngle; angle != targetAngle; angle += step) {
+    tiltLeft.write(angle);
+    delay(staggerDelayMs);
+    tiltRight.write(angle);
+    delay(rampDelayMs);
   }
-  
-  writeLeftServo(targetAngle);
-  currentLeftAngle = targetAngle;
-  delay(100);
-  
-  tiltLeft.detach();
+
+  // Ensure final position is set
+  tiltLeft.write(targetAngle);
+  delay(staggerDelayMs);
+  tiltRight.write(targetAngle);
+
+  Serial.println("Move complete.");
+  printStatus();
 }
 
-void moveRightServo(int targetAngle) {
-  targetAngle = constrain(targetAngle, 0, 180);
-  
-  tiltRight.attach(TILT_RIGHT_PIN);
-  
-  Serial.print("Right: ");
-  Serial.print(currentRightAngle);
-  Serial.print("° → ");
+/**
+ * @brief Moves both servos instantly to a target angle without ramping.
+ * @param targetAngle The logical angle to move to.
+ */
+void moveInstant(int targetAngle) {
+  targetAngle = constrain(targetAngle, TILT_MIN, TILT_MAX);
+  Serial.print("Jumping to ");
   Serial.print(targetAngle);
-  Serial.println("°");
-  
-  // Smooth movement
-  int step = (targetAngle > currentRightAngle) ? 1 : -1;
-  for (int angle = currentRightAngle; angle != targetAngle; angle += step) {
-    writeRightServo(angle);
-    delay(15);
-  }
-  
-  writeRightServo(targetAngle);
-  currentRightAngle = targetAngle;
-  delay(100);
-  
-  tiltRight.detach();
+  Serial.println(" degrees...");
+
+  tiltLeft.write(targetAngle);
+  tiltRight.write(targetAngle);
+
+  Serial.println("Move complete.");
+  printStatus();
 }
 
-// Move both servos simultaneously to their target angles
-void moveBothServos(int leftTarget, int rightTarget) {
-  leftTarget = constrain(leftTarget, 0, 180);
-  rightTarget = constrain(rightTarget, 0, 180);
-  
-  // Attach both servos
-  tiltLeft.attach(TILT_LEFT_PIN);
-  tiltRight.attach(TILT_RIGHT_PIN);
-  
-  Serial.print("Left: ");
-  Serial.print(currentLeftAngle);
-  Serial.print("° → ");
-  Serial.print(leftTarget);
-  Serial.print("°, Right: ");
-  Serial.print(currentRightAngle);
-  Serial.print("° → ");
-  Serial.print(rightTarget);
-  Serial.println("°");
-  
-  // Calculate distances and determine maximum steps needed
-  int leftDistance = abs(leftTarget - currentLeftAngle);
-  int rightDistance = abs(rightTarget - currentRightAngle);
-  int maxSteps = max(leftDistance, rightDistance);
-  
-  if (maxSteps == 0) {
-    // Already at target positions
-    tiltLeft.detach();
-    tiltRight.detach();
-    return;
-  }
-  
-  // Move both servos simultaneously
-  for (int step = 0; step <= maxSteps; step++) {
-    // Calculate current positions for both servos
-    int leftPos = currentLeftAngle + ((leftTarget - currentLeftAngle) * step) / maxSteps;
-    int rightPos = currentRightAngle + ((rightTarget - currentRightAngle) * step) / maxSteps;
-    
-    writeLeftServo(leftPos);
-    writeRightServo(rightPos);
-    delay(15);
-  }
-  
-  // Final positions
-  writeLeftServo(leftTarget);
-  writeRightServo(rightTarget);
-  currentLeftAngle = leftTarget;
-  currentRightAngle = rightTarget;
-  
-  delay(100);
-  
-  // Detach both servos
-  tiltLeft.detach();
-  tiltRight.detach();
+/**
+ * @brief Performs a full sweep from TILT_MIN to TILT_MAX and back.
+ */
+void performSweep() {
+  Serial.println("Performing sweep...");
+  delay(500);
+
+  // Go to max
+  rampMoveTilt(TILT_MAX);
+  delay(1000);
+
+  // Go to min
+  rampMoveTilt(TILT_MIN);
+  delay(1000);
+
+  // Return to center
+  rampMoveTilt(TILT_NEUTRAL);
+  Serial.println("Sweep complete.");
 }
 
-void runSweepTest() {
-  Serial.println("=== SWEEP TEST ===");
-  
-  tiltLeft.attach(TILT_LEFT_PIN);
-  tiltRight.attach(TILT_RIGHT_PIN);
-  
-  // Sweep 0° → 180° (both servos together)
-  for (int angle = 0; angle <= 180; angle += 10) {
-    Serial.print("Position: ");
-    Serial.println(angle);
-    
-    writeLeftServo(angle);
-    writeRightServo(angle);
-    currentLeftAngle = angle;
-    currentRightAngle = angle;
-    
-    delay(500);
-  }
-  
-  // Sweep 180° → 0° (both servos together)
-  for (int angle = 180; angle >= 0; angle -= 10) {
-    Serial.print("Position: ");
-    Serial.println(angle);
-    
-    writeLeftServo(angle);
-    writeRightServo(angle);
-    currentLeftAngle = angle;
-    currentRightAngle = angle;
-    
-    delay(500);
-  }
-  
-  // Return to neutral
-  writeLeftServo(90);
-  writeRightServo(90);
-  currentLeftAngle = 90;
-  currentRightAngle = 90;
-  
-  tiltLeft.detach();
-  tiltRight.detach();
-  
-  Serial.println("✓ Sweep test complete");
+
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
+
+/**
+ * @brief Prints the current status of both servos.
+ */
+void printStatus() {
+  Serial.println("\n--- STATUS ---");
+  Serial.print("Left Servo:  Angle=");
+  Serial.print(tiltLeft.currentAngle);
+  Serial.print(", Invert=");
+  Serial.println(tiltLeft.invert ? "ON" : "OFF");
+
+  Serial.print("Right Servo: Angle=");
+  Serial.print(tiltRight.currentAngle);
+  Serial.print(", Invert=");
+  Serial.println(tiltRight.invert ? "ON" : "OFF");
+  Serial.println("--------------");
 }
 
-void showStatus() {
-  Serial.println("┌─────────────────────────────┐");
-  Serial.println("│       CURRENT STATUS        │");
-  Serial.println("├─────────────────────────────┤");
-  
-  Serial.print("│ Left:  ");
-  Serial.print(currentLeftAngle);
-  Serial.print("° (");
-  Serial.print(leftServoInvert ? "INVERTED" : "NORMAL");
-  Serial.println(")   │");
-  
-  Serial.print("│ Right: ");
-  Serial.print(currentRightAngle);
-  Serial.print("° (");
-  Serial.print(rightServoInvert ? "INVERTED" : "NORMAL");
-  Serial.println(")  │");
-  
-  Serial.println("└─────────────────────────────┘");
+/**
+ * @brief Prints the help menu with all available commands.
+ */
+void printHelp() {
+  Serial.println("\n--- Serial Commands (115200 baud) ---");
+  Serial.println("  HELP          - Show this command list.");
+  Serial.println("  T <angle>     - Ramped move (e.g., 'T 120').");
+  Serial.println("  J <angle>     - Instant move (e.g., 'J 45').");
+  Serial.println("  TL <angle>    - Move LEFT servo only.");
+  Serial.println("  TR <angle>    - Move RIGHT servo only.");
+  Serial.println("  INVERTL ON/OFF- Invert LEFT servo.");
+  Serial.println("  INVERTR ON/OFF- Invert RIGHT servo.");
+  Serial.println("  SWEEP         - Perform a full range sweep.");
+  Serial.println("  CENTER        - Move to neutral (90).");
+  Serial.println("  STATUS        - Show current servo status.");
+  Serial.println("------------------------------------");
 }
