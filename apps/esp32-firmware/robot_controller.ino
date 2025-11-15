@@ -15,9 +15,23 @@
 #include <WebSocketsClient.h>
 #include <ArduinoJson.h>
 
-// ============================================ 
+// ============================================
+// POWER & GROUND CONFIGURATION NOTES
+// ============================================
+// For best electrical stability with multiple servos:
+// 1.  **Common Ground:** Ensure the ESP32, servos, and the 5V 5A power supply
+//     all share a single, common ground connection.
+// 2.  **Stable Power:** Power the servos directly from the 5V 5A supply, NOT
+//     from the ESP32's 5V pin, which cannot handle the high current draw.
+// 3.  **Decoupling Capacitors:** Place a large electrolytic capacitor (e.g., 470µF to 1000µF)
+//     across the main 5V and GND power rails, as close to the servos as possible.
+//     This capacitor acts as a small reservoir, smoothing out voltage dips that
+//     occur when the servos start moving.
+// ============================================
+
+// ============================================
 // WiFi & WebSocket Configuration
-// ============================================ 
+// ============================================
 const char* ssid = "Computerlabjio";         // Replace with your WiFi SSID
 const char* password = "pass@0009"; // Replace with your WiFi password
 
@@ -25,16 +39,16 @@ const char* ws_host = "orbit-194b.onrender.com"; // Replace with your Render bac
 const int ws_port = 443;                           // Use 443 for secure WebSocket (wss://)
 const char* ws_path = "/ws";                       // WebSocket endpoint path
 
-// ============================================ 
+// ============================================
 // ULTRASONIC MODE CONFIGURATION
-// ============================================ 
+// ============================================
 // Set to 'true' if you have voltage divider installed
 // Set to 'false' to use simulated distance (for testing without resistors)
 #define ULTRASONIC_REAL_MODE true  // CHANGE TO false IF NO RESISTORS
 
-// ============================================ 
+// ============================================
 // PIN DEFINITIONS
-// ============================================ 
+// ============================================
 #define PIR_PIN 14
 #define TILT_LEFT_PIN 19
 #define TILT_RIGHT_PIN 21
@@ -45,9 +59,9 @@ const char* ws_path = "/ws";                       // WebSocket endpoint path
 #define TRIG_PIN 13
 #define ECHO_PIN 18
 
-// ============================================ 
+// ============================================
 // SERVO ANGLE DEFINITIONS
-// ============================================ 
+// ============================================
 // Tilt servo angles
 #define TILT_MIN 60
 #define TILT_MAX 120
@@ -85,16 +99,40 @@ const char* ws_path = "/ws";                       // WebSocket endpoint path
 #define PIR_READ_INTERVAL 50        // Read PIR every 50ms (20Hz)
 #define PIR_DEBOUNCE_MS 100         // Debounce PIR for 100ms
 
-// ============================================ 
-// SERVO OBJECTS
-// ============================================ 
-Servo tiltLeft;
-Servo tiltRight;
-Servo headServo;
+// ============================================
+// SERVO MANAGEMENT
+// ============================================
+// Struct to manage servo state and provide a consistent interface
+struct ServoMotion {
+  Servo servo;
+  int currentAngle;
+  bool invert = false;
 
-// ============================================ 
+  void attach(int pin) {
+    servo.attach(pin);
+  }
+
+  void write(int angle) {
+    int physicalAngle = invert ? (180 - angle) : angle;
+    physicalAngle = constrain(physicalAngle, 0, 180);
+    servo.write(physicalAngle);
+  }
+
+  void detach() {
+    servo.detach();
+  }
+};
+
+// ============================================
+// SERVO OBJECTS
+// ============================================
+ServoMotion tiltLeft;
+ServoMotion tiltRight;
+ServoMotion headServo;
+
+// ============================================
 // WEBSOCKET & NETWORKING GLOBALS
-// ============================================ 
+// ============================================
 WebSocketsClient webSocket;
 bool isConnected = false;
 String clientId = "";
@@ -109,23 +147,18 @@ enum WsUserState
 };
 WsUserState lastSentWsState = WS_STATE_NONE;
 
-// ============================================ 
+// ============================================
 // GLOBAL VARIABLES
-// ============================================ 
+// ============================================
 
 // Current positions
 int currentTiltAngle = TILT_NEUTRAL;
-int currentHeadAngle = HEAD_NEUTRAL;
-
-// Opposite mounting compensation for tilt servos
-bool leftTiltServoInvert = false;   // Set to true if left tilt servo mounted opposite
-bool rightTiltServoInvert = true;   // Set to true if right tilt servo mounted opposite
+// headServo.currentAngle is used for head position
 
 // Runtime-adjustable head limits and behavior
 int headMinAngle = HEAD_MIN;
 int headMaxAngle = HEAD_MAX;
 bool headScanEnabled = true;
-bool headInvert = false;
 int headStepDeg = 2;
 unsigned long headStepDelayMs = 5; // Further reduced for faster head movement
 int headRandomStepMinDeg = 15;
@@ -182,17 +215,15 @@ float distanceBuffer[MEDIAN_SAMPLES];
 int bufferIndex = 0;
 bool bufferFilled = false;  // Track if buffer has enough samples
 
-// ============================================ 
+// ============================================
 // FUNCTION DECLARATIONS
-// ============================================ 
+// ============================================
 void handleSerialCommands();
 void printStatus();
 void calibrateHeadPosition();
-void moveBothTiltServos(int leftTarget, int rightTarget);
-void moveTiltSmooth(int targetAngle);
+void rampMoveTilt(int targetAngle);
 void setupTiltServos();
 void setupHeadServo();
-void writeHead(int logicalAngle);
 void moveHeadSmooth(int targetAngle);
 void loopPIR(unsigned long currentTime);
 void loopDistanceMeasurement(unsigned long currentTime);
@@ -204,9 +235,9 @@ float getMedianDistance();
 void handleWebSocketMessage(const char *message);
 void performSalute();
 
-// ============================================ 
+// ============================================
 // WEBSOCKET FUNCTIONS
-// ============================================ 
+// ============================================
 
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
   switch(type) {
@@ -321,65 +352,35 @@ void sendWsUserState(WsUserState state, float distance)
                 distance);
 }
 
-// ============================================ 
+// ============================================
 // TILT SERVO FUNCTIONS
-// ============================================ 
+// ============================================
 
-// Function to write tilt angle with inversion support and safety checks
-void writeLeftTiltServo(int angle) {
-  angle = constrain(angle, 0, 180);
-  int physicalAngle = leftTiltServoInvert ? (180 - angle) : angle;
-  physicalAngle = constrain(physicalAngle, 0, 180);
-  tiltLeft.write(physicalAngle);
-}
-
-void writeRightTiltServo(int angle) {
-  angle = constrain(angle, 0, 180);
-  int physicalAngle = rightTiltServoInvert ? (180 - angle) : angle;
-  physicalAngle = constrain(physicalAngle, 0, 180);
-  tiltRight.write(physicalAngle);
-}
-
-// Move both tilt servos simultaneously to their target angles
-// Move both tilt servos simultaneously, keeping them powered to hold position
-void moveBothTiltServos(int leftTarget, int rightTarget) {
-  leftTarget = constrain(leftTarget, TILT_MIN, TILT_MAX);
-  rightTarget = constrain(rightTarget, TILT_MIN, TILT_MAX);
-
-  // Servos are now continuously attached, so no attach/detach calls are needed here.
-
-  // Calculate distances and determine maximum steps needed
-  int leftDistance = abs(leftTarget - currentTiltAngle);
-  int rightDistance = abs(rightTarget - currentTiltAngle);
-  int maxSteps = max(leftDistance, rightDistance);
-
-  if (maxSteps == 0) {
-    // Already at target positions
-    return;
-  }
-
-  // Move both servos simultaneously
-  for (int step = 0; step <= maxSteps; step++) {
-    // Calculate current positions for both servos
-    int leftPos = currentTiltAngle + ((leftTarget - currentTiltAngle) * step) / maxSteps;
-    int rightPos = currentTiltAngle + ((rightTarget - currentTiltAngle) * step) / maxSteps;
-
-    writeLeftTiltServo(leftPos);
-    writeRightTiltServo(rightPos);
-    delay(2); // Further reduced delay for faster, yet smooth, movement under load
-  }
-
-  // Final positions
-  writeLeftTiltServo(leftTarget);
-  writeRightTiltServo(rightTarget);
-  currentTiltAngle = leftTarget; // Assuming both servos move to same logical angle
-
-  delay(100);
-
-  // Servos are left attached to hold position against a load.
-}
-
-void moveTiltSmooth(int targetAngle) {
+/*
+ * Moves the dual-servo tilt mechanism smoothly to a target angle.
+ * This function implements several strategies to handle the mechanical load:
+ *
+ * 1.  **PWM Position Ramping:** Instead of commanding the final angle directly, it moves
+ *     in small increments (e.g., 1 degree) with a delay between each step. This prevents
+ *     sudden torque spikes, reducing the risk of the servos stalling or drawing
+ *     excessive current, which is critical for the off-center load.
+ *
+ * 2.  **Synchronized Movement & Load Sharing:** Both tilt servos receive the same logical
+ *     angle commands, ensuring they move in tandem. This mechanically couples them to
+ *     share the tilt load evenly, preventing one servo from being overloaded.
+ *
+ * 3.  **Command Staggering:** A small delay (a few milliseconds) is introduced between
+ *     commanding the left and right servos within each step. This slightly offsets
+ *     their peak current draw, creating a smoother overall power demand on the 5V
+ *     supply and reducing the chance of voltage dips that could reset the ESP32.
+ *
+ * 4.  **Stall Detection (Conceptual):** True stall detection requires current sensing or
+ *     position feedback, which these servos lack. A software-based approach could
+ *     estimate if a move is taking too long. If millis() - startTime > expectedDuration,
+ *     it could pause and retry. However, the primary goal of this ramping function
+ *     is to prevent stalls from happening in the first place.
+ */
+void rampMoveTilt(int targetAngle) {
   targetAngle = constrain(targetAngle, TILT_MIN, TILT_MAX);
 
   if (targetAngle == currentTiltAngle) {
@@ -392,55 +393,73 @@ void moveTiltSmooth(int targetAngle) {
   Serial.print(targetAngle);
   Serial.println("°");
 
-  // Use the simultaneous movement function
-  moveBothTiltServos(targetAngle, targetAngle);
+  int step = (targetAngle > currentTiltAngle) ? 1 : -1;
+  int rampDelayMs = 40; // Delay between each degree of movement (30-50ms is good)
+  int staggerDelayMs = 5; // Delay between commanding each servo (a few ms)
+
+  for (int angle = currentTiltAngle; angle != targetAngle; angle += step) {
+    // Command the first servo
+    tiltLeft.write(angle);
+    // Stagger the command to the second servo
+    delay(staggerDelayMs);
+    // Command the second servo
+    tiltRight.write(angle);
+    // Wait for the step to complete
+    delay(rampDelayMs);
+  }
+
+  // Ensure final position is set accurately for both
+  tiltLeft.write(targetAngle);
+  delay(staggerDelayMs);
+  tiltRight.write(targetAngle);
+
+  currentTiltAngle = targetAngle;
+  delay(100); // Small delay for servos to settle
 }
 
 void setupTiltServos() {
+  // Configure servo properties based on physical mounting
+  tiltLeft.invert = false;   // Set to true if left tilt servo mounted opposite
+  tiltRight.invert = true;  // Set to true if right tilt servo mounted opposite
+
   tiltLeft.attach(TILT_LEFT_PIN);
   tiltRight.attach(TILT_RIGHT_PIN);
 
-  writeLeftTiltServo(TILT_NEUTRAL);
-  writeRightTiltServo(TILT_NEUTRAL);
+  tiltLeft.write(TILT_NEUTRAL);
+  tiltRight.write(TILT_NEUTRAL);
   currentTiltAngle = TILT_NEUTRAL;
 
   delay(500);
 
-  // Servos are intentionally left attached to provide holding torque.
+  // Servos are intentionally left attached to provide holding torque against the load.
 }
 
 // Perform a "salute" nod when motion is first detected
 void performSalute() {
   Serial.println("Performing salute nod...");
-  moveTiltSmooth(TILT_SALUTE);
+  rampMoveTilt(TILT_SALUTE);
   delay(1500); // Wait 1.5 seconds
-  moveTiltSmooth(TILT_NEUTRAL);
+  rampMoveTilt(TILT_NEUTRAL);
   Serial.println("Salute complete.");
 }
 
-// ============================================ 
+// ============================================
 // HEAD SERVO FUNCTIONS
-// ============================================ 
-
-// Helper to write head angle, applying inversion if enabled
-void writeHead(int logicalAngle) {
-  int physical = headInvert ? (180 - logicalAngle) : logicalAngle;
-  headServo.write(physical);
-}
+// ============================================
 
 void setupHeadServo() {
   Serial.println("Initializing head servo...");
 
+  headServo.invert = false; // Set to true if head servo is mounted inverted
   headServo.attach(HEAD_PIN);
 
   // Multi-step initialization for precise positioning
   for (int i = 0; i < 3; i++) {
-    int physical = headInvert ? (180 - HEAD_NEUTRAL) : HEAD_NEUTRAL;
-    headServo.write(physical);
+    headServo.write(HEAD_NEUTRAL);
     delay(200);
   }
 
-  currentHeadAngle = HEAD_NEUTRAL;
+  headServo.currentAngle = HEAD_NEUTRAL;
   delay(500);
   // Servo is intentionally left attached to provide holding torque.
 
@@ -455,12 +474,12 @@ void moveHeadSmooth(int targetAngle) {
   targetAngle = constrain(targetAngle, headMinAngle, headMaxAngle);
 
   // If already at target, do nothing.
-  if (targetAngle == currentHeadAngle) {
+  if (targetAngle == headServo.currentAngle) {
     return;
   }
 
   Serial.print("Head: ");
-  Serial.print(currentHeadAngle);
+  Serial.print(headServo.currentAngle);
   Serial.print("° → ");
   Serial.print(targetAngle);
   Serial.println("°");
@@ -468,19 +487,19 @@ void moveHeadSmooth(int targetAngle) {
   // Servo is now continuously attached, so no attach/detach calls are needed here.
 
   // CRITICAL: Always start from current known position
-  writeHead(currentHeadAngle);
+  headServo.write(headServo.currentAngle);
   delay(50);
 
   // Calculate movement direction and distance
-  int distance = abs(targetAngle - currentHeadAngle);
-  int direction = (targetAngle > currentHeadAngle) ? 1 : -1;
+  int distance = abs(targetAngle - headServo.currentAngle);
+  int direction = (targetAngle > headServo.currentAngle) ? 1 : -1;
 
   // Use smaller steps for better control
   int stepSize = min(abs(headStepDeg), 2);
   if (stepSize < 1) stepSize = 1;
 
   // Move step by step
-  int currentPos = currentHeadAngle;
+  int currentPos = headServo.currentAngle;
   while (abs(targetAngle - currentPos) > 0) {
     if (abs(targetAngle - currentPos) < stepSize) {
       // Final step - go directly to target
@@ -489,25 +508,25 @@ void moveHeadSmooth(int targetAngle) {
       currentPos += direction * stepSize;
     }
 
-    writeHead(currentPos);
+    headServo.write(currentPos);
     delay(headStepDelayMs);
   }
 
   // CRITICAL: Final position setting with multiple attempts
-  writeHead(targetAngle);
+  headServo.write(targetAngle);
   delay(100);
-  writeHead(targetAngle);
+  headServo.write(targetAngle);
   delay(100);
-  writeHead(targetAngle);
+  headServo.write(targetAngle);
 
   // Update tracked position
-  currentHeadAngle = targetAngle;
+  headServo.currentAngle = targetAngle;
 
   delay(100);
   // Servo is left attached to hold position against a load.
 
   Serial.print("Head: Movement complete, now at ");
-  Serial.print(currentHeadAngle);
+  Serial.print(headServo.currentAngle);
   Serial.println("°");
 }
 
@@ -519,12 +538,12 @@ void calibrateHeadPosition() {
 
   // Move to center position multiple times
   for (int i = 0; i < 3; i++) {
-    writeHead(HEAD_NEUTRAL);
+    headServo.write(HEAD_NEUTRAL);
     delay(200);
   }
 
   // Set tracked position
-  currentHeadAngle = HEAD_NEUTRAL;
+  headServo.currentAngle = HEAD_NEUTRAL;
 
   delay(500);
   headServo.detach();
@@ -534,9 +553,9 @@ void calibrateHeadPosition() {
   Serial.println("°");
 }
 
-// ============================================ 
+// ============================================
 // MAIN SETUP
-// ============================================ 
+// ============================================
 void setup() {
   Serial.begin(115200);
   Serial.println("\n╔════════════════════════════════════════════╗");
@@ -566,7 +585,7 @@ void setup() {
   }
   bufferFilled = false;
   lastValidDistance = 999.0;
-  
+
   // Initialize PIR state
   pirState = LOW;
   lastPirState = LOW;
@@ -614,12 +633,12 @@ void setup() {
   nextHeadMoveTime = millis() + random(HEAD_MOVE_INTERVAL_MIN, HEAD_MOVE_INTERVAL_MAX);
 }
 
-// ============================================ 
+// ============================================
 // MAIN LOOP
-// ============================================ 
+// ============================================
 void loop() {
   unsigned long currentTime = millis();
-  
+
   webSocket.loop();
 
   // Handle serial commands for testing
@@ -634,31 +653,31 @@ void loop() {
   delay(10);
 }
 
-// ============================================ 
+// ============================================
 // PIR DETECTION - IMPROVED VERSION
-// ============================================ 
+// ============================================
 void loopPIR(unsigned long currentTime) {
   // Read PIR at fixed intervals for consistent polling
   if (currentTime - lastPIRReadTime < PIR_READ_INTERVAL) {
     return;
   }
   lastPIRReadTime = currentTime;
-  
+
   // Read current PIR state
   pirState = digitalRead(PIR_PIN);
-  
+
   // Detect state changes with debouncing
   if (pirState != lastPirState) {
     // Debounce: ensure state is stable
     if (currentTime - lastPirChangeTime > PIR_DEBOUNCE_MS) {
-      
+
       if (pirState == HIGH) {
         // Motion detected
         lastPIRTrigger = currentTime;
         pirHighStartTime = currentTime;
         totalMotionDetections++;
         digitalWrite(LED_PIN, HIGH);
-        
+
         // Only trigger state change and salute if coming from IDLE
         if (currentState == IDLE) {
           Serial.println("\n━━━ MOTION DETECTED ━━━");
@@ -680,14 +699,14 @@ void loopPIR(unsigned long currentTime) {
           Serial.println("━━━ MOTION CONTINUED ━━━");
           sendMotionDetected(); // Still send WebSocket event
         }
-        
+
       } else {
         // Motion ended
         unsigned long pirDuration = currentTime - pirHighStartTime;
         digitalWrite(LED_PIN, LOW);
         Serial.printf("━━━ MOTION ENDED (duration: %lu ms) ━━━\n", pirDuration);
       }
-      
+
       lastPirChangeTime = currentTime;
       lastPirState = pirState;
     }
@@ -712,9 +731,9 @@ void loopPIR(unsigned long currentTime) {
   }
 }
 
-// ============================================ 
+// ============================================
 // DISTANCE MEASUREMENT
-// ============================================ 
+// ============================================
 void loopDistanceMeasurement(unsigned long currentTime) {
 
   // Always measure distance to allow for presence detection without PIR.
@@ -733,7 +752,7 @@ void loopDistanceMeasurement(unsigned long currentTime) {
     // Add to median filter
     distanceBuffer[bufferIndex] = currentDistance;
     bufferIndex = (bufferIndex + 1) % MEDIAN_SAMPLES;
-    
+
     // Mark buffer as filled after first complete cycle
     if (bufferIndex == 0 && !bufferFilled) {
       bufferFilled = true;
@@ -867,7 +886,7 @@ float getMedianDistance() {
   }
 
   float median = sorted[MEDIAN_SAMPLES / 2];  // Get middle value
-  
+
   // Only reject 999.0 cm readings (sensor timeout/no echo)
   // All other readings are valid (person movement is real)
   if (median >= 999.0) {
@@ -877,15 +896,15 @@ float getMedianDistance() {
     }
     return 999.0;
   }
-  
+
   // Valid reading - update and return
   lastValidDistance = median;
   return median;
 }
 
-// ============================================ 
+// ============================================
 // TILT CONTROL BASED ON DISTANCE
-// ============================================ 
+// ============================================
 void loopTiltControl(unsigned long currentTime) {
   int targetTiltAngle = TILT_NEUTRAL;
   SystemState newState = currentState;
@@ -995,7 +1014,7 @@ void loopTiltControl(unsigned long currentTime) {
 
   // Move tilt servos if angle changed
   if (targetTiltAngle != currentTiltAngle) {
-    moveTiltSmooth(targetTiltAngle);
+    rampMoveTilt(targetTiltAngle);
   }
 
   // Return to IDLE after returning to neutral
@@ -1018,9 +1037,9 @@ void loopTiltControl(unsigned long currentTime) {
   }
 }
 
-// ============================================ 
+// ============================================
 // RANDOM HEAD MOVEMENT
-// ============================================ 
+// ============================================
 void loopRandomHead(unsigned long currentTime) {
 
   // Only move head when IDLE and scanning enabled
@@ -1033,7 +1052,7 @@ void loopRandomHead(unsigned long currentTime) {
     int stepMag = random(headRandomStepMinDeg, headRandomStepMaxDeg + 1);
     int dir = random(0, 2) == 0 ? -1 : 1;
 
-    int tentative = currentHeadAngle + dir * stepMag;
+    int tentative = headServo.currentAngle + dir * stepMag;
     // If out of bounds, reflect back into range
     if (tentative < headMinAngle) {
       tentative = headMinAngle + (headMinAngle - tentative);
@@ -1055,9 +1074,9 @@ void loopRandomHead(unsigned long currentTime) {
   }
 }
 
-// ============================================ 
+// ============================================
 // SERIAL COMMAND HANDLING
-// ============================================ 
+// ============================================
 void handleSerialCommands() {
   if (Serial.available() > 0) {
     String command = Serial.readStringUntil('\n');
@@ -1072,7 +1091,7 @@ void handleSerialCommands() {
         Serial.print("Moving tilt to: ");
         Serial.print(angle);
         Serial.println("°");
-        moveTiltSmooth(angle);
+        rampMoveTilt(angle);
       } else {
         Serial.print("Invalid tilt angle! Use ");
         Serial.print(TILT_MIN);
@@ -1088,7 +1107,7 @@ void handleSerialCommands() {
         Serial.print("Moving LEFT tilt to: ");
         Serial.print(angle);
         Serial.println("°");
-        writeLeftTiltServo(angle);
+        tiltLeft.write(angle);
       } else {
         Serial.println("Invalid angle!");
       }
@@ -1101,7 +1120,7 @@ void handleSerialCommands() {
         Serial.print("Moving RIGHT tilt to: ");
         Serial.print(angle);
         Serial.println("°");
-        writeRightTiltServo(angle);
+        tiltRight.write(angle);
       } else {
         Serial.println("Invalid angle!");
       }
@@ -1114,7 +1133,7 @@ void handleSerialCommands() {
         Serial.print("Moving BOTH tilt servos to: ");
         Serial.print(angle);
         Serial.println("°");
-        moveBothTiltServos(angle, angle);
+        rampMoveTilt(angle);
       } else {
         Serial.println("Invalid angle!");
       }
@@ -1124,10 +1143,10 @@ void handleSerialCommands() {
       // Invert left tilt servo: TINVERTL <on|off>
       String param = command.substring(9);
       if (param == "ON") {
-        leftTiltServoInvert = true;
+        tiltLeft.invert = true;
         Serial.println("Left tilt servo inversion: ENABLED");
       } else if (param == "OFF") {
-        leftTiltServoInvert = false;
+        tiltLeft.invert = false;
         Serial.println("Left tilt servo inversion: DISABLED");
       } else {
         Serial.println("Usage: TINVERTL ON or TINVERTL OFF");
@@ -1138,10 +1157,10 @@ void handleSerialCommands() {
       // Invert right tilt servo: TINVERTR <on|off>
       String param = command.substring(9);
       if (param == "ON") {
-        rightTiltServoInvert = true;
+        tiltRight.invert = true;
         Serial.println("Right tilt servo inversion: ENABLED");
       } else if (param == "OFF") {
-        rightTiltServoInvert = false;
+        tiltRight.invert = false;
         Serial.println("Right tilt servo inversion: DISABLED");
       } else {
         Serial.println("Usage: TINVERTR ON or TINVERTR OFF");
@@ -1235,7 +1254,7 @@ void printStatus() {
   Serial.print(" cm (Last valid: ");
   Serial.print(lastValidDistance, 1);
   Serial.println(" cm)");
-  
+
   Serial.print("Buffer Status: ");
   Serial.println(bufferFilled ? "FILLED (outlier rejection active)" : "FILLING...");
 
@@ -1244,13 +1263,13 @@ void printStatus() {
   Serial.println("°");
 
   Serial.print("Left Tilt Invert: ");
-  Serial.println(leftTiltServoInvert ? "ON" : "OFF");
+  Serial.println(tiltLeft.invert ? "ON" : "OFF");
 
   Serial.print("Right Tilt Invert: ");
-  Serial.println(rightTiltServoInvert ? "ON" : "OFF");
+  Serial.println(tiltRight.invert ? "ON" : "OFF");
 
   Serial.print("Head Angle: ");
-  Serial.print(currentHeadAngle);
+  Serial.print(headServo.currentAngle);
   Serial.println("°");
 
   Serial.print("Head Scan Enabled: ");
