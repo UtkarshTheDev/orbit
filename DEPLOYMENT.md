@@ -38,13 +38,13 @@ This guide covers deploying the Orbit application with:
 4. **Deploy**
    - Click "Create Web Service"
    - Render will automatically deploy your backend
-   - Your backend URL will be: `https://orbit-194b.onrender.com` (or similar)
+   - Your backend URL will be: `https://orbit-5awh.onrender.com` (or similar)
 
 ### Verify Backend Deployment
 
 Test the health endpoint:
 ```bash
-curl https://orbit-194b.onrender.com/health
+curl https://orbit-5awh.onrender.com/health
 ```
 
 Expected response:
@@ -77,7 +77,7 @@ Expected response:
 3. **Environment Variables**
    Add in Vercel's Environment Variables section:
    ```
-   VITE_WS_URL=wss://orbit-194b.onrender.com/ws
+   VITE_WS_URL=wss://orbit-5awh.onrender.com/ws
    ```
    
    **Note**: If not set, the app will auto-detect the WebSocket URL based on the environment.
@@ -101,7 +101,7 @@ The application uses WebSocket for real-time communication between frontend and 
 
 ### Connection Flow
 
-1. Frontend connects to: `wss://orbit-194b.onrender.com/ws`
+1. Frontend connects to: `wss://orbit-5awh.onrender.com/ws`
 2. Backend validates origin against `WS_ALLOWED_ORIGINS`
 3. Connection established with automatic reconnection on failure
 
@@ -109,7 +109,7 @@ The application uses WebSocket for real-time communication between frontend and 
 
 The frontend automatically detects the correct WebSocket URL:
 - **Development** (localhost): `ws://localhost:3001`
-- **Production** (HTTPS): `wss://orbit-194b.onrender.com/ws`
+- **Production** (HTTPS): `wss://orbit-5awh.onrender.com/ws`
 
 ### Connection Status
 
@@ -146,7 +146,7 @@ The frontend displays connection status in the top-right corner:
 
 Use browser console to test WebSocket connection:
 ```javascript
-const ws = new WebSocket('wss://orbit-194b.onrender.com/ws');
+const ws = new WebSocket('wss://orbit-5awh.onrender.com/ws');
 ws.onopen = () => console.log('Connected!');
 ws.onmessage = (e) => console.log('Message:', e.data);
 ws.onerror = (e) => console.error('Error:', e);
@@ -212,9 +212,9 @@ App runs at: `http://localhost:5173`
 
 ## Production URLs
 
-- **Backend**: https://orbit-194b.onrender.com
+- **Backend**: https://orbit-5awh.onrender.com
 - **Frontend**: https://orbit-robo.vercel.app
-- **WebSocket**: wss://orbit-194b.onrender.com/ws
+- **WebSocket**: wss://orbit-5awh.onrender.com/ws
 
 ## Support
 

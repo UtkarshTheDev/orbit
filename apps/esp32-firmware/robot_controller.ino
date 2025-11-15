@@ -35,7 +35,7 @@
 const char* ssid = "Computerlabjio";         // Replace with your WiFi SSID
 const char* password = "pass@0009"; // Replace with your WiFi password
 
-const char* ws_host = "orbit-5awh.onrender.com"; // Replace with your Render backend domain
+const char* ws_host = "orbit-3svf.onrender.com"; // Replace with your Render backend domain
 const int ws_port = 443;                           // Use 443 for secure WebSocket (wss://)
 const char* ws_path = "/ws";                       // WebSocket endpoint path
 

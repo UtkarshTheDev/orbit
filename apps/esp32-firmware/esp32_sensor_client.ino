@@ -13,7 +13,7 @@ const char* password = "YOUR_WIFI_PASSWORD";   // Replace with your WiFi passwor
 // ===========================
 // WebSocket Configuration
 // ===========================
-const char* ws_host = "orbit-5awh.onrender.com";  // Replace with your Render backend domain (without https://)
+const char* ws_host = "orbit-3svf.onrender.com";  // Replace with your Render backend domain (without https://)
 const int ws_port = 443;                             // Use 443 for secure WebSocket (wss://)
 const char* ws_path = "/ws";                         // WebSocket endpoint path
 

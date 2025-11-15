@@ -58,7 +58,7 @@ const getWebSocketUrl = () => {
 	}
 
 	// Production: use wss with backend domain
-	return "wss://orbit-194b.onrender.com/ws";
+	return "wss://orbit-5awh.onrender.com/ws";
 };
 
 const WS_CONFIG = {

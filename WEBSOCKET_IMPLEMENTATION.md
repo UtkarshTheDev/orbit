@@ -282,7 +282,7 @@ bun run dev
 ```
 
 ### Production
-- Backend: `wss://orbit-194b.onrender.com/ws`
+- Backend: `wss://orbit-5awh.onrender.com/ws`
 - Frontend: `https://orbit-robo.vercel.app`
 
 ## Summary

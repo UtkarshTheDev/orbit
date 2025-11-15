@@ -11,7 +11,7 @@
 // ============================================ 
 const char* ssid = "Computerlabjio";
 const char* password = "pass@0009";
-const char* ws_host = "orbit-5awh.onrender.com";
+const char* ws_host = "orbit-3svf.onrender.com";
 const int ws_port = 443;
 const char* ws_path = "/ws";
 
