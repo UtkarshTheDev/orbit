@@ -27,11 +27,28 @@
 #define HEAD_NEUTRAL 90
 
 // ============================================ 
-// SERVO OBJECTS
+// SERVO MANAGEMENT STRUCT
 // ============================================ 
-Servo tiltLeft;
-Servo tiltRight;
-Servo headServo;
+struct ServoMotion {
+  Servo servo;
+  int currentAngle;
+  bool invert = false;
+
+  void attach(int pin) {
+    servo.attach(pin);
+  }
+
+  void write(int angle) {
+    int physicalAngle = invert ? (180 - angle) : angle;
+    physicalAngle = constrain(physicalAngle, 0, 180);
+    servo.write(physicalAngle);
+    currentAngle = angle; // Store the logical angle
+  }
+};
+
+ServoMotion tiltLeft;
+ServoMotion tiltRight;
+Servo headServo; // Head servo can remain simple for this test file
 
 // ============================================ 
 // TEST STATE
@@ -50,7 +67,7 @@ void setup() {
   while (!Serial) {
     ; // wait for serial port to connect. 
   }
-  Serial.println("\n\n===== ESP32 Hardware Test Suite =====");
+  Serial.println("\n\n===== ESP32 Hardware Test Suite (Advanced Servo Control) =====");
 
   // Pin Modes
   pinMode(LED_PIN, OUTPUT);
@@ -63,17 +80,19 @@ void setup() {
   tiltRight.attach(TILT_RIGHT_PIN);
   headServo.attach(HEAD_PIN);
 
+  // Set initial inversion (common for dual tilt setups)
+  tiltLeft.invert = false;
+  tiltRight.invert = true; 
+
   // Set servos to neutral position
+  Serial.println("-> Moving servos to neutral and holding position.");
   tiltLeft.write(TILT_NEUTRAL);
   tiltRight.write(TILT_NEUTRAL);
   headServo.write(HEAD_NEUTRAL);
   delay(500);
 
-  // Detach servos to save power
-  tiltLeft.detach();
-  tiltRight.detach();
-  headServo.detach();
-
+  // Servos are intentionally left attached to provide holding torque.
+  
   digitalWrite(LED_PIN, LOW);
 
   printHelp();
@@ -101,8 +120,35 @@ void loop() {
 }
 
 // ============================================ 
-// TEST FUNCTIONS
+// MOVEMENT & TEST FUNCTIONS
 // ============================================ 
+
+void rampMoveTilt(int targetAngle) {
+  targetAngle = constrain(targetAngle, TILT_MIN, TILT_MAX);
+  Serial.print("-> Ramping tilt move to ");
+  Serial.print(targetAngle);
+  Serial.println(" degrees...");
+
+  int startAngle = tiltLeft.currentAngle;
+  int step = (targetAngle > startAngle) ? 1 : -1;
+
+  int rampDelayMs = 30;
+  int staggerDelayMs = 5;
+
+  for (int angle = startAngle; angle != targetAngle; angle += step) {
+    tiltLeft.write(angle);
+    delay(staggerDelayMs);
+    tiltRight.write(angle);
+    delay(rampDelayMs);
+  }
+
+  // Ensure final position is set
+  tiltLeft.write(targetAngle);
+  delay(staggerDelayMs);
+  tiltRight.write(targetAngle);
+
+  Serial.println("-> Move complete.");
+}
 
 void testLed() {
   Serial.println("-> Testing LED. Should blink 5 times.");
@@ -153,83 +199,27 @@ void runDistanceTest() {
   delay(500); // Read every half second
 }
 
-void sweepServo(Servo &servo, int minAngle, int maxAngle, int delayMs) {
-  for (int pos = minAngle; pos <= maxAngle; pos += 1) {
-    servo.write(pos);
-    delay(delayMs);
-  }
-  for (int pos = maxAngle; pos >= minAngle; pos -= 1) {
-    servo.write(pos);
-    delay(delayMs);
-  }
-  servo.write((minAngle + maxAngle) / 2); // Return to center
-}
-
-void testTiltLeft() {
-  Serial.println("-> Testing LEFT tilt servo (sweep).");
-  tiltLeft.attach(TILT_LEFT_PIN);
-  sweepServo(tiltLeft, TILT_MIN, TILT_MAX, 20);
-  tiltLeft.detach();
-  Serial.println("-> Left tilt test complete.");
-}
-
-void testTiltRight() {
-  Serial.println("-> Testing RIGHT tilt servo (sweep).");
-  tiltRight.attach(TILT_RIGHT_PIN);
-  sweepServo(tiltRight, TILT_MIN, TILT_MAX, 20);
-  tiltRight.detach();
-  Serial.println("-> Right tilt test complete.");
-}
-
-void testTiltBoth() {
-  Serial.println("-> Testing BOTH tilt servos together (sweep).");
-  tiltLeft.attach(TILT_LEFT_PIN);
-  tiltRight.attach(TILT_RIGHT_PIN);
-  for (int pos = TILT_MIN; pos <= TILT_MAX; pos += 1) {
-    tiltLeft.write(pos);
-    tiltRight.write(pos);
-    delay(20);
-  }
-  for (int pos = TILT_MAX; pos >= TILT_MIN; pos -= 1) {
-    tiltLeft.write(pos);
-    tiltRight.write(pos);
-    delay(20);
-  }
-  tiltLeft.write(TILT_NEUTRAL);
-  tiltRight.write(TILT_NEUTRAL);
+void testTiltSweep() {
+  Serial.println("-> Testing tilt sweep (ramped).");
+  rampMoveTilt(TILT_MAX);
   delay(500);
-  tiltLeft.detach();
-  tiltRight.detach();
-  Serial.println("-> Both tilt test complete.");
-}
-
-void testTiltInverted() {
-  Serial.println("-> Testing tilt servos INVERTED (opposite directions).");
-  tiltLeft.attach(TILT_LEFT_PIN);
-  tiltRight.attach(TILT_RIGHT_PIN);
-  for (int pos = TILT_MIN; pos <= TILT_MAX; pos += 1) {
-    tiltLeft.write(pos);
-    tiltRight.write(TILT_MIN + TILT_MAX - pos); // Inverted
-    delay(20);
-  }
-  for (int pos = TILT_MAX; pos >= TILT_MIN; pos -= 1) {
-    tiltLeft.write(pos);
-    tiltRight.write(TILT_MIN + TILT_MAX - pos); // Inverted
-    delay(20);
-  }
-  tiltLeft.write(TILT_NEUTRAL);
-  tiltRight.write(TILT_NEUTRAL);
+  rampMoveTilt(TILT_MIN);
   delay(500);
-  tiltLeft.detach();
-  tiltRight.detach();
-  Serial.println("-> Inverted tilt test complete.");
+  rampMoveTilt(TILT_NEUTRAL);
+  Serial.println("-> Tilt sweep complete.");
 }
 
 void testHead() {
   Serial.println("-> Testing HEAD servo (sweep).");
-  headServo.attach(HEAD_PIN);
-  sweepServo(headServo, HEAD_MIN, HEAD_MAX, 15);
-  headServo.detach();
+  for (int pos = HEAD_MIN; pos <= HEAD_MAX; pos += 1) {
+    headServo.write(pos);
+    delay(15);
+  }
+  for (int pos = HEAD_MAX; pos >= HEAD_MIN; pos -= 1) {
+    headServo.write(pos);
+    delay(15);
+  }
+  headServo.write(HEAD_NEUTRAL); // Return to center
   Serial.println("-> Head test complete.");
 }
 
@@ -265,81 +255,39 @@ void handleSerialCommand(String command) {
     distanceTestRunning = true;
   }
   // TILT SERVO TESTS
-  else if (command == "tilt left") {
-    testTiltLeft();
+  else if (command == "tilt sweep") {
+    testTiltSweep();
   }
-  else if (command == "tilt right") {
-    testTiltRight();
+  else if (command.startsWith("settilt ")) { // settilt <angle>
+      int angle = command.substring(8).toInt();
+      rampMoveTilt(angle);
   }
-  else if (command == "tilt both") {
-    testTiltBoth();
+  else if (command.startsWith("invertr ")) {
+      String param = command.substring(8);
+      param.toUpperCase();
+      tiltRight.invert = (param == "ON");
+      Serial.print("-> Right servo inversion set to: ");
+      Serial.println(tiltRight.invert ? "ON" : "OFF");
+      tiltRight.write(tiltRight.currentAngle); // Re-apply current angle with new inversion
   }
-  else if (command == "tilt inverted") {
-    testTiltInverted();
-  }
-  else if (command.startsWith("settilt inverted")) { // settilt inverted <angle>
-    int firstSpace = command.indexOf(' ');
-    int angle = command.substring(firstSpace + 1 + String("inverted").length() + 1).toInt();
-    Serial.print("-> Setting inverted tilt to ");
-    Serial.print(angle);
-    Serial.println(" degrees (left normal, right inverted).");
-    tiltLeft.attach(TILT_LEFT_PIN);
-    tiltRight.attach(TILT_RIGHT_PIN);
-    tiltLeft.write(angle);
-    tiltRight.write(TILT_MIN + TILT_MAX - angle); // Inverted
-    delay(500);
-    tiltLeft.detach();
-    tiltRight.detach();
-  }
-  else if (command.startsWith("settilt")) { // settilt <left|right|both> <angle>
-    int firstSpace = command.indexOf(' ');
-    int secondSpace = command.indexOf(' ', firstSpace + 1);
-    if (firstSpace != -1 && secondSpace != -1) {
-      String target = command.substring(firstSpace + 1, secondSpace);
-      int angle = command.substring(secondSpace + 1).toInt();
-      Serial.print("-> Setting ");
-      Serial.print(target);
-      Serial.print(" to ");
-      Serial.print(angle);
-      Serial.println(" degrees.");
-      if (target == "left") {
-        tiltLeft.attach(TILT_LEFT_PIN);
-        tiltLeft.write(angle);
-        delay(500);
-        tiltLeft.detach();
-      } else if (target == "right") {
-        tiltRight.attach(TILT_RIGHT_PIN);
-        tiltRight.write(angle);
-        delay(500);
-        tiltRight.detach();
-      } else if (target == "both") {
-        tiltLeft.attach(TILT_LEFT_PIN);
-        tiltRight.attach(TILT_RIGHT_PIN);
-        tiltLeft.write(angle);
-        tiltRight.write(angle);
-        delay(500);
-        tiltLeft.detach();
-        tiltRight.detach();
-      } else {
-        Serial.println("   Invalid target. Use 'left', 'right', 'both'.");
-      }
-    } else {
-      Serial.println("   Invalid format. Use: settilt <left|right|both> <angle>");
-    }
+   else if (command.startsWith("invertl ")) {
+      String param = command.substring(8);
+      param.toUpperCase();
+      tiltLeft.invert = (param == "ON");
+      Serial.print("-> Left servo inversion set to: ");
+      Serial.println(tiltLeft.invert ? "ON" : "OFF");
+      tiltLeft.write(tiltLeft.currentAngle); // Re-apply current angle with new inversion
   }
   // HEAD SERVO TESTS
   else if (command == "head") {
     testHead();
   }
-  else if (command.startsWith("sethead")) { // sethead <angle>
-    int angle = command.substring(7).toInt();
+  else if (command.startsWith("sethead ")) { // sethead <angle>
+    int angle = command.substring(8).toInt();
     Serial.print("-> Setting head to ");
     Serial.print(angle);
     Serial.println(" degrees.");
-    headServo.attach(HEAD_PIN);
     headServo.write(angle);
-    delay(500);
-    headServo.detach();
   }
   else {
     Serial.println("-> Unknown command. Type 'help' for a list of commands.");
@@ -355,11 +303,10 @@ void printHelp() {
   Serial.println("pir           - Monitors the PIR motion sensor.");
   Serial.println("distance      - Monitors the ultrasonic distance sensor.");
   Serial.println("\n[Tilt Servo Tests]");
-  Serial.println("tilt left     - Sweeps the left tilt servo.");
-  Serial.println("tilt right    - Sweeps the right tilt servo.");
-  Serial.println("tilt both     - Sweeps both tilt servos together.");
-  Serial.println("tilt inverted - Sweeps tilt servos in opposite directions.");
-  Serial.println("settilt <left|right|both|inverted> <angle> - Sets tilt servo(s) to a specific angle.");
+  Serial.println("tilt sweep    - Sweeps tilt servos through their full range.");
+  Serial.println("settilt <angle> - Ramped move to a specific tilt angle.");
+  Serial.println("invertl <on|off> - Invert the LEFT servo's direction.");
+  Serial.println("invertr <on|off> - Invert the RIGHT servo's direction.");
   Serial.println("\n[Head Servo Tests]");
   Serial.println("head          - Sweeps the head servo.");
   Serial.println("sethead <angle> - Sets head servo to a specific angle.");

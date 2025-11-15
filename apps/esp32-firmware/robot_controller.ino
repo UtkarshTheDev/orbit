@@ -35,7 +35,7 @@
 const char* ssid = "Computerlabjio";         // Replace with your WiFi SSID
 const char* password = "pass@0009"; // Replace with your WiFi password
 
-const char* ws_host = "orbit-194b.onrender.com"; // Replace with your Render backend domain
+const char* ws_host = "orbit-5awh.onrender.com"; // Replace with your Render backend domain
 const int ws_port = 443;                           // Use 443 for secure WebSocket (wss://)
 const char* ws_path = "/ws";                       // WebSocket endpoint path
 
@@ -76,8 +76,8 @@ const char* ws_path = "/ws";                       // WebSocket endpoint path
 // Distance thresholds (cm)
 #define DISTANCE_VERY_CLOSE 50    // < 50cm: Max tilt
 #define DISTANCE_CLOSE 100        // 50-100cm: Medium tilt
-#define DISTANCE_VIEWING 250      // 100-250cm: Slight tilt
-#define DISTANCE_FAR 300          // > 250cm: Return to neutral
+#define DISTANCE_VIEWING 500      // 100-500cm: Slight tilt
+#define DISTANCE_FAR 500          // > 500cm: Return to neutral
 
 // Distance zone tilt angles - adjusted for opposite servo mounting
 #define TILT_VERY_CLOSE 115   // Lean back more when very close (reduced for dual servo stability)
@@ -600,8 +600,8 @@ void setup() {
   Serial.println("\nDistance Zones:");
   Serial.println("  < 50cm   = Very Close (tilt 115°)");
   Serial.println("  50-100cm = Close (tilt 100°)");
-  Serial.println("  100-250cm = Viewing (tilt 95°)");
-  Serial.println("  > 250cm  = Far (neutral 90°)");
+  Serial.println("  100-500cm = Viewing (tilt 95°)");
+  Serial.println("  > 500cm  = Far (neutral 90°)");
 
   // --- WiFi & WebSocket Setup ---
   Serial.printf("\n[WiFi] Connecting to %s", ssid);
@@ -992,7 +992,7 @@ void loopTiltControl(unsigned long currentTime) {
         }
         break;
       case VIEWING_FAR:
-        Serial.println("━━━ State: VIEWING_FAR (100-150cm) ━━━");
+        Serial.println("━━━ State: VIEWING_FAR (100-500cm) ━━━");
         // Only send 'passed' if no other state has been sent yet
         if (lastSentWsState == WS_STATE_NONE) {
           sendWsUserState(WS_STATE_PASSED, lastStableDistance);
@@ -1007,7 +1007,7 @@ void loopTiltControl(unsigned long currentTime) {
         }
         break;
       case RETURNING_NEUTRAL:
-        Serial.println("━━━ State: RETURNING_NEUTRAL (> 150cm) ━━━");
+        Serial.println("━━━ State: RETURNING_NEUTRAL (> 500cm) ━━━");
         break;
     }
   }

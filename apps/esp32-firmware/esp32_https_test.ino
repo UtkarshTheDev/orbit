@@ -5,7 +5,7 @@
 const char* ssid = "YOUR_WIFI_SSID";
 const char* password = "YOUR_WIFI_PASSWORD";
 
-const char* host = "orbit-194b.onrender.com";
+const char* host = "orbit-5awh.onrender.com";
 const int httpsPort = 443;
 
 // Root CA certificate for GlobalSign Root CA
