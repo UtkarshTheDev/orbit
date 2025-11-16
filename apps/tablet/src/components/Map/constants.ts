@@ -14,7 +14,7 @@ export const GRID_HEIGHT = Math.ceil(600 / GRID_SIZE);
 // Campus rooms data
 export const rooms: Room[] = [
   // Bottom outdoor areas (previously top, now also flipped horizontally)
-  { id: "playground", x: 160, y: 460, width: 780, height: 120, name: "PLAYGROUND", type: "outdoor", color: "#D9F99D" },
+  { id: "playground", x: 160, y: 460, width: 780, height: 120, name: "Mathematic Gallery / Food Stall", subjects: [{ name: "Mathematic Gallery", height: 60 }, { name: "Food Stall", height: 60 }], type: "outdoor", color: "#D9F99D" },
   { id: "stage", x: 90, y: 460, width: ROOM_WIDTH, height: 120, name: "STAGE", type: "outdoor", color: "#F87171" },
 
   {
@@ -130,9 +130,7 @@ export const rooms: Room[] = [
     name: "Room No. 3",
     roomNumber: "Room No. 3",
     subjects: [
-      { name: "Craft", height: 35 },
-      { name: "EVS", height: 35 },
-      { name: "Maths", height: 35 },
+      { name: "Art and Craft", height: 90 }
     ],
     type: "classroom",
     color: "#93C5FD",
@@ -295,11 +293,6 @@ export const rooms: Room[] = [
     height: ROOM_HEIGHT,
     name: "Room No. 4",
     roomNumber: "Room No. 4",
-    subjects: [
-      { name: "Craft", height: 35 },
-      { name: "EVS", height: 35 },
-      { name: "Maths", height: 35 },
-    ],
     type: "classroom",
     color: "#C4B5FD",
   },
@@ -312,11 +305,7 @@ export const rooms: Room[] = [
     height: ROOM_HEIGHT,
     name: "Room No. 5",
     roomNumber: "Room No. 5",
-    subjects: [
-      { name: "Craft", height: 35 },
-      { name: "EVS", height: 35 },
-      { name: "Maths", height: 35 },
-    ],
+    subjects: [{ name: "Art and Craft", height: 90 }],
     type: "classroom",
     color: "#C4B5FD",
   },
@@ -329,11 +318,7 @@ export const rooms: Room[] = [
     height: ROOM_HEIGHT,
     name: "Room No. 6",
     roomNumber: "Room No. 6",
-    subjects: [
-      { name: "Craft", height: 35 },
-      { name: "Science", height: 35 },
-      { name: "Maths", height: 35 },
-    ],
+    subjects: [{ name: "Art and Craft", height: 90 }],
     type: "classroom",
     color: "#C4B5FD",
   },
@@ -346,6 +331,7 @@ export const rooms: Room[] = [
     height: ROOM_HEIGHT,
     name: "Room No. 7",
     roomNumber: "Room No. 7",
+    subjects: [{ name: "Art and Craft", height: 90 }],
     type: "classroom",
     color: "#D6D3D1",
   },
@@ -358,6 +344,7 @@ export const rooms: Room[] = [
     height: ROOM_HEIGHT,
     name: "Room No. 8",
     roomNumber: "Room No. 8",
+    subjects: [{ name: "Art and Craft", height: 90 }],
     type: "classroom",
     color: "#D6D3D1",
   },
@@ -370,6 +357,7 @@ export const rooms: Room[] = [
     height: ROOM_HEIGHT,
     name: "Room No. 9",
     roomNumber: "Room No. 9",
+    subjects: [{ name: "Art and Craft", height: 90 }],
     type: "classroom",
     color: "#D6D3D1",
   },
@@ -382,7 +370,7 @@ export const rooms: Room[] = [
     height: ROOM_HEIGHT,
     name: "Room No. 10",
     roomNumber: "Room No. 10",
-    subjects: [{ name: "Maths", height: 90 }],
+    subjects: [{ name: "Art and Craft", height: 90 }],
     type: "classroom",
     color: "#86EFAC",
   },
@@ -395,6 +383,7 @@ export const rooms: Room[] = [
     height: ROOM_HEIGHT,
     name: "Room No. 11",
     roomNumber: "Room No. 11",
+    subjects: [{ name: "Art and Craft", height: 90 }],
     type: "classroom",
     color: "#D6D3D1",
   },

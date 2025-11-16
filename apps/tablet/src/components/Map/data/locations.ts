@@ -7,10 +7,9 @@ const createCampusLocations = (): Location[] => {
 
   // Event/Classroom locations (rooms with specific subjects)
   const eventRooms = [
-    'room1', 'room2', 'room3', // Craft, EVS, Maths
-    'room4', 'room5', 'room6', // Craft, EVS, Maths/Science  
-    'room10', // Maths
-    'sports-room' // Science
+    'room1', 'room2', 'room3', 'room5', 'room6', 'room7', 'room8', 'room9', 'room10', 'room11',
+    'sports-room',
+    'playground'
   ];
 
   eventRooms.forEach(roomId => {

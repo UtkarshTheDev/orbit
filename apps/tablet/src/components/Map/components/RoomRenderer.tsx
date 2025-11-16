@@ -52,7 +52,7 @@ export const RoomRenderer: React.FC<RoomRendererProps> = ({
         y={room.y}
         width={room.width}
         height={room.height}
-        fill={room.color}
+        fill={!room.subjects || room.subjects.length === 0 ? "#E5E7EB" : room.color}
         stroke={getRoomBorderColor()}
         strokeWidth={getRoomBorderWidth()}
         rx="4"
