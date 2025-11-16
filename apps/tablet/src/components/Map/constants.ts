@@ -333,7 +333,7 @@ export const rooms: Room[] = [
     roomNumber: "Room No. 7",
     subjects: [{ name: "Art and Craft", height: 90 }],
     type: "classroom",
-    color: "#D6D3D1",
+    color: "#C4B5FD",
   },
 
   {
@@ -346,7 +346,7 @@ export const rooms: Room[] = [
     roomNumber: "Room No. 8",
     subjects: [{ name: "Art and Craft", height: 90 }],
     type: "classroom",
-    color: "#D6D3D1",
+    color: "#C4B5FD",
   },
 
   {
@@ -359,7 +359,7 @@ export const rooms: Room[] = [
     roomNumber: "Room No. 9",
     subjects: [{ name: "Art and Craft", height: 90 }],
     type: "classroom",
-    color: "#D6D3D1",
+    color: "#C4B5FD",
   },
 
   {
@@ -385,7 +385,7 @@ export const rooms: Room[] = [
     roomNumber: "Room No. 11",
     subjects: [{ name: "Art and Craft", height: 90 }],
     type: "classroom",
-    color: "#D6D3D1",
+    color: "#C4B5FD",
   },
 
   {
